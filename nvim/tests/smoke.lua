@@ -195,6 +195,7 @@ local root = vim.fn.fnamemodify(vim.fn.resolve(nvim), ':h')
 check('install.sh manages kitty conf', read(root .. '/install.sh'):find('kitty/kitty.conf', 1, true) ~= nil)
 local kitty = read(home .. '/.config/kitty/kitty.conf')
 check('kitty Cmd+E reaches nvim', kitty:find('cmd+e send_text all \\e[101;9u', 1, true) ~= nil)
+check('kitty Shift+Cmd+E peeks', kitty:find('cmd+shift+e send_text all \\e[101;10u', 1, true) ~= nil)
 
 -- 12. Cmd+O "land here": file_browser mappings cd the tab to the browsed
 -- or highlighted folder, close the picker, and move the tree too.
