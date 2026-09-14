@@ -134,6 +134,8 @@ check('titlestring is short', options_src:find('titlestring', 1, true) ~= nil
 local editor_src = read(nvim .. '/lua/plugins/editor.lua')
 check('tree indent guides on', editor_src:find('indent_markers = { enable = true }', 1, true) ~= nil)
 check('svelte parser installed', editor_src:find("'svelte'", 1, true) ~= nil)
+check('mini.icons set up and mocking devicons', editor_src:find("require('mini.icons').setup()", 1, true) ~= nil
+  and editor_src:find('mock_nvim_web_devicons', 1, true) ~= nil)
 -- NOTE: lazy `keys` bind at runtime (see test.lua note above); here we
 -- assert the declarations, shadowing the conflict check from 2026-09-14.
 check('harpoon keys declared', editor_src:find("'<leader>a'", 1, true) ~= nil

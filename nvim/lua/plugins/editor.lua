@@ -65,6 +65,11 @@ return {
       mappings = { add = 'ys', delete = 'ds', replace = 'cs' },
     }
     require('mini.sessions').setup() -- manual snapshots: <leader>Sw / <leader>Sr
+    require('mini.icons').setup()
+    -- Impersonate devicons: every plugin that asks nvim-web-devicons for
+    -- a glyph (nvim-tree, lualine, Telescope…) gets mini.icons' set
+    -- instead, with zero changes on their side.
+    require('mini.icons').mock_nvim_web_devicons()
   end },
   { 'famiu/bufdelete.nvim', cmd = { 'Bdelete', 'Bwipeout' } },
   -- NOTE: eager on purpose (no `cmd` key, so the setup's `lazy = false`
