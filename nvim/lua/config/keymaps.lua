@@ -49,6 +49,10 @@ map('t', '<Esc>[925;1~', '<C-\\><C-n><cmd>lua require("config.tree").focus(true)
 -- which have no t map above, so both need their own drop-to-Normal first.
 map('t', '<D-e>', '<C-\\><C-n><cmd>lua require("config.tree").focus(true)<cr>', opts)
 map('t', '<D-S-e>', '<C-\\><C-n><cmd>lua require("config.tree").peek(true)<cr>', opts)
+-- Middle-click opens the tree (focused, current file revealed) instead of
+-- pasting. Needs `mouse = 'a'` above, or the emulator eats the click.
+map({ 'n', 'v', 'i', 't' }, '<MiddleMouse>', function() require('config.tree').focus(true) end,
+  { noremap = true, silent = true, desc = 'Open file tree' })
 -- (old Alt bank lived here; Alt+N now toggles the current slot's terminal — loop below)
 -- Alt+Right intentionally left unmapped in terminal modes: Ghostty sends it
 -- as Esc+f, which the shell reads as word-forward (VSCode behavior). It used

@@ -34,6 +34,7 @@ check('showtabline shows when >1 tab', vim.opt.showtabline:get() == 1)
 check('foldmethod is treesitter expr', vim.opt.foldmethod:get() == 'expr')
 check('folds start open', vim.opt.foldlevel:get() == 99)
 check('scrolloff pads past EOF', vim.opt.scrolloff:get() == 999)
+check('mouse captured in every mode', vim.o.mouse == 'a')
 
 -- 3. Terminal toggles are simple global ids; slot selects are gone.
 require('config.keymaps')
@@ -107,6 +108,8 @@ check('Cmd+E focuses tree', keymaps_src:find("<D-e>', function() require('config
 check('Shift+Cmd+E peeks tree', keymaps_src:find("<D-S-e>', function() require('config.tree').peek(true)", 1, true) ~= nil)
 check('Cmd+E focuses from float', keymaps_src:find("require(\"config.tree\").focus(true)", 1, true) ~= nil)
 check('Shift+Cmd+E peeks from float', keymaps_src:find("require(\"config.tree\").peek(true)", 1, true) ~= nil)
+check('middle-click opens tree', vim.fn.maparg('<MiddleMouse>', 'n') ~= ''
+  and vim.fn.maparg('<MiddleMouse>', 't') ~= '')
 -- Short tab title: project + short label, no full terminal buffer path.
 local options_src = read(nvim .. '/lua/config/options.lua')
 local title_line = options_src:match('[^\n]*titlestring[^\n]*') or ''
@@ -116,6 +119,7 @@ check('titlestring is short', options_src:find('titlestring', 1, true) ~= nil
   and title_line:find('://', 1, true) == nil)
 local editor_src = read(nvim .. '/lua/plugins/editor.lua')
 check('tree indent guides on', editor_src:find('indent_markers = { enable = true }', 1, true) ~= nil)
+check('svelte parser installed', editor_src:find("'svelte'", 1, true) ~= nil)
 local runner_src = read(nvim .. '/lua/config/runner.lua')
 check('bun runs typescript', runner_src:find("typescript = function(f) return { 'bun', f }", 1, true) ~= nil)
 

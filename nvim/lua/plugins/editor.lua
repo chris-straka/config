@@ -33,7 +33,7 @@ return {
     config = function()
       local ts = require 'nvim-treesitter'
       ts.setup {}
-      ts.install { 'lua', 'vim', 'vimdoc', 'javascript', 'typescript', 'tsx', 'python', 'go', 'rust', 'bash', 'json', 'css', 'html',
+      ts.install { 'lua', 'vim', 'vimdoc', 'javascript', 'typescript', 'tsx', 'svelte', 'python', 'go', 'rust', 'bash', 'json', 'css', 'html',
         'c', 'cpp', 'cmake', 'java', 'c_sharp', 'terraform', 'yaml', 'dockerfile', 'graphql', 'proto', 'toml', 'solidity', 'typst', 'http' }
       -- Neovim 0.11+ starts treesitter highlight/indent per-buffer; ensure it.
       vim.api.nvim_create_autocmd('FileType', {

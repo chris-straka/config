@@ -25,6 +25,9 @@ o.tabstop = 2
 o.smartindent = true
 o.shiftwidth = 2
 o.termguicolors = true
+-- Mouse in every mode: nvim captures clicks itself (middle-click is ours
+-- to bind) instead of the emulator stealing them for selection paste.
+o.mouse = 'a'
 -- 200ms: Space is the leader and which-key intentionally holds bare Space
 -- taps this long waiting for the follow-up key (that hold IS the "space
 -- lag"); combos resolve instantly once the next key arrives, so this only
