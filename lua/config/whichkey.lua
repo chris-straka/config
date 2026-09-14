@@ -1,0 +1,45 @@
+-- Ported from lua/which/*.lua to which-key v3 (.add API).
+-- Old .register() calls no longer work.
+local ok, wk = pcall(require, 'which-key')
+if not ok then return end
+
+wk.add {
+  { '<leader><Tab>', '<cmd>e#<cr>', desc = 'Prev buffer' },
+  { '<leader>=', '<c-w>=', desc = 'Equal sizes' },
+  { '<leader>e', '<cmd>NvimTreeToggle<cr>', desc = 'Toggle tree' },
+  { '<leader>q', ':q<cr>', desc = 'Quit' },
+  { '<leader>w', ':w!<cr>', desc = 'Write' },
+  { '<leader>b', group = 'Buffers' },
+  { '<leader>bb', "<cmd>lua require'telescope.builtin'.buffers({ sort_mru = true })<cr>", desc = 'Find buffer' },
+  { '<leader>bd', '<cmd>Bdelete!<CR>', desc = 'Close buffer' },
+  { '<leader>bD', '<cmd>%bd<cr>', desc = 'Close all buffers' },
+  { '<leader>L', '<cmd>Lazy<cr>', desc = 'Plugins (load state)' },
+  { '<leader>Q', group = 'Misc' },
+  { '<leader>Qs', '<cmd>Trouble symbols toggle<cr>', desc = 'Symbols' },
+  { '<leader>Qd', '<cmd>Trouble diagnostics toggle<cr>', desc = 'Diagnostics' },
+  { '<leader>t', '<cmd>ToggleTerm direction=float<cr>', desc = 'Terminal' },
+  { '<leader>o', group = 'Tasks' },
+  { '<leader>R', group = 'REST' },
+  { '<leader>d', group = 'Debug' },
+  { '<leader>f', group = 'Find' },
+  { '<leader>ff', '<cmd>Telescope find_files<cr>', desc = 'Files' },
+  { '<leader>fg', '<cmd>Telescope live_grep<cr>', desc = 'Grep' },
+  { '<leader>fp', '<cmd>Telescope projects<cr>', desc = 'Projects' },
+  { '<leader>g', group = 'Git' },
+  { '<leader>gg', '<cmd>Neogit<cr>', desc = 'Neogit' },
+  { '<leader>gd', '<cmd>DiffviewOpen<cr>', desc = 'Diffview' },
+  { '<leader>gb', '<cmd>GitBlameToggle<cr>', desc = 'Blame' },
+  -- LSP on 'm' prefix (kept from old config)
+  { 'm', group = 'LSP' },
+  { 'ma', '<cmd>lua vim.lsp.buf.code_action()<cr>', desc = 'Code action' },
+  { 'md', '<cmd>lua vim.lsp.buf.definition()<cr>', desc = 'Definition' },
+  { 'mD', '<cmd>lua vim.lsp.buf.declaration()<cr>', desc = 'Declaration' },
+  { 'mr', '<cmd>lua vim.lsp.buf.references()<cr>', desc = 'References' },
+  { 'mR', '<cmd>lua vim.lsp.buf.rename()<cr>', desc = 'Rename' },
+  { 'mk', '<cmd>lua vim.lsp.buf.hover()<cr>', desc = 'Hover' },
+  { 'mf', '<cmd>lua vim.lsp.buf.format()<cr>', desc = 'Format' },
+  { 'mn', '<cmd>lua vim.diagnostic.goto_next()<cr>', desc = 'Next diagnostic' },
+  { 'mp', '<cmd>lua vim.diagnostic.goto_prev()<cr>', desc = 'Prev diagnostic' },
+  { 'ml', '<cmd>lua vim.diagnostic.open_float()<CR>', desc = 'Line diagnostics' },
+  { 'mw', '<cmd>Telescope diagnostics<cr>', desc = 'Workspace diagnostics' },
+}
