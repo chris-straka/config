@@ -166,20 +166,24 @@ end, { noremap = true, silent = true, desc = 'Read session snapshot' })
 -- Tradeoff: inside a termbuff, typing a literal backslash becomes Ctrl-V then backslash.
 map('n', '<leader>t', '<cmd>ToggleTerm direction=float<cr>', { noremap = true, silent = true, desc = 'Floating terminal' })
 map({ 'n', 't' }, '\\', '<cmd>ToggleTerm direction=float<cr>', { noremap = true, silent = true, desc = 'Floating terminal' })
--- Terminal-mode exit ramp: DOUBLE Esc drops to Terminal-Normal
--- (navigate/copy mode). A single Esc passes straight to the shell job, so
--- TUIs keep their own Esc — Muse's interrupt, fzf/lazygit cancel.
--- Cost: a lone Esc waits timeoutlen (200ms) for a possible second press.
+-- Terminal-mode exit ramp: `|` drops to Terminal-Normal (navigate/copy
+-- mode). A single Esc passes straight to the shell job, so TUIs keep
+-- their own Esc — Muse's interrupt, fzf/lazygit cancel — and double-Esc
+-- is gone on purpose (too easy to fire half of it into the shell).
+-- Cost of the pipe: `|` can no longer be typed inside a terminal float,
+-- so shell pipelines must be composed elsewhere; revert to
+-- `map('t', '<Esc><Esc>', ...)` if that ever hurts more than it helps.
 -- Ctrl+C is untouched and reaches the shell too — but in Muse it quits,
 -- so interrupt with Esc, not Ctrl+C.
-map('t', '<Esc><Esc>', '<C-\\><C-n>', { noremap = true, silent = true, desc = 'Terminal to Normal mode' })
+map('t', '|', '<C-\\><C-n>', { noremap = true, silent = true, desc = 'Terminal to Normal mode' })
 -- Exit the focused terminal (see config/terminal.lua): types `exit` +
 -- Enter into its shell, so the shell ends and the float goes away;
 -- reopen with Alt+N for a fresh shell. <leader>tR stays Normal-only on
 -- purpose: a <leader> mapping in terminal mode would make every Space
--- typed into the shell wait timeoutlen for a follow-up key. Alt+X is a
--- bare Alt key with no such timeout cost, so it binds in normal,
--- terminal, and insert modes and works straight from Terminal-Insert.
+-- typed into the shell wait timeoutlen for a follow-up key (from inside
+-- a terminal: `|` first). Alt+X is a bare Alt key with no such timeout
+-- cost, so it binds in normal, terminal, and insert modes and works
+-- straight from Terminal-Insert.
 map('n', '<leader>tR', function() require('config.terminal').exit_focused() end,
   { noremap = true, silent = true, desc = 'Exit focused terminal' })
 map({ 'n', 't', 'i' }, '<A-x>', function() require('config.terminal').exit_focused() end,
@@ -215,5 +219,8 @@ local function resize_float(dw, dh)
 end
 map({ 'n', 't' }, '<A-,>', function() resize_float(-5, 0) end, { noremap = true, silent = true, desc = 'Float narrower' })
 map({ 'n', 't' }, '<A-.>', function() resize_float(5, 0) end, { noremap = true, silent = true, desc = 'Float wider' })
+-- Same width keys on the brackets: Alt+[ narrows, Alt+] widens.
+map({ 'n', 't' }, '<A-[>', function() resize_float(-5, 0) end, { noremap = true, silent = true, desc = 'Float narrower' })
+map({ 'n', 't' }, '<A-]>', function() resize_float(5, 0) end, { noremap = true, silent = true, desc = 'Float wider' })
 map({ 'n', 't' }, '<A-->', function() resize_float(0, -2) end, { noremap = true, silent = true, desc = 'Float shorter' })
 map({ 'n', 't' }, '<A-=>', function() resize_float(0, 2) end, { noremap = true, silent = true, desc = 'Float taller' })

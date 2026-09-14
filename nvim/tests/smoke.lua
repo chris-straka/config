@@ -56,6 +56,12 @@ check('Alt+X exits from normal', vim.fn.maparg('<A-x>', 'n') ~= '')
 check('Alt+X exits from inside terminal', vim.fn.maparg('<A-x>', 't') ~= '')
 check('Alt+X exits while typing', vim.fn.maparg('<A-x>', 'i') ~= '')
 check('<leader>tR still exits', vim.fn.maparg(' tR', 'n') ~= '')
+-- Float width on the brackets; pipe is the Terminal-Normal hatch,
+-- double-Esc is gone.
+check('Alt+[ narrows float', vim.fn.maparg('<A-[>', 'n') ~= '' and vim.fn.maparg('<A-[>', 't') ~= '')
+check('Alt+] widens float', vim.fn.maparg('<A-]>', 'n') ~= '' and vim.fn.maparg('<A-]>', 't') ~= '')
+check('pipe drops terminal to Normal', vim.fn.maparg('|', 't') == '<C-\\><C-N>')
+check('double-Esc ramp retired', vim.fn.maparg('<Esc><Esc>', 't') == '')
 local term_src = read(nvim .. '/lua/config/terminal.lua')
 check('exit sends exit+enter to the job', term_src:find("chansend(term.job_id, 'exit\\n')", 1, true) ~= nil)
 check('Cmd+Opt+[ folds', vim.fn.maparg('<D-M-[>', 'n') == 'zc')
@@ -129,6 +135,8 @@ end
 local ui = read(nvim .. '/lua/plugins/ui.lua')
 check('lualine shows cwd basename', ui:find("fnamemodify(vim.fn.getcwd(), ':t')", 1, true) ~= nil)
 check('lualine shortens toggleterm to term', ui:find("s == 'toggleterm' and 'term'", 1, true) ~= nil)
+check('lualine numbers nvim tabs only when several', ui:find("tabpagenr('$')", 1, true) ~= nil
+  and ui:find("'Tab '", 1, true) ~= nil)
 check('tree bg brightened, theme kept', ui:find('catppuccin-mocha', 1, true) ~= nil
   and ui:find('NvimTreeNormal', 1, true) ~= nil
   and ui:find('surface0', 1, true) ~= nil)

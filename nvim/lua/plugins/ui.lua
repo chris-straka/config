@@ -26,14 +26,22 @@ return {
       vim.cmd.colorscheme('catppuccin-mocha')
     end },
   { 'nvim-lualine/lualine.nvim', event = 'VeryLazy', dependencies = { 'nvim-tree/nvim-web-devicons' }, opts = {
-    -- Default sections restated with one addition: the project name
+    -- Default sections restated with two additions: the project name
     -- (current directory's basename, e.g. `ccez-keeps`). One Ghostty tab
-    -- runs one nvim for one project, so this is the tab's identity.
+    -- runs one nvim for one project, so this is the tab's identity —
+    -- nvim cannot see Ghostty's own tab index (stock Ghostty exports no
+    -- tab env var or queryable socket), so numbered Ghostty tabs in the
+    -- statusline are not possible. The second addition covers nvim's own
+    -- tabs (`:tabnew`): `Tab n/N`, blank unless several exist, so it
+    -- never prints a misleading always-1 number for Ghostty tabs.
     sections = {
       lualine_a = { 'mode' },
       lualine_b = { 'branch', 'diff', 'diagnostics' },
       lualine_c = { 'filename', { function()
         return '󰉋 ' .. vim.fn.fnamemodify(vim.fn.getcwd(), ':t')
+      end }, { function()
+        if vim.fn.tabpagenr('$') <= 1 then return '' end
+        return 'Tab ' .. vim.fn.tabpagenr() .. '/' .. vim.fn.tabpagenr('$')
       end } },
       -- `fmt` shortens the filetype label only (`toggleterm` -> `term`);
       -- icon and everything else stay as the stock component renders them.
