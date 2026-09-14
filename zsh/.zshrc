@@ -33,8 +33,6 @@ autoload -Uz compinit
 compinit
 # End of Docker CLI completions
 
-# job application scripts (add-job, build.sh)
-export PATH="$HOME/Jobs/bin:$PATH"
 export ANDROID_HOME=$HOME/Library/Android/sdk
 export PATH=$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator
 export ANDROID_NDK_HOME=$HOME/Library/Android/sdk/ndk/30.0.16138531

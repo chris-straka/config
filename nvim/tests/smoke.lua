@@ -3,6 +3,9 @@
 local home = vim.env.HOME
 local nvim = home .. '/.config/nvim'
 vim.opt.rtp:prepend(nvim)
+-- Mirror init.lua: Space is the leader (keymaps.lua assumes it).
+vim.g.mapleader = ' '
+vim.g.maplocalleader = ' '
 
 local function read(path)
   local f = assert(io.open(path, 'r'), 'missing file: ' .. path)
@@ -39,6 +42,44 @@ local a2 = vim.fn.maparg('<A-2>', 'n')
 check('Alt+2 toggles global terminal 2', a2:find('2ToggleTerm', 1, true) ~= nil)
 check('Cmd+Opt+[ folds', vim.fn.maparg('<D-M-[>', 'n') == 'zc')
 check('Cmd+Opt+] unfolds', vim.fn.maparg('<D-M-]>', 'n') == 'zo')
+
+-- 7. Code runner: module loads, <leader>of is bound.
+local runner = require('config.runner')
+check('runner module exposes run_file', type(runner.run_file) == 'function')
+check('<leader>of runs current file', vim.fn.maparg(' of', 'n') ~= '')
+
+-- 9. Option+K sender: reference builder + visual binding + bun TS runner.
+check('ref lines 3-4', runner.at_reference('personal/README.md', 3, 4, 100) == '@personal/README.md#3-4')
+check('ref whole file collapses', runner.at_reference('personal/README.md', 1, 100, 100) == '@personal/README.md')
+check('ref single line', runner.at_reference('a.ts', 5, 5, 100) == '@a.ts#5')
+check('ref no file is nil', runner.at_reference('', 1, 1, 10) == nil)
+check('visual Option+K sends ref', vim.fn.maparg('<A-k>', 'v') ~= '')
+check('visual Cmd+C copies', vim.fn.maparg('<D-c>', 'v') == '"+y')
+
+-- 10. gd-style LSP only: the m-prefix duplicates are gone from whichkey.
+local wk = read(nvim .. '/lua/config/whichkey.lua')
+check('no m-prefix LSP group', wk:find("'m', group", 1, true) == nil)
+check('no ma duplicate', wk:find("'ma'", 1, true) == nil)
+
+for _, p in ipairs({ home .. '/.config/ghostty/config', home .. '/.config/ghostty/nvim-launcher' }) do
+  local tag = p:match('[^/]+$') .. '/copy'
+  local c = read(p)
+  check(tag .. ' Cmd+C reaches nvim', c:find('super+c=text', 1, true) ~= nil)
+end
+local runner_src = read(nvim .. '/lua/config/runner.lua')
+check('bun runs typescript', runner_src:find("typescript = function(f) return { 'bun', f }", 1, true) ~= nil)
+
+-- 8. Testing plugins: specs declare the adapters, keys are bound.
+local test_src = read(nvim .. '/lua/plugins/test.lua')
+for _, spec in ipairs({ 'nvim-neotest/neotest', 'neotest-python', 'neotest-rust', 'neotest-vitest', 'neotest-golang', 'michaelb/sniprun' }) do
+  check('test spec declares ' .. spec, test_src:find(spec, 1, true) ~= nil)
+end
+-- NOTE: lazy `keys` specs only bind when lazy.nvim runs, which the
+-- --noplugin smoke harness skips — so here we assert the declarations;
+-- runtime binding is proven by the full boot check below.
+for _, key in ipairs({ '<leader>Tr', '<leader>Tf', '<leader>Ta', '<leader>Td', '<leader>To', '<leader>Ts', '<leader>Tx', '<Plug>SnipRun' }) do
+  check('test spec binds ' .. key, test_src:find(key, 1, true) ~= nil)
+end
 
 -- 4. Lualine shows the project name, not a slot.
 local ui = read(nvim .. '/lua/plugins/ui.lua')

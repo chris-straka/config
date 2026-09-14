@@ -18,6 +18,8 @@ wk.add {
   { '<leader>Qs', '<cmd>Trouble symbols toggle<cr>', desc = 'Symbols' },
   { '<leader>Qd', '<cmd>Trouble diagnostics toggle<cr>', desc = 'Diagnostics' },
   { '<leader>t', '<cmd>ToggleTerm direction=float<cr>', desc = 'Terminal' },
+  { '<leader>T', group = 'Test' },
+  { '<leader>s', group = 'Snip' },
   { '<leader>o', group = 'Tasks' },
   { '<leader>R', group = 'REST' },
   { '<leader>d', group = 'Debug' },
@@ -29,17 +31,6 @@ wk.add {
   { '<leader>gg', '<cmd>Neogit<cr>', desc = 'Neogit' },
   { '<leader>gd', '<cmd>DiffviewOpen<cr>', desc = 'Diffview' },
   { '<leader>gb', '<cmd>GitBlameToggle<cr>', desc = 'Blame' },
-  -- LSP on 'm' prefix (kept from old config)
-  { 'm', group = 'LSP' },
-  { 'ma', '<cmd>lua vim.lsp.buf.code_action()<cr>', desc = 'Code action' },
-  { 'md', '<cmd>lua vim.lsp.buf.definition()<cr>', desc = 'Definition' },
-  { 'mD', '<cmd>lua vim.lsp.buf.declaration()<cr>', desc = 'Declaration' },
-  { 'mr', '<cmd>lua vim.lsp.buf.references()<cr>', desc = 'References' },
-  { 'mR', '<cmd>lua vim.lsp.buf.rename()<cr>', desc = 'Rename' },
-  { 'mk', '<cmd>lua vim.lsp.buf.hover()<cr>', desc = 'Hover' },
-  { 'mf', '<cmd>lua vim.lsp.buf.format()<cr>', desc = 'Format' },
-  { 'mn', '<cmd>lua vim.diagnostic.goto_next()<cr>', desc = 'Next diagnostic' },
-  { 'mp', '<cmd>lua vim.diagnostic.goto_prev()<cr>', desc = 'Prev diagnostic' },
-  { 'ml', '<cmd>lua vim.diagnostic.open_float()<CR>', desc = 'Line diagnostics' },
-  { 'mw', '<cmd>Telescope diagnostics<cr>', desc = 'Workspace diagnostics' },
+  -- LSP lives on gd/gr/gi/K/<leader>rn/<leader>ca (see lsp.lua) — the old
+  -- 'm'-prefix duplicates were removed; one family only.
 }

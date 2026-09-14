@@ -81,6 +81,11 @@ keybind = super+z=text:\x1b[122;9u
 # Cmd+E opens the Neovim file tree (nvim <D-e>). Overwrites the
 # default Cmd+E (search selection).
 keybind = super+e=text:\x1b[101;9u
+# Cmd+C copies Neovim visual selections (nvim <D-c> -> "+y). Overwrites
+# Ghostty's built-in copy: with mouse enabled in nvim, drag-selections
+# belong to nvim, so the emulator usually has nothing to copy anyway.
+# (Right-click menu still copies emulator-side.)
+keybind = super+c=text:\x1b[99;9u
 # (Retired: Cmd+Ctrl+digits used to select project slots. Slots are gone —
 # one Ghostty tab per project now — so this family is intentionally left
 # unbound.)

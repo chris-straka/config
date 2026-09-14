@@ -52,8 +52,8 @@ map('t', '<D-e>', '<C-\\><C-n>:NvimTreeFindFileToggle<CR>', opts)
 -- In normal buffers the same keys would stall on find-char, so hop instead
 -- (mirrors the free Esc+b word-back on Alt+Left).
 map('n', '<A-f>', 'w', { noremap = true, silent = true, desc = 'Word forward' })
--- Wide log float on the same terminal id 2: same focus model, more columns to skim.
-map({ 'n', 't' }, '<A-v>', '<cmd>2ToggleTerm direction=float<cr>', opts)
+-- (Retired: Alt+V toggled terminal 2, byte-for-byte the same terminal as
+-- Cmd+2/Alt+2. One binding per terminal now.)
 -- Floating terminals, one Ghostty tab = one project so plain global ids are
 -- enough: Cmd+N / Alt+N toggles terminal N of THIS tab's nvim. A dev
 -- server on term 2 keeps running in that tab while you work in another
@@ -120,6 +120,26 @@ map('n', '<D-S-z>', '<cmd>redo<cr>', { noremap = true, silent = true, desc = 'Re
 map('n', '<D-z>', 'u', { noremap = true, silent = true, desc = 'Undo' })
 map('i', '<D-z>', '<C-o>u', { noremap = true, silent = true, desc = 'Undo' })
 map('v', '<D-z>', '<Esc>u', { noremap = true, silent = true, desc = 'Undo' })
+-- Cmd+C copies the visual selection (VSCode habit). Plain `y` already
+-- reaches the system clipboard (clipboard=unnamedplus); this binds the
+-- familiar key. Yank is not a modification, so it works in read-only
+-- buffers too (terminal floats, tree, prompts) — edits there fail with
+-- E21 'modifiable is off', which is the error you get when a keystroke
+-- tries to change a buffer Neovim marked read-only. Needs the matching
+-- Ghostty bind (super+c -> <D-c>); without it the emulator eats Cmd+C.
+map('v', '<D-c>', '"+y', { noremap = true, silent = true, desc = 'Copy selection' })
+
+-- Code runner (VSCode code-runner button): <leader>of runs the current
+-- file with the right interpreter via overseer (see config/runner.lua);
+-- output docks at the bottom, stop/re-run from <leader>ot.
+map('n', '<leader>of', function() require('config.runner').run_file() end,
+  { noremap = true, silent = true, desc = 'Run current file' })
+-- Option+K from a visual selection (Claude Code @-mention habit): types
+-- @file / @file#l1-l2 into the visible floating terminal. No Ghostty
+-- change needed — left-Opt-as-Alt already delivers Option+K as <A-k>,
+-- and <A-k> is unbound in visual mode (window nav owns it in normal).
+map('v', '<A-k>', function() require('config.runner').send_at_reference() end,
+  { noremap = true, silent = true, desc = 'Send @file ref to terminal' })
 
 -- Manual session snapshots (mini.sessions): save and restore the whole
 -- open layout on demand (one Ghostty tab = one project, one session each).
@@ -139,17 +159,19 @@ end, { noremap = true, silent = true, desc = 'Read session snapshot' })
 -- Tradeoff: inside a termbuff, typing a literal backslash becomes Ctrl-V then backslash.
 map('n', '<leader>t', '<cmd>ToggleTerm direction=float<cr>', { noremap = true, silent = true, desc = 'Floating terminal' })
 map({ 'n', 't' }, '\\', '<cmd>ToggleTerm direction=float<cr>', { noremap = true, silent = true, desc = 'Floating terminal' })
--- Terminal-mode exit ramp: Esc drops to Terminal-Normal (navigate/copy mode).
--- Without this, Esc just goes to the shell job and there's no way out short
--- of toggling. Tradeoff: fullscreen TUIs inside (fzf, lazygit) lose Esc as
--- their own cancel key — use their Ctrl-C instead.
-map('t', '<Esc>', '<C-\\><C-n>', { noremap = true, silent = true, desc = 'Terminal to Normal mode' })
+-- Terminal-mode exit ramp: DOUBLE Esc drops to Terminal-Normal
+-- (navigate/copy mode). A single Esc passes straight to the shell job, so
+-- TUIs keep their own Esc — Muse's interrupt, fzf/lazygit cancel.
+-- Cost: a lone Esc waits timeoutlen (200ms) for a possible second press.
+-- Ctrl+C is untouched and reaches the shell too — but in Muse it quits,
+-- so interrupt with Esc, not Ctrl+C.
+map('t', '<Esc><Esc>', '<C-\\><C-n>', { noremap = true, silent = true, desc = 'Terminal to Normal mode' })
 -- Reset the focused terminal: kill its job (toggleterm auto-deletes the
 -- dead shell) and close the float; reopen with Cmd+N for a fresh shell in
 -- the current directory. For wedged shells — otherwise
 -- just type `exit`. Normal mode only on purpose: a <leader> mapping in
 -- terminal mode would make every Space typed into the shell wait
--- timeoutlen for a follow-up key. From inside a terminal: Esc first.
+-- timeoutlen for a follow-up key. From inside a terminal: Esc Esc first.
 map('n', '<leader>tR', function()
   local terms = require('toggleterm.terminal')
   local id = terms.get_focused_id()
