@@ -1,0 +1,6 @@
+# Personal machine/config noise is never versioned.
+.DS_Store
+*.bak-*
+*.lock
+# Live Muse credentials (OAuth tokens) — see muse/.gitignore too.
+auth.json

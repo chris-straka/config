@@ -1,0 +1,86 @@
+# Ghostty main config: FiraCode Nerd Font, Catppuccin Mocha,
+# no title-bar clutter.
+#
+# Cmd handling: a terminal can't carry the Cmd modifier itself, so the
+# combos below are translated into CSI-u with the super modifier, which
+# Neovim decodes straight to its <D-...> maps (see nvim
+# lua/config/keymaps.lua). (The old private 9xx sequences stopped reaching
+# mappings in Neovim 0.12, which consumes raw CSI `~` input.)
+#
+# Number-row keys need both spellings handled: Ghostty's defaults define
+# `super+digit_N=goto_tab:N` AND `super+N=goto_tab:N` (see
+# `ghostty +list-keybinds --default`), plus `super+9=last_tab` and
+# `super+0=reset_font_size`. The digit_N binds below send our sequences;
+# the bare forms are UNBOUND (not mirrored with text:) so a single press
+# can never fire twice — a double-send would open+instantly-close toggles.
+font-family = "FiraCode Nerd Font"
+font-size = 16
+# New windows inherit the current window's zoom instead of resetting to
+# font-size above (reloads still re-read font-size).
+window-inherit-font-size = true
+theme = "Catppuccin Mocha"
+# One Ghostty tab = one project (its own nvim). The tab bar must stay
+# visible: `hidden` removes the titlebar chrome tabs live in, so a new tab
+# opened invisibly. `transparent` keeps the minimal look with tabs intact.
+macos-titlebar-style = transparent
+# `auto`: bar appears once you have 2+ tabs; lualine already names the
+# current tab's project, so a single-tab window stays clean.
+window-show-tab-bar = auto
+# Left Option acts as Alt (sends an Esc prefix): without this,
+# Option sends accented chars and every Alt-hjkl / Alt+digit map in Neovim
+# silently fails. Right Option still types special characters.
+macos-option-as-alt = left
+
+# Bank A: Cmd+1..0 -> simple floating-terminal toggles (nvim <D-1>..<D-0>).
+# Each Ghostty tab runs its own nvim, so these are automatically confined
+# to the current tab's project. Ghostty tab switching lives on
+# Cmd+Shift+H/L below, not on digits.
+keybind = super+digit_1=text:\x1b[49;9u
+keybind = super+digit_2=text:\x1b[50;9u
+keybind = super+digit_3=text:\x1b[51;9u
+keybind = super+digit_4=text:\x1b[52;9u
+keybind = super+digit_5=text:\x1b[53;9u
+keybind = super+digit_6=text:\x1b[54;9u
+keybind = super+digit_7=text:\x1b[55;9u
+keybind = super+digit_8=text:\x1b[56;9u
+keybind = super+digit_9=text:\x1b[57;9u
+keybind = super+digit_0=text:\x1b[48;9u
+# Bare-form unbinds for Bank A: remove the bare defaults outright
+# (super+1..8=goto_tab, super+9=last_tab, super+0=reset_font_size) so the
+# digit_N text binds above are the single sender per press. (Deliberately
+# unbind, not text: mirrors — two text sends per press would cancel
+# toggles.) If a bare Super key ever passes through as an event instead,
+# the nvim <D-…> maps catch it directly.
+keybind = super+1=unbind
+keybind = super+2=unbind
+keybind = super+3=unbind
+keybind = super+4=unbind
+keybind = super+5=unbind
+keybind = super+6=unbind
+keybind = super+7=unbind
+keybind = super+8=unbind
+keybind = super+9=unbind
+keybind = super+0=unbind
+
+# Ghostty tab navigation (handled by Ghostty itself, never reaches nvim):
+# Shift+Cmd+H / Shift+Cmd+L = previous / next project tab.
+# New tab = Cmd+T, close tab = Cmd+W (surface) or Cmd+Opt+W (whole tab).
+keybind = super+shift+h=previous_tab
+keybind = super+shift+l=next_tab
+# VSCode-style folding: Cmd+Opt+[ folds, Cmd+Opt+] unfolds
+# (nvim <D-M-[> / <D-M-]>). CSI-u super+alt = modifier 11 (8+2, plus 1).
+keybind = super+alt+[=text:\x1b[91;11u
+keybind = super+alt+]=text:\x1b[93;11u
+
+# Cmd+letter maps (nvim <D-p>/<D-o>/<D-S-f>/<D-S-z>/<D-z>/<D-e>)
+keybind = super+p=text:\x1b[112;9u
+keybind = super+o=text:\x1b[111;9u
+keybind = super+shift+f=text:\x1b[70;10u
+keybind = super+shift+z=text:\x1b[90;10u
+keybind = super+z=text:\x1b[122;9u
+# Cmd+E opens the Neovim file tree (nvim <D-e>). Overwrites the
+# default Cmd+E (search selection).
+keybind = super+e=text:\x1b[101;9u
+# (Retired: Cmd+Ctrl+digits used to select project slots. Slots are gone —
+# one Ghostty tab per project now — so this family is intentionally left
+# unbound.)

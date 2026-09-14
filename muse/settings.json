@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "provider": "meta",
+  "model": "muse-spark-1.3-contributor",
+  "tui": {
+    "foreign_context_notice_shown": true
+  },
+  "mcp_servers": {
+    "chrome-devtools": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@latest"
+      ],
+      "mode": "optional"
+    },
+    "playwright": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest"
+      ],
+      "mode": "optional"
+    },
+    "microsoft-learn": {
+      "transport": "streamable_http",
+      "url": "https://learn.microsoft.com/api/mcp",
+      "mode": "optional"
+    },
+    "cloudflare-docs": {
+      "transport": "streamable_http",
+      "url": "https://docs.mcp.cloudflare.com/mcp",
+      "mode": "optional"
+    },
+    "cloudflare-api": {
+      "transport": "streamable_http",
+      "url": "https://mcp.cloudflare.com/mcp",
+      "mode": "optional"
+    },
+    "cloudflare-bindings": {
+      "transport": "streamable_http",
+      "url": "https://bindings.mcp.cloudflare.com/mcp",
+      "mode": "optional"
+    },
+    "cloudflare-observability": {
+      "transport": "streamable_http",
+      "url": "https://observability.mcp.cloudflare.com/mcp",
+      "mode": "optional"
+    },
+    "blender": {
+      "transport": "stdio",
+      "command": "/Users/c/.local/bin/blender-mcp",
+      "args": [],
+      "mode": "optional"
+    },
+    "hll": {
+      "transport": "stdio",
+      "command": "/Users/c/Games/hll/tools/hll-mcp/publish/HllMcp",
+      "args": [],
+      "env": {
+        "GODOT_PATH": "/Applications/Godot.app/Contents/MacOS/Godot",
+        "HLL_PROJECT": "/Users/c/Games/hll"
+      },
+      "mode": "optional"
+    },
+    "context7": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp"
+      ],
+      "mode": "optional"
+    },
+    "deepwiki": {
+      "transport": "streamable_http",
+      "url": "https://mcp.deepwiki.com/mcp",
+      "mode": "optional"
+    },
+    "dart": {
+      "transport": "stdio",
+      "command": "/opt/homebrew/bin/dart",
+      "args": [
+        "mcp-server"
+      ],
+      "mode": "optional"
+    },
+    "tauri": {
+      "transport": "stdio",
+      "command": "/Users/c/.local/share/mise/shims/npx",
+      "args": [
+        "-y",
+        "@hypothesi/tauri-mcp-server"
+      ],
+      "mode": "optional"
+    },
+    "cloud-run": {
+      "transport": "streamable_http",
+      "url": "https://run.googleapis.com/mcp",
+      "mode": "optional"
+    }
+  }
+}

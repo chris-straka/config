@@ -1,0 +1,72 @@
+# Launcher config for the Spotlight "nvim" / "Neovim" apps: same look and
+# Cmd bindings as the main config, but starts Neovim instead of a shell.
+# (zsh -l -i so the mise/brew PATH from shell dotfiles exists for LSP.)
+#
+# NOTE: the keybinds below DUPLICATE ~/.config/ghostty/config on purpose.
+# The `config-file` include is kept, but includes have proven unreliable in
+# the `open --args --config-file=...` handoff path (windows opened with the
+# command applied yet no translations), so this file must work standalone.
+# If you change key translations in the main config, mirror them here.
+config-file = /Users/c/.config/ghostty/config
+command = /bin/zsh -l -i -c "exec nvim"
+# Duplicated (not just included): the tab bar must survive the
+# `open --args --config-file=...` handoff that drops includes.
+macos-titlebar-style = transparent
+# `auto`: bar appears once you have 2+ tabs; lualine already names the
+# current tab's project, so a single-tab window stays clean.
+window-show-tab-bar = auto
+# Spotlight launches inherit `/` as cwd — pin home so every launch starts
+# somewhere predictable (slots take you to projects from there).
+working-directory = home
+# Left Option acts as Alt (mirrors main config): without this, every
+# Alt-hjkl / Alt+digit map in Neovim silently fails in launcher windows.
+macos-option-as-alt = left
+
+# Bank A: Cmd+1..0 -> simple floating-terminal toggles (nvim <D-1>..<D-0>).
+# Each Ghostty tab runs its own nvim, so these are automatically confined
+# to the current tab's project. Ghostty tab switching lives on
+# Cmd+Shift+H/L below, not on digits.
+keybind = super+digit_1=text:\x1b[49;9u
+keybind = super+digit_2=text:\x1b[50;9u
+keybind = super+digit_3=text:\x1b[51;9u
+keybind = super+digit_4=text:\x1b[52;9u
+keybind = super+digit_5=text:\x1b[53;9u
+keybind = super+digit_6=text:\x1b[54;9u
+keybind = super+digit_7=text:\x1b[55;9u
+keybind = super+digit_8=text:\x1b[56;9u
+keybind = super+digit_9=text:\x1b[57;9u
+keybind = super+digit_0=text:\x1b[48;9u
+# Bare-form unbinds for Bank A (see main config for rationale).
+keybind = super+1=unbind
+keybind = super+2=unbind
+keybind = super+3=unbind
+keybind = super+4=unbind
+keybind = super+5=unbind
+keybind = super+6=unbind
+keybind = super+7=unbind
+keybind = super+8=unbind
+keybind = super+9=unbind
+keybind = super+0=unbind
+
+# Ghostty tab navigation (handled by Ghostty itself, never reaches nvim):
+# Shift+Cmd+H / Shift+Cmd+L = previous / next project tab.
+# New tab = Cmd+T, close tab = Cmd+W (surface) or Cmd+Opt+W (whole tab).
+keybind = super+shift+h=previous_tab
+keybind = super+shift+l=next_tab
+# VSCode-style folding: Cmd+Opt+[ folds, Cmd+Opt+] unfolds
+# (nvim <D-M-[> / <D-M-]>). CSI-u super+alt = modifier 11 (8+2, plus 1).
+keybind = super+alt+[=text:\x1b[91;11u
+keybind = super+alt+]=text:\x1b[93;11u
+
+# Cmd+letter maps (nvim <D-p>/<D-o>/<D-S-f>/<D-S-z>/<D-z>/<D-e>)
+keybind = super+p=text:\x1b[112;9u
+keybind = super+o=text:\x1b[111;9u
+keybind = super+shift+f=text:\x1b[70;10u
+keybind = super+shift+z=text:\x1b[90;10u
+keybind = super+z=text:\x1b[122;9u
+# Cmd+E opens the Neovim file tree (nvim <D-e>). Overwrites the
+# default Cmd+E (search selection).
+keybind = super+e=text:\x1b[101;9u
+# (Retired: Cmd+Ctrl+digits used to select project slots. Slots are gone —
+# one Ghostty tab per project now — so this family is intentionally left
+# unbound.)

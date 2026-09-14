@@ -1,0 +1,4 @@
+# Live credentials and tool-maintained files are never versioned.
+auth.json
+*.lock
+*.bak-*
