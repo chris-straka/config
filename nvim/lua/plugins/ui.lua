@@ -1,6 +1,8 @@
 -- UI: colorschemes, statusline, diagnostics list
 return {
-  { 'EdenEast/nightfox.nvim', lazy = false, priority = 1000 },
+  -- Alternates to the Catppuccin default below: lazy so neither costs
+  -- startup time unless :colorscheme names it.
+  { 'EdenEast/nightfox.nvim', lazy = true },
   { 'folke/tokyonight.nvim', lazy = true },
   -- Matches the Ghostty theme (Catppuccin Mocha): purple/mauve accents
   -- instead of nightfox's flatter look. The colorscheme lives in `config`

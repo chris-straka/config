@@ -1,6 +1,16 @@
 -- LSP + completion + formatting/lint, tuned 2026-09-12 from actual ~/SWE usage:
 -- mostly Rust + Go + Python, a little TS/Astro (bun, never deno).
 -- nvim-lsp-installer is archived; mason.nvim is its maintained successor.
+--
+-- One list owns every server (mason-lspconfig accepts lspconfig names in
+-- ensure_installed, so both sites below take these strings): add a server
+-- here once instead of in two places.
+local servers = {
+  'lua_ls', 'ts_ls', 'jsonls', 'cssls', 'tailwindcss',
+  'gopls', 'pyright', 'rust_analyzer', 'bashls', 'jdtls', 'omnisharp',
+  'clangd', 'terraformls', 'helm_ls', 'yamlls',
+  'dockerls', 'docker_compose_language_service', 'taplo', 'tinymist',
+}
 return {
   { 'williamboman/mason.nvim', cmd = 'Mason', opts = {} },
   {
@@ -10,12 +20,7 @@ return {
       -- Full-stack set mapped from the VS Code extension list: clangd (cpptools),
       -- terraformls (hashicorp), helm_ls + yamlls (k8s), dockerls + compose,
       -- taplo (even-better-toml), tinymist (typst resumes in ~/Jobs).
-      ensure_installed = {
-        'lua_ls', 'ts_ls', 'jsonls', 'cssls', 'tailwindcss',
-        'gopls', 'pyright', 'rust_analyzer', 'bashls', 'jdtls', 'omnisharp',
-        'clangd', 'terraformls', 'helm_ls', 'yamlls',
-        'dockerls', 'docker_compose_language_service', 'taplo', 'tinymist',
-      },
+      ensure_installed = servers,
     },
   },
   {
@@ -31,12 +36,7 @@ return {
 
       -- Java formats via jdtls itself, so it stays out of the conform
       -- table on purpose.
-      vim.lsp.enable({
-        'lua_ls', 'ts_ls', 'jsonls', 'cssls', 'tailwindcss',
-        'gopls', 'pyright', 'rust_analyzer', 'bashls', 'jdtls', 'omnisharp',
-        'clangd', 'terraformls', 'helm_ls', 'yamlls',
-        'dockerls', 'docker_compose_language_service', 'taplo', 'tinymist',
-      })
+      vim.lsp.enable(servers)
 
       vim.api.nvim_create_autocmd('LspAttach', {
         group = vim.api.nvim_create_augroup('UserLspKeys', { clear = true }),

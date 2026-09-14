@@ -1,5 +1,5 @@
 -- Focused-terminal exit, shared by <leader>tR and Alt+X, plus numbered
--- terminal cycling on Cmd+[/] (see config/keymaps.lua). Exit types `exit`
+-- terminal cycling on Cmd+[/] (see config/keymaps/). Exit types `exit`
 -- + Enter into the focused terminal's shell job — the plain-`exit`
 -- equivalent — so the shell ends and the float goes away; reopen with
 -- Alt+N for a fresh shell.

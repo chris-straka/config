@@ -97,8 +97,8 @@ return {
       border = 'curved',
       -- Default 80% of the screen minus two Alt+[ narrow steps (5 cols
       -- each), parked high (easier to read than bottom-anchored), or the
-      -- remembered Alt-,/. zoom (see resize_float in
-      -- config/keymaps.lua): toggleterm's persist_size covers splits
+      -- remembered Alt-,/. zoom (see resize() in config/float.lua):
+      -- toggleterm's persist_size covers splits
       -- only, so floats need this to keep their size.
       width = function()
         local s = vim.g.toggleterm_float_size

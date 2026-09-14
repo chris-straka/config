@@ -4,7 +4,7 @@
 # Cmd handling: a terminal can't carry the Cmd modifier itself, so the
 # combos below are translated into CSI-u with the super modifier, which
 # Neovim decodes straight to its <D-...> maps (see nvim
-# lua/config/keymaps.lua). (The old private 9xx sequences stopped reaching
+# lua/config/keymaps/). (The old private 9xx sequences stopped reaching
 # mappings in Neovim 0.12, which consumes raw CSI `~` input.)
 #
 # Number-row keys need both spellings handled: Ghostty's defaults define
