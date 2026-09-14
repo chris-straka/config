@@ -2,11 +2,12 @@
 # Cmd bindings as the main config, but starts Neovim instead of a shell.
 # (zsh -l -i so the mise/brew PATH from shell dotfiles exists for LSP.)
 #
-# NOTE: the keybinds below DUPLICATE ~/.config/ghostty/config on purpose.
-# The `config-file` include is kept, but includes have proven unreliable in
-# the `open --args --config-file=...` handoff path (windows opened with the
+# NOTE: the keybind block below is GENERATED from shared-keybinds.conf
+# (same block lives in ghostty/config). The `config-file` include is
+# kept, but includes have proven unreliable in the
+# `open --args --config-file=...` handoff path (windows opened with the
 # command applied yet no translations), so this file must work standalone.
-# If you change key translations in the main config, mirror them here.
+# To change a key: edit shared-keybinds.conf, then run install.sh.
 config-file = /Users/c/.config/ghostty/config
 command = /bin/zsh -l -i -c "exec nvim"
 # Large default (mirrors main config): launcher windows open zoomed in too.
@@ -30,6 +31,7 @@ macos-option-as-alt = left
 # live one modifier over: Alt+1..0 toggles this tab's nvim floats, and
 # Shift+Cmd+H/L steps between tabs below.
 
+# <<SHARED-KEYBINDS-BEGIN: generated from shared-keybinds.conf by install.sh — edit there>>
 # Ghostty tab navigation (handled by Ghostty itself, never reaches nvim):
 # Shift+Cmd+H / Shift+Cmd+L = previous / next project tab.
 # New tab = Cmd+T, close tab = Cmd+W (surface) or Cmd+Opt+W (whole tab).
@@ -56,6 +58,7 @@ keybind = super+shift+e=text:\x1b[101;10u
 # belong to nvim, so the emulator usually has nothing to copy anyway.
 # (Right-click menu still copies emulator-side.)
 keybind = super+c=text:\x1b[99;9u
+# <<SHARED-KEYBINDS-END>>
 # (Retired: Cmd+Ctrl+digits used to select project slots. Slots are gone —
 # one Ghostty tab per project now — so this family is intentionally left
 # unbound.)

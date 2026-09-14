@@ -23,6 +23,29 @@ link() { # link <path-in-repo> <target-path>
   echo "link: $dst -> $src"
 }
 
+sync_ghostty() { # splice shared-keybinds.conf into config + nvim-launcher
+  # (idempotent: re-running on already-generated files is a no-op).
+  # Both files must work standalone — the Spotlight launcher handoff
+  # drops `config-file` includes — so the shared Cmd-key block lives in
+  # exactly one place and gets copied into both markers below.
+  local shared="$REPO/ghostty/shared-keybinds.conf"
+  local begin='# <<SHARED-KEYBINDS-BEGIN'
+  local end='# <<SHARED-KEYBINDS-END>>'
+  local body
+  body="$(tail -n +8 "$shared")" # strip the 7-line editing header
+  for f in "$REPO/ghostty/config" "$REPO/ghostty/nvim-launcher"; do
+    local tmp="$f.tmp.$$"
+    awk -v begin="$begin" -v end="$end" -v body="$body" '
+      index($0, begin) { print; print body; skip = 1; next }
+      index($0, end) { skip = 0 }
+      !skip { print }
+    ' "$f" > "$tmp" && mv "$tmp" "$f"
+    rm -f "$tmp"
+    echo "sync: $f"
+  done
+}
+
+sync_ghostty
 link nvim "$HOME/.config/nvim"
 link ghostty "$HOME/.config/ghostty"
 link muse/settings.json "$HOME/.config/muse/settings.json"

@@ -5,7 +5,14 @@ return {
     'nvim-telescope/telescope.nvim',
     cmd = 'Telescope',
     dependencies = { 'nvim-lua/plenary.nvim', 'nvim-tree/nvim-web-devicons' },
-    opts = { defaults = { file_ignore_patterns = { 'node_modules', '.terraform', '.git/' } } },
+    opts = function()
+      return {
+        defaults = { file_ignore_patterns = { 'node_modules', '.terraform', '.git/' } },
+        extensions = {
+          file_browser = { mappings = require('config.telescope_land').mappings },
+        },
+      }
+    end,
     config = function(_, opts)
       require('telescope').setup(opts)
       pcall(require('telescope').load_extension, 'projects')
@@ -190,9 +197,22 @@ return {
   -- Backend is the `jupytext` CLI (uv tool); keep both or neither works.
   { 'GCBallesteros/jupytext.nvim', ft = 'ipynb', opts = { style = 'markdown' } },
   {
+    -- Quick file pinning: <leader>a pins the current file, <C-e> shows the
+    -- pin list, <leader>1..4 jumps to pins. All four bindings were free
+    -- (verified 2026-09-14: no <leader>a / <C-e> / <C-h> / <leader>[1234]
+    -- anywhere in lua/). <C-e> takes over Vim's scroll-down in normal
+    -- mode only; insert-mode <C-e> still inserts the char below.
     'ThePrimeagen/harpoon',
     branch = 'harpoon2',
     dependencies = { 'nvim-lua/plenary.nvim' },
     config = function() require('harpoon').setup() end,
+    keys = {
+      { '<leader>a', function() require('harpoon'):list():add() end, desc = 'Pin file (harpoon)' },
+      { '<C-e>', function() require('harpoon').ui:toggle_quick_menu(require('harpoon'):list()) end, desc = 'Pin list' },
+      { '<leader>1', function() require('harpoon'):list():select(1) end, desc = 'Pin 1' },
+      { '<leader>2', function() require('harpoon'):list():select(2) end, desc = 'Pin 2' },
+      { '<leader>3', function() require('harpoon'):list():select(3) end, desc = 'Pin 3' },
+      { '<leader>4', function() require('harpoon'):list():select(4) end, desc = 'Pin 4' },
+    },
   },
 }

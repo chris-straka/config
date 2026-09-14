@@ -40,6 +40,7 @@ macos-option-as-alt = left
 # live one modifier over: Alt+1..0 toggles this tab's nvim floats, and
 # Shift+Cmd+H/L steps between tabs below.
 
+# <<SHARED-KEYBINDS-BEGIN: generated from shared-keybinds.conf by install.sh — edit there>>
 # Ghostty tab navigation (handled by Ghostty itself, never reaches nvim):
 # Shift+Cmd+H / Shift+Cmd+L = previous / next project tab.
 # New tab = Cmd+T, close tab = Cmd+W (surface) or Cmd+Opt+W (whole tab).
@@ -66,6 +67,7 @@ keybind = super+shift+e=text:\x1b[101;10u
 # belong to nvim, so the emulator usually has nothing to copy anyway.
 # (Right-click menu still copies emulator-side.)
 keybind = super+c=text:\x1b[99;9u
+# <<SHARED-KEYBINDS-END>>
 # (Retired: Cmd+Ctrl+digits used to select project slots. Slots are gone —
 # one Ghostty tab per project now — so this family is intentionally left
 # unbound.)
