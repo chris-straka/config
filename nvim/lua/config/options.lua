@@ -10,6 +10,12 @@ o.splitbelow = true
 o.splitright = true
 o.errorbells = false
 o.title = true
+-- Short tab titles: Ghostty shows nvim's terminal title, and the default
+-- includes the full terminal buffer path, so a toggleterm float reads
+-- like `zsh;#toggleterm#1 - (term protocol path) - Nvim`. Show just the
+-- project (cwd basename) plus a short label instead: files show their
+-- tail, terminals show `term`, empty buffers show `nvim`.
+o.titlestring = [[%{fnamemodify(getcwd(), ':t')} – %{&buftype == 'terminal' ? 'term' : expand('%:t') == '' ? 'nvim' : expand('%:t')}]]
 o.scrolloff = 10
 o.expandtab = true
 o.tabstop = 2

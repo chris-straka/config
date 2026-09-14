@@ -6,7 +6,9 @@ if not ok then return end
 wk.add {
   { '<leader><Tab>', '<cmd>e#<cr>', desc = 'Prev buffer' },
   { '<leader>=', '<c-w>=', desc = 'Equal sizes' },
-  { '<leader>e', '<cmd>NvimTreeToggle<cr>', desc = 'Toggle tree' },
+  -- Same peek as Shift+Cmd+E (open + reveal, cursor stays in code);
+  -- Cmd+E focuses instead. See config/tree.lua.
+  { '<leader>e', function() require('config.tree').peek(true) end, desc = 'Peek tree' },
   { '<leader>q', ':q<cr>', desc = 'Quit' },
   { '<leader>w', ':w!<cr>', desc = 'Write' },
   { '<leader>b', group = 'Buffers' },

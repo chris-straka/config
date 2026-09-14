@@ -40,23 +40,23 @@ The number before the `;` is the plain key (`101` = e, `50` = 2).
 Inside a toggleterm float, keystrokes go to the shell job, not to Neovim.
 Anything bound to a `:` command therefore needs terminal-mode handling
 that steps out to Terminal-Normal first (`<C-\><C-n>`). Currently covered:
-slot digits and `<D-e>` (tree). Still missing: `<D-p>`, `<D-o>`,
-`<D-S-f>`, `<D-z>`-family from floats (undo's bare-`u` RHS needs care —
-in terminal mode it would be typed into the shell).
+`<D-e>` (tree focus) and `<D-S-e>` (tree peek). Still missing: `<D-p>`,
+`<D-o>`, `<D-S-f>`, `<D-z>`-family from floats (undo's bare-`u` RHS needs
+care — in terminal mode it would be typed into the shell).
 
 ## File inventory (2026-09-14: slots retired, Ghostty tabs own projects)
 
-- Ghostty `config` and `nvim-launcher`: Cmd+digits + Cmd+letters go to nvim
-  as CSI-u; Shift+Cmd+H/L switch Ghostty tabs natively; Cmd+T new tab,
-  Cmd+W / Cmd+Opt+W close. Zero legacy sequences. The launcher duplicates
+- Ghostty `config` and `nvim-launcher`: Cmd+digits stay native (goto_tab),
+  Cmd+letters go to nvim as CSI-u; Shift+Cmd+H/L switch Ghostty tabs
+  natively; Cmd+T new tab, Cmd+W / Cmd+Opt+W close. Zero legacy sequences. The launcher duplicates
   the binds inline because the `open --args --config-file=…` handoff
   proved unreliable for includes — **mirror any keybind change in both
   files**. Window chrome (`transparent` titlebar, always-show tab bar) is
   duplicated too, for the same reason.
 - Kitty config converted the same way (other track).
 - `nvim/lua/config/keymaps.lua`: `<D-…>` maps are the live path; the old
-  `<Esc>[9xx…` maps stay as harmless fallback; `<D-e>` has the terminal
-  mode map, letters don't (see above).
+  `<Esc>[9xx…` maps stay as harmless fallback; `<D-e>` and `<D-S-e>` have
+  terminal mode maps, other letters don't (see above).
 - Backups of the four terminal configs: `/tmp/dotbackup/` — note `/tmp`
   clears on reboot, move these somewhere permanent if they still matter.
 - Full nvim config backup: `~/.config/nvim.bak-20260913`.

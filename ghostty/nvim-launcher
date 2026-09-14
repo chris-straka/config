@@ -22,31 +22,11 @@ working-directory = home
 # Alt-hjkl / Alt+digit map in Neovim silently fails in launcher windows.
 macos-option-as-alt = left
 
-# Bank A: Cmd+1..0 -> simple floating-terminal toggles (nvim <D-1>..<D-0>).
-# Each Ghostty tab runs its own nvim, so these are automatically confined
-# to the current tab's project. Ghostty tab switching lives on
-# Cmd+Shift+H/L below, not on digits.
-keybind = super+digit_1=text:\x1b[49;9u
-keybind = super+digit_2=text:\x1b[50;9u
-keybind = super+digit_3=text:\x1b[51;9u
-keybind = super+digit_4=text:\x1b[52;9u
-keybind = super+digit_5=text:\x1b[53;9u
-keybind = super+digit_6=text:\x1b[54;9u
-keybind = super+digit_7=text:\x1b[55;9u
-keybind = super+digit_8=text:\x1b[56;9u
-keybind = super+digit_9=text:\x1b[57;9u
-keybind = super+digit_0=text:\x1b[48;9u
-# Bare-form unbinds for Bank A (see main config for rationale).
-keybind = super+1=unbind
-keybind = super+2=unbind
-keybind = super+3=unbind
-keybind = super+4=unbind
-keybind = super+5=unbind
-keybind = super+6=unbind
-keybind = super+7=unbind
-keybind = super+8=unbind
-keybind = super+9=unbind
-keybind = super+0=unbind
+# Digits belong to Ghostty here: Cmd+1..8 jump straight to project tabs,
+# Cmd+9 jumps to the last tab (stock Ghostty behavior — no binds needed,
+# just nothing overriding them, which is why Bank A is gone). Terminals
+# live one modifier over: Alt+1..0 toggles this tab's nvim floats, and
+# Shift+Cmd+H/L steps between tabs below.
 
 # Ghostty tab navigation (handled by Ghostty itself, never reaches nvim):
 # Shift+Cmd+H / Shift+Cmd+L = previous / next project tab.
@@ -58,15 +38,17 @@ keybind = super+shift+l=next_tab
 keybind = super+alt+[=text:\x1b[91;11u
 keybind = super+alt+]=text:\x1b[93;11u
 
-# Cmd+letter maps (nvim <D-p>/<D-o>/<D-S-f>/<D-S-z>/<D-z>/<D-e>)
+# Cmd+letter maps (nvim <D-p>/<D-o>/<D-S-f>/<D-S-z>/<D-z>/<D-e>/<D-S-e>)
 keybind = super+p=text:\x1b[112;9u
 keybind = super+o=text:\x1b[111;9u
 keybind = super+shift+f=text:\x1b[70;10u
 keybind = super+shift+z=text:\x1b[90;10u
 keybind = super+z=text:\x1b[122;9u
-# Cmd+E opens the Neovim file tree (nvim <D-e>). Overwrites the
-# default Cmd+E (search selection).
+# Cmd+E focuses the Neovim file tree (nvim <D-e>), Shift+Cmd+E peeks
+# it (nvim <D-S-e>, cursor stays in code). Overwrites the default
+# Cmd+E (search selection).
 keybind = super+e=text:\x1b[101;9u
+keybind = super+shift+e=text:\x1b[101;10u
 # Cmd+C copies Neovim visual selections (nvim <D-c> -> "+y). Overwrites
 # Ghostty's built-in copy: with mouse enabled in nvim, drag-selections
 # belong to nvim, so the emulator usually has nothing to copy anyway.

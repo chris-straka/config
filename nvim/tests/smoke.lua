@@ -36,8 +36,8 @@ check('folds start open', vim.opt.foldlevel:get() == 99)
 
 -- 3. Terminal toggles are simple global ids; slot selects are gone.
 require('config.keymaps')
-local d1 = vim.fn.maparg('<D-1>', 'n')
-check('Cmd+1 toggles global terminal 1', d1:find('1ToggleTerm', 1, true) ~= nil)
+check('Cmd+1 free for Ghostty tabs', vim.fn.maparg('<D-1>', 'n') == '')
+check('Cmd+2 free for Ghostty tabs', vim.fn.maparg('<D-2>', 't') == '')
 local a2 = vim.fn.maparg('<A-2>', 'n')
 check('Alt+2 toggles global terminal 2', a2:find('2ToggleTerm', 1, true) ~= nil)
 check('Cmd+Opt+[ folds', vim.fn.maparg('<D-M-[>', 'n') == 'zc')
@@ -60,12 +60,35 @@ check('visual Cmd+C copies', vim.fn.maparg('<D-c>', 'v') == '"+y')
 local wk = read(nvim .. '/lua/config/whichkey.lua')
 check('no m-prefix LSP group', wk:find("'m', group", 1, true) == nil)
 check('no ma duplicate', wk:find("'ma'", 1, true) == nil)
+check('leader-e peeks like Shift+Cmd+E', wk:find("require('config.tree').peek(true)", 1, true) ~= nil)
 
 for _, p in ipairs({ home .. '/.config/ghostty/config', home .. '/.config/ghostty/nvim-launcher' }) do
   local tag = p:match('[^/]+$') .. '/copy'
   local c = read(p)
   check(tag .. ' Cmd+C reaches nvim', c:find('super+c=text', 1, true) ~= nil)
 end
+
+-- 11. Tree ergonomics: <leader>h peeks (no focus), indent guides are on.
+check('<leader>h peeks tree', vim.fn.maparg(' h', 'n') ~= '')
+local tree_src = read(nvim .. '/lua/config/tree.lua')
+check('peek never focuses', tree_src:find('focus = false', 1, true) ~= nil)
+check('focus helper exists', tree_src:find('function M.focus', 1, true) ~= nil
+  and tree_src:find('focus = true', 1, true) ~= nil)
+-- Cmd+E focuses, Shift+Cmd+E peeks (normal + terminal modes).
+local keymaps_src = read(nvim .. '/lua/config/keymaps.lua')
+check('Cmd+E focuses tree', keymaps_src:find("<D-e>', function() require('config.tree').focus(true)", 1, true) ~= nil)
+check('Shift+Cmd+E peeks tree', keymaps_src:find("<D-S-e>', function() require('config.tree').peek(true)", 1, true) ~= nil)
+check('Cmd+E focuses from float', keymaps_src:find("require(\"config.tree\").focus(true)", 1, true) ~= nil)
+check('Shift+Cmd+E peeks from float', keymaps_src:find("require(\"config.tree\").peek(true)", 1, true) ~= nil)
+-- Short tab title: project + short label, no full terminal buffer path.
+local options_src = read(nvim .. '/lua/config/options.lua')
+local title_line = options_src:match('[^\n]*titlestring[^\n]*') or ''
+check('titlestring is short', options_src:find('titlestring', 1, true) ~= nil
+  and options_src:find("fnamemodify(getcwd(), ':t')", 1, true) ~= nil
+  and options_src:find("'term'", 1, true) ~= nil
+  and title_line:find('://', 1, true) == nil)
+local editor_src = read(nvim .. '/lua/plugins/editor.lua')
+check('tree indent guides on', editor_src:find('indent_markers = { enable = true }', 1, true) ~= nil)
 local runner_src = read(nvim .. '/lua/config/runner.lua')
 check('bun runs typescript', runner_src:find("typescript = function(f) return { 'bun', f }", 1, true) ~= nil)
 
@@ -85,6 +108,9 @@ end
 local ui = read(nvim .. '/lua/plugins/ui.lua')
 check('lualine shows cwd basename', ui:find("fnamemodify(vim.fn.getcwd(), ':t')", 1, true) ~= nil)
 check('lualine shortens toggleterm to term', ui:find("s == 'toggleterm' and 'term'", 1, true) ~= nil)
+check('tree bg brightened, theme kept', ui:find('catppuccin-mocha', 1, true) ~= nil
+  and ui:find('NvimTreeNormal', 1, true) ~= nil
+  and ui:find('surface0', 1, true) ~= nil)
 
 -- 6. Fresh nvim opens the file tree (launcher flow: no file arguments).
 local autocmds = read(nvim .. '/lua/config/autocmds.lua')
@@ -102,7 +128,10 @@ for _, p in ipairs({ home .. '/.config/ghostty/config', home .. '/.config/ghostt
   check(tag .. ' Shift+Cmd+L next tab', c:find('super+shift+l=next_tab', 1, true) ~= nil)
   check(tag .. ' Cmd+Opt+[ fold transport', c:find('super+alt+[=text', 1, true) ~= nil)
   check(tag .. ' Cmd+Opt+] unfold transport', c:find('super+alt+]=text', 1, true) ~= nil)
-  check(tag .. ' Cmd+digits still toggle terms', c:find('super+digit_1=text', 1, true) ~= nil)
+  check(tag .. ' Cmd+digits left native (tabs)', not c:find('super+digit_1=text', 1, true))
+  check(tag .. ' no digit unbinds', not c:find('super+1=unbind', 1, true))
+  check(tag .. ' Cmd+E focuses tree', c:find('super+e=text', 1, true) ~= nil)
+  check(tag .. ' Shift+Cmd+E peeks tree', c:find('super+shift+e=text', 1, true) ~= nil)
 end
 
 if failures > 0 then

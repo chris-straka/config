@@ -7,7 +7,24 @@ return {
   -- (not options.lua): options runs before lazy puts plugins on the rtp,
   -- so a colorscheme command there silently no-ops every start.
   { 'catppuccin/nvim', name = 'catppuccin', lazy = false, priority = 1000,
-    config = function() vim.cmd.colorscheme('catppuccin-mocha') end },
+    -- No theme switch needed for a brighter tree: keep Catppuccin Mocha
+    -- and lift just the tree window from mantle to surface0.
+    opts = {
+      highlight_overrides = {
+        mocha = function(mocha)
+          return {
+            NvimTreeNormal = { bg = mocha.surface0 },
+            NvimTreeNormalNC = { bg = mocha.surface0 },
+            NvimTreeEndOfBuffer = { bg = mocha.surface0 },
+            NvimTreeWinSeparator = { fg = mocha.surface1, bg = mocha.surface0 },
+          }
+        end,
+      },
+    },
+    config = function(_, opts)
+      require('catppuccin').setup(opts)
+      vim.cmd.colorscheme('catppuccin-mocha')
+    end },
   { 'nvim-lualine/lualine.nvim', event = 'VeryLazy', dependencies = { 'nvim-tree/nvim-web-devicons' }, opts = {
     -- Default sections restated with one addition: the project name
     -- (current directory's basename, e.g. `ccez-keeps`). One Ghostty tab

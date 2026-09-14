@@ -61,7 +61,7 @@ return {
   end },
   { 'famiu/bufdelete.nvim', cmd = { 'Bdelete', 'Bwipeout' } },
   -- NOTE: eager on purpose (no `cmd` key, so the setup's `lazy = false`
-  -- default applies): the Cmd/Alt+digit keymaps call `:NToggleTerm` with a
+  -- default applies): the Alt+digit keymaps call `:NToggleTerm` with a
   -- count, and lazy's command stub declares range (not count), so the first
   -- counted toggle mis-parses the count as a line range and dies with E16.
   { 'akinsho/toggleterm.nvim', opts = {
@@ -111,6 +111,9 @@ return {
     dependencies = { 'nvim-tree/nvim-web-devicons' },
     opts = {
       update_focused_file = { enable = true },
+      -- Indent guides: the tree's structure cue, which matters more here
+      -- because every folder shares one glyph (see below).
+      renderer = { indent_markers = { enable = true } },
       -- Tree follows the working directory, so it always shows the
       -- current tab's project (one Ghostty tab = one project).
       sync_root_with_cwd = true,

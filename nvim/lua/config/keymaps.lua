@@ -32,19 +32,23 @@ map({ 'n', 't', 'i' }, '<A-l>', '<C-w>l', opts)
 -- tree / terminal / finder (plugin commands must exist at runtime, so plain strings)
 -- FindFileToggle reveals the current file in the tree, like VSCode explorer focus.
 map({ 'n', 'v' }, '<A-e>', ':NvimTreeFindFileToggle<CR>', opts)
--- Cmd+E opens the file tree (VSCode explorer). Terminals send CSI-u with
--- the super modifier, decoded straight to <D-e> (see their configs);
--- Ghostty's default Cmd+E (search selection) is overridden there to send
--- it. The <Esc>[925;1~ maps are the pre-0.12 fallback and stay harmless.
-map({ 'n', 'v', 'i' }, '<D-e>', ':NvimTreeFindFileToggle<CR>', opts)
-map({ 'n', 'v', 'i' }, '<Esc>[925;1~', ':NvimTreeFindFileToggle<CR>', opts)
--- Same tree toggle from inside a toggleterm float (Terminal-Insert): a bare
--- `:cmd` RHS would be typed into the shell job in t mode, so drop to
--- Terminal-Normal first (same <C-\><C-n> pattern as the Esc exit ramp below).
-map('t', '<Esc>[925;1~', '<C-\\><C-n>:NvimTreeFindFileToggle<CR>', opts)
--- Same for the live transport: CSI-u super decodes to <D-e>, which has no
--- t map above, so Cmd+E from a float needs its own drop-to-Normal first.
-map('t', '<D-e>', '<C-\\><C-n>:NvimTreeFindFileToggle<CR>', opts)
+-- Cmd+E focuses the tree AND reveals the current file (VSCode explorer:
+-- cursor moves in). Shift+Cmd+E peeks instead (open + reveal, cursor
+-- stays in code). Terminals send CSI-u with the super modifier, decoded
+-- straight to <D-e> / <D-S-e> (see their configs); Ghostty's default
+-- Cmd+E (search selection) is overridden there to send it. The
+-- <Esc>[925;1~ maps are the pre-0.12 fallback and stay harmless.
+map({ 'n', 'v', 'i' }, '<D-e>', function() require('config.tree').focus(true) end, opts)
+map({ 'n', 'v', 'i' }, '<Esc>[925;1~', function() require('config.tree').focus(true) end, opts)
+map({ 'n', 'v', 'i' }, '<D-S-e>', function() require('config.tree').peek(true) end, opts)
+-- Same from inside a toggleterm float (Terminal-Insert): a bare `:cmd`
+-- RHS would be typed into the shell job in t mode, so drop to
+-- Terminal-Normal first, then call the module like everywhere else.
+map('t', '<Esc>[925;1~', '<C-\\><C-n><cmd>lua require("config.tree").focus(true)<cr>', opts)
+-- Same for the live transport: CSI-u super decodes to <D-e> / <D-S-e>,
+-- which have no t map above, so both need their own drop-to-Normal first.
+map('t', '<D-e>', '<C-\\><C-n><cmd>lua require("config.tree").focus(true)<cr>', opts)
+map('t', '<D-S-e>', '<C-\\><C-n><cmd>lua require("config.tree").peek(true)<cr>', opts)
 -- (old Alt bank lived here; Alt+N now toggles the current slot's terminal — loop below)
 -- Alt+Right intentionally left unmapped in terminal modes: Ghostty sends it
 -- as Esc+f, which the shell reads as word-forward (VSCode behavior). It used
@@ -55,19 +59,17 @@ map('n', '<A-f>', 'w', { noremap = true, silent = true, desc = 'Word forward' })
 -- (Retired: Alt+V toggled terminal 2, byte-for-byte the same terminal as
 -- Cmd+2/Alt+2. One binding per terminal now.)
 -- Floating terminals, one Ghostty tab = one project so plain global ids are
--- enough: Cmd+N / Alt+N toggles terminal N of THIS tab's nvim. A dev
--- server on term 2 keeps running in that tab while you work in another
--- Ghostty tab (separate nvim process, fully isolated). Digit 0 means 10.
--- (Retired: slots made these ids slot-bound and owned Cmd+Shift/Cmd+Ctrl+N
--- for slot switching. Both are gone; those modifiers are unbound.)
+-- enough: Alt+N toggles terminal N of THIS tab's nvim. A dev server on
+-- term 2 keeps running in that tab while you work in another Ghostty tab
+-- (separate nvim process, fully isolated). Digit 0 means 10. Cmd+N is
+-- Ghostty's: Cmd+1..8 jump to project tabs, Cmd+9 to the last tab.
 for _i = 1, 10 do
   local _n, _d = _i, (_i == 10 and '0' or tostring(_i))
   local _rhs = '<cmd>' .. _n .. 'ToggleTerm direction=float<cr>'
-  -- Insert included: Cmd/Alt+digits must work while typing, since the
-  -- emulators deliver Cmd as Esc sequences (a bare <D-…> never arrives).
-  -- toggleterm's on_open startinsert lands the opened float in
-  -- Terminal-Insert no matter which mode we toggled from.
-  map({ 'n', 't', 'i' }, '<D-' .. _d .. '>', _rhs, opts)
+  -- Insert included: Alt+digits must work while typing, since the
+  -- emulators deliver modifiers as Esc sequences. toggleterm's on_open
+  -- startinsert lands the opened float in Terminal-Insert no matter which
+  -- mode we toggled from.
   map({ 'n', 't', 'i' }, '<A-' .. _d .. '>', _rhs, opts)
   map({ 'n', 't', 'i' }, '<Esc>[' .. (899 + _i) .. ';1~', _rhs, opts)
 end
@@ -117,6 +119,11 @@ map('n', '<D-S-z>', '<cmd>redo<cr>', { noremap = true, silent = true, desc = 'Re
 -- Cmd+Z: undo (VSCode undo). Kept out of terminal mode on purpose so it
 -- still reaches the shell job (suspend). Visual uses <Esc>u because bare
 -- u there means lowercase, not undo.
+-- Space+h peeks the tree (open, cursor stays in code); Shift+Cmd+E
+-- peeks with the current file revealed, Cmd+E focuses it.
+-- See config/tree.lua for the mechanism.
+map('n', '<leader>h', function() require('config.tree').peek(false) end,
+  { noremap = true, silent = true, desc = 'Peek file tree' })
 map('n', '<D-z>', 'u', { noremap = true, silent = true, desc = 'Undo' })
 map('i', '<D-z>', '<C-o>u', { noremap = true, silent = true, desc = 'Undo' })
 map('v', '<D-z>', '<Esc>u', { noremap = true, silent = true, desc = 'Undo' })
@@ -183,7 +190,7 @@ map('n', '<leader>tR', function()
   if term and term:is_open() then term:close() end
   if term and term.job_id then pcall(vim.fn.jobstop, term.job_id) end
   local digit = ((id - 1) % 10) + 1
-  vim.notify('terminal ' .. id .. ' killed — reopen fresh with Cmd+' .. (digit == 10 and 0 or digit),
+  vim.notify('terminal ' .. id .. ' killed — reopen fresh with Alt+' .. (digit == 10 and 0 or digit),
     vim.log.levels.INFO)
 end, { noremap = true, silent = true, desc = 'Reset focused terminal' })
 
