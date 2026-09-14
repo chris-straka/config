@@ -40,15 +40,20 @@ The number before the `;` is the plain key (`101` = e, `50` = 2).
 Inside a toggleterm float, keystrokes go to the shell job, not to Neovim.
 Anything bound to a `:` command therefore needs terminal-mode handling
 that steps out to Terminal-Normal first (`<C-\><C-n>`). Currently covered:
-`<D-e>` (tree focus) and `<D-S-e>` (tree peek). Still missing: `<D-p>`,
+`<D-e>` (tree focus), `<D-S-e>` (tree peek), and `<D-[>` / `<D-]>`
+(terminal cycling). Still missing: `<D-p>`,
 `<D-o>`, `<D-S-f>`, `<D-z>`-family from floats (undo's bare-`u` RHS needs
 care — in terminal mode it would be typed into the shell).
 
 ## File inventory (2026-09-14: slots retired, Ghostty tabs own projects)
 
-- Ghostty `config` and `nvim-launcher`: Cmd+digits stay native (goto_tab),
-  Cmd+letters go to nvim as CSI-u; Shift+Cmd+H/L switch Ghostty tabs
-  natively; Cmd+T new tab, Cmd+W / Cmd+Opt+W close. Zero legacy sequences. The launcher duplicates
+- Ghostty `config` and `nvim-launcher`: Cmd+digits go to nvim as CSI-u
+  (terminal toggles — most-used action owns the easiest key), Alt+digits
+  stay native (goto_tab),
+  Cmd+letters go to nvim as CSI-u (Cmd+W closes nvim's buffer, never the
+  tab); Shift+Cmd+H/L switch Ghostty tabs natively; Cmd+T new tab,
+  escalating close (Cmd+W buffer, Shift+Cmd+W tab, Ctrl+Shift+Cmd+W
+  window; Cmd+Opt+W still closes tabs, Ghostty default). Zero legacy sequences. The launcher duplicates
   the binds inline because the `open --args --config-file=…` handoff
   proved unreliable for includes — **edit shared-keybinds.conf and run
   install.sh, which splices the block into both files**. Window chrome

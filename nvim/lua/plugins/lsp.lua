@@ -46,10 +46,38 @@ return {
           vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, b)
           vim.keymap.set('n', 'gr', vim.lsp.buf.references, b)
           vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, b)
-          vim.keymap.set('n', 'K', vim.lsp.buf.hover, b)
-          vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, b)
+          -- Cap the hover/signature floats at 80 columns: without
+          -- max_width, open_floating_preview() wraps at the current
+          -- window width, so docs span the whole screen on a wide
+          -- monitor. Keep in sync with M.max_width in
+          -- lua/config/mouse_hover.lua (same tooltip via mouse).
+          vim.keymap.set('n', 'K', function() vim.lsp.buf.hover({ max_width = 80 }) end, b)
+          vim.keymap.set('n', '<C-k>', function() vim.lsp.buf.signature_help({ max_width = 80 }) end, b)
           vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, b)
           vim.keymap.set('n', '<leader>ca', vim.lsp.buf.code_action, b)
+
+          local client = vim.lsp.get_client_by_id(ev.data.client_id)
+          -- VSCode reference highlighting: resting the cursor highlights
+          -- every use of the symbol under it; moving clears it again.
+          if client and client:supports_method('textDocument/documentHighlight', ev.buf) then
+            local g = vim.api.nvim_create_augroup('UserLspHighlight', { clear = false })
+            vim.api.nvim_clear_autocmds({ group = g, buffer = ev.buf })
+            vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
+              group = g,
+              buffer = ev.buf,
+              callback = function() vim.lsp.buf.document_highlight() end,
+            })
+            vim.api.nvim_create_autocmd({ 'CursorMoved', 'CursorMovedI' }, {
+              group = g,
+              buffer = ev.buf,
+              callback = function() vim.lsp.buf.clear_references() end,
+            })
+          end
+          -- VSCode shows inlay hints (inferred types, parameter names) by
+          -- default; <leader>uh toggles them per buffer.
+          if client and client:supports_method('textDocument/inlayHint', ev.buf) then
+            vim.lsp.inlay_hint.enable(true, { bufnr = ev.buf })
+          end
         end,
       })
     end,

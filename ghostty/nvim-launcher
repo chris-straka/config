@@ -25,26 +25,82 @@ working-directory = home
 # Alt-hjkl / Alt+digit map in Neovim silently fails in launcher windows.
 macos-option-as-alt = left
 
-# Digits belong to Ghostty here: Cmd+1..8 jump straight to project tabs,
-# Cmd+9 jumps to the last tab (stock Ghostty behavior — no binds needed,
-# just nothing overriding them, which is why Bank A is gone). Terminals
-# live one modifier over: Alt+1..0 toggles this tab's nvim floats, and
-# Shift+Cmd+H/L steps between tabs below.
+# Frequency-first digits: Cmd+1..0 toggles this tab's nvim floats
+# (CSI-u super to nvim <D-1>..<D-0>, 0 is 10) — terminals get the
+# easiest key because they switch most. Project tabs live one modifier
+# over: Alt+1..0 jumps straight to tabs (Ghostty-native goto_tab), and
+# Shift+Cmd+H/L still steps between tabs below.
 
 # <<SHARED-KEYBINDS-BEGIN: generated from shared-keybinds.conf by install.sh — edit there>>
 # Ghostty tab navigation (handled by Ghostty itself, never reaches nvim):
 # Shift+Cmd+H / Shift+Cmd+L = previous / next project tab.
-# New tab = Cmd+T, close tab = Cmd+W (surface) or Cmd+Opt+W (whole tab).
+# Escalating close: Cmd+W closes nvim's buffer, Shift+Cmd+W closes this
+# tab, Ctrl+Shift+Cmd+W closes the window. (Cmd+Opt+W still closes tabs
+# too, Ghostty default. Plain Cmd+W is NOT Ghostty's: it reaches nvim
+# and closes the current buffer there — see nvim lua/config/keymaps.lua
+# <D-w>.) New tab = Cmd+T.
 keybind = super+shift+h=previous_tab
 keybind = super+shift+l=next_tab
+keybind = super+shift+w=close_tab
+keybind = super+ctrl+shift+w=close_window
+# Cmd+Opt+Shift+W is one modifier away from the window close and would
+# take every window (Ghostty default close_all_windows): unbound, so it
+# can never fire by accident. Cmd+Q still quits everything.
+keybind = super+alt+shift+w=unbind
+# Terminals own Cmd+digits (most-used action gets the easiest key):
+# Cmd+1..0 toggles this tab's nvim floats (nvim <D-1>..<D-0>), 0 is 10.
+# Same proven shape as the retired Bank A (pty-rigged 2026-09-14):
+# digit_N binds send ONE CSI-u super sequence each, bare forms are
+# unbound so a single press can never fire twice.
+keybind = super+digit_1=text:\x1b[49;9u
+keybind = super+digit_2=text:\x1b[50;9u
+keybind = super+digit_3=text:\x1b[51;9u
+keybind = super+digit_4=text:\x1b[52;9u
+keybind = super+digit_5=text:\x1b[53;9u
+keybind = super+digit_6=text:\x1b[54;9u
+keybind = super+digit_7=text:\x1b[55;9u
+keybind = super+digit_8=text:\x1b[56;9u
+keybind = super+digit_9=text:\x1b[57;9u
+keybind = super+digit_0=text:\x1b[48;9u
+keybind = super+1=unbind
+keybind = super+2=unbind
+keybind = super+3=unbind
+keybind = super+4=unbind
+keybind = super+5=unbind
+keybind = super+6=unbind
+keybind = super+7=unbind
+keybind = super+8=unbind
+keybind = super+9=unbind
+keybind = super+0=unbind
+# Project tabs move one modifier over (Ghostty handles these, nvim never
+# sees them): Alt+1..9 jumps to tabs 1..9, Alt+0 to tab 10. Tradeoffs of
+# the move: Cmd+9 no longer jumps to the last tab and Cmd+0 no longer
+# resets the font size (zoom with Cmd+= / Cmd+- instead).
+keybind = alt+1=goto_tab:1
+keybind = alt+2=goto_tab:2
+keybind = alt+3=goto_tab:3
+keybind = alt+4=goto_tab:4
+keybind = alt+5=goto_tab:5
+keybind = alt+6=goto_tab:6
+keybind = alt+7=goto_tab:7
+keybind = alt+8=goto_tab:8
+keybind = alt+9=goto_tab:9
+keybind = alt+0=goto_tab:10
 # VSCode-style folding: Cmd+Opt+[ folds, Cmd+Opt+] unfolds
 # (nvim <D-M-[> / <D-M-]>). CSI-u super+alt = modifier 11 (8+2, plus 1).
 keybind = super+alt+[=text:\x1b[91;11u
 keybind = super+alt+]=text:\x1b[93;11u
+# VSCode-style formatting: Shift+Alt+F formats (nvim <A-S-f>).
+# CSI-u alt+shift = modifier 4 (1, plus shift + alt). No clash with
+# Cmd+Shift+F above (super+shift, modifier 10): different modifier.
+keybind = alt+shift+f=text:\x1b[70;4u
 
-# Cmd+letter maps (nvim <D-p>/<D-o>/<D-S-f>/<D-S-z>/<D-z>/<D-e>/<D-S-e>)
+# Cmd+letter maps (nvim <D-p>/<D-o>/<D-w>/<D-S-f>/<D-S-z>/<D-z>/<D-e>/<D-S-e>)
 keybind = super+p=text:\x1b[112;9u
 keybind = super+o=text:\x1b[111;9u
+# Cmd+W closes nvim's current buffer (nvim <D-w> -> Bdelete, window kept,
+# empty buffer when last). Shift+Cmd+W above closes the Ghostty tab.
+keybind = super+w=text:\x1b[119;9u
 keybind = super+shift+f=text:\x1b[70;10u
 keybind = super+shift+z=text:\x1b[90;10u
 keybind = super+z=text:\x1b[122;9u
@@ -53,11 +109,21 @@ keybind = super+z=text:\x1b[122;9u
 # Cmd+E (search selection).
 keybind = super+e=text:\x1b[101;9u
 keybind = super+shift+e=text:\x1b[101;10u
+# Cmd+[/] steps this tab's numbered terminal floats, previous/next
+# (nvim <D-[>/<D-]> with wraparound). CSI-u super = modifier 9, like the
+# letters above ([ is 91, ] is 93). Swap these two lines to rebind later.
+keybind = super+[=text:\x1b[91;9u
+keybind = super+]=text:\x1b[93;9u
 # Cmd+C copies Neovim visual selections (nvim <D-c> -> "+y). Overwrites
 # Ghostty's built-in copy: with mouse enabled in nvim, drag-selections
 # belong to nvim, so the emulator usually has nothing to copy anyway.
 # (Right-click menu still copies emulator-side.)
 keybind = super+c=text:\x1b[99;9u
+# Cmd+Delete (Backspace) trashes the nvim-tree node under the cursor
+# (nvim <D-BS> -> api.fs.trash, Finder parity). 127 is Delete/Backspace,
+# modifier 9 is super, like the letters above. Overwrites the default
+# Cmd+Backspace (kill-line, \x15).
+keybind = super+backspace=text:\x1b[127;9u
 # <<SHARED-KEYBINDS-END>>
 # (Retired: Cmd+Ctrl+digits used to select project slots. Slots are gone —
 # one Ghostty tab per project now — so this family is intentionally left

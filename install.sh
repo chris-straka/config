@@ -31,18 +31,21 @@ sync_ghostty() { # splice shared-keybinds.conf into config + nvim-launcher
   local shared="$REPO/ghostty/shared-keybinds.conf"
   local begin='# <<SHARED-KEYBINDS-BEGIN'
   local end='# <<SHARED-KEYBINDS-END>>'
-  local body
-  body="$(tail -n +8 "$shared")" # strip the 7-line editing header
+  # BSD awk cannot hold newlines in a -v variable, so the body travels in
+  # a file instead (the old -v body= broke with "newline in string").
+  local bodyfile="$REPO/ghostty/.shared-keybinds.body.tmp"
+  tail -n +8 "$shared" > "$bodyfile" # strip the 7-line editing header
   for f in "$REPO/ghostty/config" "$REPO/ghostty/nvim-launcher"; do
     local tmp="$f.tmp.$$"
-    awk -v begin="$begin" -v end="$end" -v body="$body" '
-      index($0, begin) { print; print body; skip = 1; next }
+    awk -v begin="$begin" -v end="$end" -v bodyfile="$bodyfile" '
+      index($0, begin) { print; while ((getline line < bodyfile) > 0) print line; skip = 1; next }
       index($0, end) { skip = 0 }
       !skip { print }
     ' "$f" > "$tmp" && mv "$tmp" "$f"
     rm -f "$tmp"
     echo "sync: $f"
   done
+  rm -f "$bodyfile"
 }
 
 sync_ghostty

@@ -95,13 +95,14 @@ return {
     direction = 'float',
     float_opts = {
       border = 'curved',
-      -- Default 80% of the screen, parked high (easier to read than
-      -- bottom-anchored), or the remembered Alt-,/. zoom (see
-      -- resize_float in config/keymaps.lua): toggleterm's persist_size
-      -- covers splits only, so floats need this to keep their size.
+      -- Default 80% of the screen minus two Alt+[ narrow steps (5 cols
+      -- each), parked high (easier to read than bottom-anchored), or the
+      -- remembered Alt-,/. zoom (see resize_float in
+      -- config/keymaps.lua): toggleterm's persist_size covers splits
+      -- only, so floats need this to keep their size.
       width = function()
         local s = vim.g.toggleterm_float_size
-        local w = (type(s) == 'table' and s.width) or math.floor(vim.o.columns * 0.8)
+        local w = (type(s) == 'table' and s.width) or (math.floor(vim.o.columns * 0.8) - 10)
         return math.max(60, math.min(vim.o.columns - 4, w))
       end,
       height = function()
@@ -130,6 +131,10 @@ return {
       -- current tab's project (one Ghostty tab = one project).
       sync_root_with_cwd = true,
       view = { width = 30 },
+      -- nvim-tree hides gitignored nodes by default, and the Jobs repo
+      -- gitignores its applications/ folder (privacy): exempt it so the
+      -- folder is always visible. Everything else ignored stays hidden.
+      filters = { exclude = { 'applications' } },
       -- VSCode behavior: Enter on a file opens it and closes the tree.
       actions = { open_file = { quit_on_open = true } },
       -- VSCode-explorer keys: h collapses the directory (or jumps to the
@@ -143,12 +148,27 @@ return {
           return { desc = 'nvim-tree: ' .. desc, buffer = bufnr, noremap = true, silent = true, nowait = true }
         end
         vim.keymap.set('n', 'h', api.node.navigate.parent_close, opts('Collapse'))
-        vim.keymap.set('n', 'l', api.node.open.edit, opts('Expand'))
+        -- PDFs can't render in a buffer: open them in Preview (macOS)
+        -- instead of showing binary. Shared by l and Enter below.
+        local function preview_pdf(node)
+          if node and node.type == 'file' and node.absolute_path:lower():match('%.pdf$') then
+            vim.ui.open(node.absolute_path)
+            return true
+          end
+          return false
+        end
+        vim.keymap.set('n', 'l', function()
+          if not preview_pdf(api.tree.get_node_under_cursor()) then api.node.open.edit() end
+        end, opts('Expand'))
+        -- Cmd+Delete (Backspace) trashes the node under the cursor,
+        -- mirroring Finder (needs the `trash` CLI; prompts to confirm).
+        -- Transport: Ghostty/kitty send CSI-u super (see shared-keybinds).
+        vim.keymap.set({ 'n', 'x' }, '<D-BS>', api.fs.trash, opts('Trash'))
         vim.keymap.set('n', '<CR>', function()
           local node = api.tree.get_node_under_cursor()
           if node and node.type == 'directory' then
             api.tree.change_root_to_node()
-          else
+          elseif not preview_pdf(node) then
             api.node.open.edit()
           end
         end, opts('Open / change directory'))

@@ -28,6 +28,16 @@ o.termguicolors = true
 -- Mouse in every mode: nvim captures clicks itself (middle-click is ours
 -- to bind) instead of the emulator stealing them for selection paste.
 o.mouse = 'a'
+-- Deliver mouse movements as <MouseMove> (see the mapping in keymaps.lua):
+-- resting the mouse on a word shows its hover docs. Tradeoff: moving the
+-- mouse aborts a half-typed mapping, same as pressing a wrong key would.
+o.mousemoveevent = true
+-- Right-click popup: drop the "How to disable mouse" item (and its
+-- separator) from Neovim's default PopUp menu; the rest (Inspect,
+-- Go to definition, Cut/Copy/Paste, ...) stays. pcall: defaults may not
+-- define the item on every version, and that must not break startup.
+pcall(vim.cmd, 'aunmenu PopUp.How-to\\ disable\\ mouse')
+pcall(vim.cmd, 'aunmenu PopUp.-2-')
 -- 200ms: Space is the leader and which-key intentionally holds bare Space
 -- taps this long waiting for the follow-up key (that hold IS the "space
 -- lag"); combos resolve instantly once the next key arrives, so this only
@@ -49,6 +59,11 @@ o.showtabline = 1
 o.signcolumn = 'yes'
 o.updatetime = 250
 o.undofile = true
+o.swapfile = false
+-- VSCode-style: no .swp files, so the E325 "swap file exists" prompt can
+-- never appear. Crash recovery still has persistent undo (above) plus
+-- manual <leader>Sw session snapshots; autosave (see autocmds) makes
+-- unsaved-loss rare in the first place.
 o.breakindent = true
 o.completeopt = 'menu,menuone,noselect'
 -- Folding from treesitter grammars (no extra plugin): the parser computes

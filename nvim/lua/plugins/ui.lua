@@ -32,8 +32,14 @@ return {
     sections = {
       lualine_a = { 'mode' },
       lualine_b = { 'branch', 'diff', 'diagnostics' },
-      lualine_c = { 'filename', { function()
+      lualine_c = { { function()
         return '󰉋 ' .. vim.fn.fnamemodify(vim.fn.getcwd(), ':t')
+      end }, { 'filename', path = 1, fmt = function(s)
+        -- Terminal floats name their buffers zsh;#toggleterm#N: the
+        -- only part worth statusline space is the terminal number.
+        local n = s:match('#toggleterm#(%d+)')
+        if n then return 'term ' .. n end
+        return s
       end } },
       -- `fmt` shortens the filetype label only (`toggleterm` -> `term`);
       -- icon and everything else stay as the stock component renders them.
@@ -44,6 +50,23 @@ return {
       lualine_z = { 'location' },
     },
   } },
+  -- Center the buffer with side padding so the file tree stops
+  -- moonlighting as a spacer: on by default ('safe' waits out the
+  -- startup tree), <leader>z toggles (the plugin's own suggested key),
+  -- text width 120.
+  { 'shortcuts/no-neck-pain.nvim',
+    -- Eager: default-on centering lives in the plugin's own VimEnter
+    -- autocmd, which only exists once the plugin is loaded (same
+    -- reason mini.nvim over in editor.lua is eager).
+    lazy = false,
+    cmd = { 'NoNeckPain', 'NoNeckPainWidthUp', 'NoNeckPainWidthDown' },
+    keys = {
+      { '<leader>z', '<cmd>NoNeckPain<cr>', desc = 'Center buffer' },
+    },
+    opts = {
+      width = 120,
+      autocmds = { enableOnVimEnter = 'safe', enableOnTabEnter = true },
+    } },
   { 'folke/trouble.nvim', cmd = { 'Trouble' }, opts = {} },
   -- VS Code's Error Lens: diagnostics as inline virtual text at the line.
   -- Replaces the default virtual_text (upstream recommendation).

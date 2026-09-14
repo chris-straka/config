@@ -14,6 +14,16 @@ local function read(path)
   return s
 end
 
+-- Keymaps live split across lua/config/keymaps/*.lua (see that dir's
+-- init.lua): read all four as one combined source for the text checks.
+local function read_keymaps()
+  local parts = {}
+  for _, f in ipairs({ 'init.lua', 'general.lua', 'workspace.lua', 'terminal.lua' }) do
+    parts[#parts + 1] = read(nvim .. '/lua/config/keymaps/' .. f)
+  end
+  return table.concat(parts, '\n')
+end
+
 local failures = 0
 local function check(name, ok)
   if ok then
@@ -73,6 +83,61 @@ check('exit sends exit+enter to the job', term_src:find("chansend(term.job_id, '
 check('Cmd+Opt+[ folds', vim.fn.maparg('<D-M-[>', 'n') == 'zc')
 check('Cmd+Opt+] unfolds', vim.fn.maparg('<D-M-]>', 'n') == 'zo')
 
+-- 8. Manual format: Shift+Alt+F formats the buffer, or just the visual
+-- selection (conform reads the range itself). Cmd+Shift+F stays search.
+check('Shift+Alt+F formats from normal', vim.fn.maparg('<A-S-f>', 'n') ~= '')
+check('Shift+Alt+F formats a visual selection', vim.fn.maparg('<A-S-f>', 'v') ~= '')
+check('Cmd+Shift+F still searches files', vim.fn.maparg('<D-S-f>', 'n'):find('live_grep', 1, true) ~= nil)
+do
+  local keymaps_src = read_keymaps()
+  check('format uses the conform table with LSP fallback',
+    keymaps_src:find("require('conform').format", 1, true) ~= nil
+    and keymaps_src:find('lsp_fallback', 1, true) ~= nil)
+end
+for _, p in ipairs({ home .. '/.config/ghostty/config', home .. '/.config/ghostty/nvim-launcher' }) do
+  local tag, c = p:match('[^/]+$'), read(p)
+  check(tag .. ' Shift+Alt+F formats', c:find('alt+shift+f=text', 1, true) ~= nil)
+  check(tag .. ' Cmd+Shift+F still searches', c:find('super+shift+f=text', 1, true) ~= nil)
+end
+check('kitty Shift+Alt+F formats',
+  read(home .. '/.config/kitty/kitty.conf'):find('alt+shift+f send_text', 1, true) ~= nil)
+
+-- Autosave: settled edits hit disk without :w, unnamed buffers are left
+-- alone, and no swap files exist to warn about.
+check('no swap files, ever', vim.opt.swapfile:get() == false)
+do
+  local ac_src = read(nvim .. '/lua/config/autocmds.lua')
+  check('autosave covers settle/leave/focus',
+    ac_src:find('InsertLeave', 1, true) ~= nil and ac_src:find('TextChanged', 1, true) ~= nil
+      and ac_src:find('BufLeave', 1, true) ~= nil and ac_src:find('FocusLost', 1, true) ~= nil)
+  check('autosave only touches plain modified files',
+    ac_src:find('modifiable', 1, true) ~= nil and ac_src:find('readonly', 1, true) ~= nil
+      and ac_src:find("buftype ~= ''", 1, true) ~= nil and ac_src:find('silent! update', 1, true) ~= nil)
+end
+do
+  -- ConformFormat would try to load the real plugin headless: require
+  -- the autocmds (harmless headless), then drop it so this stays about
+  -- the autosave write itself (live, saving runs the same format-on-save
+  -- as a manual :w).
+  require('config.autocmds')
+  vim.api.nvim_clear_autocmds({ group = 'ConformFormat' })
+  local f = vim.fn.tempname()
+  vim.cmd('edit ' .. vim.fn.fnameescape(f))
+  local buf = vim.api.nvim_get_current_buf()
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, { 'autosaved' })
+  vim.cmd('doautocmd InsertLeave')
+  check('autosave writes settled edits',
+    vim.fn.readfile(f)[1] == 'autosaved' and not vim.bo[buf].modified)
+  vim.api.nvim_buf_delete(buf, { force = true })
+  local scratch = vim.api.nvim_create_buf(true, false)
+  vim.api.nvim_set_current_buf(scratch)
+  vim.api.nvim_buf_set_lines(scratch, 0, -1, false, { 'no name, no write' })
+  local ok = pcall(vim.cmd, 'doautocmd InsertLeave')
+  check('autosave skips unnamed buffers', ok and vim.bo[scratch].modified)
+  vim.api.nvim_buf_delete(scratch, { force = true })
+  vim.fn.delete(f)
+end
+
 -- 7. Code runner: module loads, <leader>of is bound.
 local runner = require('config.runner')
 check('runner module exposes run_file', type(runner.run_file) == 'function')
@@ -109,9 +174,9 @@ check('focus helper exists', tree_src:find('function M.focus', 1, true) ~= nil
   and tree_src:find('focus = true', 1, true) ~= nil)
 check('focus never toggles a visible tree shut', tree_src:find('is_visible()', 1, true) ~= nil
   and tree_src:find('api.tree.focus()', 1, true) ~= nil
-  and tree_src:find('api.tree.find_file()', 1, true) ~= nil)
+  and tree_src:find('api.tree.find_file({ focus = true })', 1, true) ~= nil)
 -- Cmd+E focuses, Shift+Cmd+E peeks (normal + terminal modes).
-local keymaps_src = read(nvim .. '/lua/config/keymaps.lua')
+local keymaps_src = read_keymaps()
 check('Cmd+E focuses tree', keymaps_src:find("<D-e>', function() require('config.tree').focus(true)", 1, true) ~= nil)
 check('Shift+Cmd+E peeks tree', keymaps_src:find("<D-S-e>', function() require('config.tree').peek(true)", 1, true) ~= nil)
 check('Cmd+E focuses from float', keymaps_src:find("require(\"config.tree\").focus(true)", 1, true) ~= nil)
@@ -168,6 +233,17 @@ end
 local ui = read(nvim .. '/lua/plugins/ui.lua')
 check('lualine shows cwd basename', ui:find("fnamemodify(vim.fn.getcwd(), ':t')", 1, true) ~= nil)
 check('lualine shortens toggleterm to term', ui:find("s == 'toggleterm' and 'term'", 1, true) ~= nil)
+check('lualine shows relative filepath', ui:find("'filename', path = 1", 1, true) ~= nil)
+check('lualine collapses term buffers to term N', ui:find("#toggleterm#(%d+)", 1, true) ~= nil)
+check('center toggle installed on leader-z', ui:find('shortcuts/no-neck-pain.nvim', 1, true) ~= nil
+  and ui:find("'<leader>z', '<cmd>NoNeckPain<cr>'", 1, true) ~= nil
+  and ui:find('width = 120', 1, true) ~= nil)
+check('centering is on by default', ui:find("enableOnVimEnter = 'safe'", 1, true) ~= nil
+  and ui:find('enableOnTabEnter = true', 1, true) ~= nil)
+local openlink_src = read(nvim .. '/lua/config/openlink.lua')
+check('pdfs hand off to the OS viewer', openlink_src:find('vim.ui.open(target.file)', 1, true) ~= nil)
+check('tree l opens pdfs in Preview', editor_src:find('vim.ui.open(node.absolute_path)', 1, true) ~= nil
+  and editor_src:find("match('%.pdf$')", 1, true) ~= nil)
 check('tree bg brightened, theme kept', ui:find('catppuccin-mocha', 1, true) ~= nil
   and ui:find('NvimTreeNormal', 1, true) ~= nil
   and ui:find('surface0', 1, true) ~= nil)
@@ -266,6 +342,106 @@ do
   package.preload['telescope.actions'] = nil
   package.preload['nvim-tree.api'] = nil
   package.preload['telescope.actions.state'] = nil
+  vim.fn.delete(root, 'rf')
+end
+
+-- 12b. One cwd owner + instant statusline: the land helpers route through
+-- tree.change_root (no second tcd site), which refreshes lualine when it
+-- is already loaded and stays quiet when it is not. Default floats open
+-- two Alt+[ narrow steps slimmer.
+do
+  local land_src = read(nvim .. '/lua/config/telescope_land.lua')
+  check('tab-cwd changes live in one place', land_src:find('tcd', 1, true) == nil
+    and land_src:find('change_root', 1, true) ~= nil)
+  check('default float opens two narrow-steps slimmer',
+    read(nvim .. '/lua/plugins/editor.lua'):find('columns * 0.8) - 10', 1, true) ~= nil)
+  local dir = vim.fn.tempname()
+  vim.fn.mkdir(dir, 'p')
+  dir = vim.fn.resolve(dir)
+  local back = vim.fn.getcwd()
+  local refreshed = 0
+  package.loaded['lualine'] = { refresh = function() refreshed = refreshed + 1 end }
+  package.preload['nvim-tree.api'] = function()
+    return { tree = { change_root = function() end } }
+  end
+  require('config.tree').change_root(dir)
+  check('change_root cds the tab', vim.fn.getcwd() == dir)
+  check('change_root refreshes a loaded statusline', refreshed == 1)
+  package.loaded['lualine'] = nil
+  require('config.tree').change_root(dir)
+  check('change_root stays quiet without lualine', vim.fn.getcwd() == dir)
+  vim.cmd('tcd ' .. vim.fn.fnameescape(back))
+  package.loaded['lualine'] = nil
+  package.loaded['nvim-tree.api'] = nil
+  package.preload['nvim-tree.api'] = nil
+  vim.fn.delete(dir, 'rf')
+end
+
+-- 12c. Descend-then-land: after Enter drops into a folder, selection sits
+-- on the `..` parent row, so Cmd+O must land the browsed folder itself —
+-- while a folder highlighted inside the browsed one still wins.
+do
+  local root = vim.fn.tempname()
+  vim.fn.mkdir(root .. '/SWE/SUB', 'p')
+  vim.fn.writefile({}, root .. '/SWE/file.txt')
+  local closed, tree_root, selected = nil, nil, nil
+  local finder_path, finder_files, finder_cwd = nil, nil, nil
+  -- Earlier sections cached mocks in package.loaded: drop them so the
+  -- preloads below take effect.
+  package.loaded['telescope.actions'] = nil
+  package.loaded['telescope.actions.state'] = nil
+  package.loaded['nvim-tree.api'] = nil
+  package.loaded['lualine'] = nil
+  package.preload['telescope.actions'] = function()
+    return { close = function(bufnr) closed = bufnr end }
+  end
+  package.preload['nvim-tree.api'] = function()
+    return { tree = { change_root = function(dir) tree_root = dir end } }
+  end
+  package.preload['telescope.actions.state'] = function()
+    return {
+      get_current_picker = function()
+        return { finder = { path = finder_path, files = finder_files, cwd = finder_cwd } }
+      end,
+      get_selected_entry = function() return selected end,
+    }
+  end
+  local back = vim.fn.getcwd()
+  -- tempname() sits under /var (a symlink to /private/var): resolve once
+  -- so browsed, highlighted, and asserted paths compare identically.
+  local rroot = vim.fn.resolve(root)
+  local swe = rroot .. '/SWE'
+  local sub = rroot .. '/SWE/SUB'
+  local land = require('config.telescope_land')
+  -- Browsing SWE with the `..` parent row highlighted: stay in SWE.
+  finder_path, finder_files, finder_cwd = swe, nil, nil
+  selected = { path = rroot, Path = { is_dir = function() return true end, absolute = function() return rroot end } }
+  closed, tree_root = nil, nil
+  land.land_here(7)
+  check('land after descend stays in browsed dir', closed == 7 and vim.fn.getcwd() == swe and tree_root == swe)
+  -- Browsing SWE with a file highlighted: same.
+  selected = { path = swe .. '/file.txt' }
+  closed, tree_root = nil, nil
+  land.land_here(7)
+  check('land on highlighted file stays browsed', vim.fn.getcwd() == swe and tree_root == swe)
+  -- Browsing SWE with a subfolder highlighted: the subfolder wins.
+  selected = { path = sub }
+  closed, tree_root = nil, nil
+  land.land_here(7)
+  check('land on inner folder follows highlight', vim.fn.getcwd() == sub and tree_root == sub)
+  -- Browsing the parent with SWE highlighted: original pick-and-land.
+  finder_path = rroot
+  selected = { path = swe }
+  closed, tree_root = nil, nil
+  land.land_here(7)
+  check('land on outer folder follows highlight', vim.fn.getcwd() == swe and tree_root == swe)
+  vim.cmd('tcd ' .. vim.fn.fnameescape(back))
+  package.preload['telescope.actions'] = nil
+  package.preload['nvim-tree.api'] = nil
+  package.preload['telescope.actions.state'] = nil
+  package.loaded['telescope.actions'] = nil
+  package.loaded['telescope.actions.state'] = nil
+  package.loaded['nvim-tree.api'] = nil
   vim.fn.delete(root, 'rf')
 end
 
@@ -369,17 +545,24 @@ check('cycle stale id restarts', terminal._pick({ 1, 2 }, 9, 1) == 1)
 check('cycle single stays', terminal._pick({ 3 }, 3, -1) == 3)
 check('cycle empty is nil', terminal._pick({}, nil, 1) == nil)
 
--- 16. Cmd+W closes the buffer (never the tab); Cmd+Shift+W closes window.
--- Telescope Enter roots the tree at the opened file's dir; <leader>cr
--- prompts for a new tree root (.. goes up).
+-- 16. Escalating close: Cmd+W closes the buffer (never the tab),
+-- Shift+Cmd+W the tab, Ctrl+Shift+Cmd+W the window. Telescope Enter
+-- roots the tree at the opened file's dir; <leader>cr prompts for a new
+-- tree root (.. goes up).
 check('Cmd+W closes buffer via MiniBufremove', keymaps_src:find("<D-w>", 1, true) ~= nil
   and keymaps_src:find('MiniBufremove', 1, true) ~= nil)
 check('Cmd+W works from inside float', vim.fn.maparg('<D-w>', 't') ~= '')
 for _, p in ipairs({ home .. '/.config/ghostty/config', home .. '/.config/ghostty/nvim-launcher' }) do
   local tag, c = p:match('[^/]+$'), read(p)
   check(tag .. ' Cmd+W reaches nvim', c:find('super+w=text', 1, true) ~= nil)
-  check(tag .. ' Shift+Cmd+W closes window', c:find('super+shift+w=close_window', 1, true) ~= nil)
+  check(tag .. ' Shift+Cmd+W closes tab', c:find('super+shift+w=close_tab', 1, true) ~= nil)
+  check(tag .. ' Ctrl+Shift+Cmd+W closes window', c:find('super+ctrl+shift+w=close_window', 1, true) ~= nil)
+  check(tag .. ' Cmd+Opt+Shift+W disarmed', c:find('super+alt+shift+w=unbind', 1, true) ~= nil)
 end
+check('kitty Shift+Cmd+W closes tab',
+  read(home .. '/.config/kitty/kitty.conf'):find('shift+cmd+w close_tab', 1, true) ~= nil)
+check('kitty Ctrl+Shift+Cmd+W closes window',
+  read(home .. '/.config/kitty/kitty.conf'):find('ctrl+shift+cmd+w close_window', 1, true) ~= nil)
 local land2 = require('config.telescope_land')
 check('select_and_land helper exists', type(land2.select_and_land) == 'function')
 check('select_and_land on Enter in insert', type(land2.mappings.i['<CR>']) == 'function')
@@ -430,6 +613,51 @@ do
   package.preload['nvim-tree.api'] = nil
   package.preload['telescope.actions.state'] = nil
   vim.fn.delete(root, 'rf')
+end
+
+-- 17. Cmd+Delete trashes the nvim-tree node under the cursor (Finder
+-- parity): buffer-local <D-BS> on api.fs.trash, CSI-u super transport
+-- in both Ghostty files (from shared-keybinds.conf) and kitty.
+check('tree Cmd+Delete trashes node', editor_src:find("<D-BS>', api.fs.trash", 1, true) ~= nil)
+for _, p in ipairs({ home .. '/.config/ghostty/config', home .. '/.config/ghostty/nvim-launcher' }) do
+  local tag, c = p:match('[^/]+$'), read(p)
+  check(tag .. ' Cmd+Delete reaches nvim', c:find('super+backspace=text', 1, true) ~= nil)
+end
+check('kitty Cmd+Delete reaches nvim', kitty:find('cmd+backspace send_text all \\e[127;9u', 1, true) ~= nil)
+
+-- 18. gx opens Markdown file links in a new buffer at the line.
+local openlink = require('config.openlink')
+local md = '[resume](/Users/c/Jobs/applications/x/resume.typ:12)'
+local t1 = openlink.extract(md, 5, '/tmp')
+check('md link extracts file+line', t1 and t1.file == '/Users/c/Jobs/applications/x/resume.typ' and t1.lnum == 12)
+local t2 = openlink.extract(md, 1, '/tmp')
+check('md link works from the label', t2 and t2.file == '/Users/c/Jobs/applications/x/resume.typ')
+local t3 = openlink.extract('see [a](/x/a.lua) and [b](/y/b.lua:3)', 26, '/tmp')
+check('cursor picks the link it is on', t3 and t3.file == '/y/b.lua' and t3.lnum == 3)
+local t4 = openlink.extract('open /Users/c/Jobs/content/skills.yml please', 10, '/tmp')
+check('bare path extracts', t4 and t4.file == '/Users/c/Jobs/content/skills.yml' and t4.lnum == nil)
+local t5 = openlink.extract('nothing to open here', 5, '/tmp')
+check('plain words are nil', t5 == nil)
+local t6 = openlink.extract('[site](https://example.com)', 5, '/tmp')
+check('urls stay urls', t6 and t6.url == 'https://example.com')
+local t7 = openlink.extract('[rel](docs/notes.md)', 5, '/base')
+check('relative links resolve at the file dir', t7 and t7.file == '/base/docs/notes.md')
+check('gx opens link under cursor', vim.fn.maparg('gx', 'n') ~= '')
+check('tree exempts applications from ignore filter',
+  editor_src:find("exclude = { 'applications' }", 1, true) ~= nil)
+
+-- 19. Right-click popup: the "How to disable mouse" item (and its
+-- trailing separator) is gone; the useful PopUp items stay. options.lua
+-- removes them at startup (Neovim's defaults define them), and section 2
+-- above already required config.options, so assert the live menu state.
+do
+  local popup = vim.fn.getcompletion('PopUp.', 'menu')
+  check('right-click menu drops How-to-disable-mouse',
+    not vim.tbl_contains(popup, 'How-to\\ disable\\ mouse'))
+  check('right-click menu drops trailing separator',
+    not vim.tbl_contains(popup, '-2-'))
+  check('right-click menu keeps useful items',
+    vim.tbl_contains(popup, 'Inspect') and vim.tbl_contains(popup, 'Copy'))
 end
 
 if failures > 0 then

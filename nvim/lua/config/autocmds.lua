@@ -31,3 +31,24 @@ autocmd('VimEnter', {
     if vim.fn.argc() == 0 then require('config.tree').peek(false) end
   end,
 })
+
+-- VSCode-style autosave: write shortly after normal-mode edits settle
+-- (TextChanged honors updatetime), when leaving insert mode, when the
+-- buffer is left, and when the emulator loses focus. `update` only
+-- writes modified named buffers, so this is a no-op everywhere else —
+-- and it runs the same conform format-on-save as a manual :w.
+-- Special buffers (tree, terminals, prompts) and readonly files are
+-- skipped. Deliberately not TextChangedI: that fires per keystroke,
+-- which would format mid-word while typing.
+autocmd({ 'InsertLeave', 'TextChanged', 'BufLeave', 'FocusLost' }, {
+  group = vim.api.nvim_create_augroup('Autosave', { clear = true }),
+  callback = function(args)
+    local buf = args.buf
+    if not vim.api.nvim_buf_is_valid(buf) then return end
+    if vim.api.nvim_buf_get_name(buf) == '' then return end
+    if not vim.bo[buf].modifiable or vim.bo[buf].readonly then return end
+    if vim.bo[buf].buftype ~= '' then return end
+    if not vim.bo[buf].modified then return end
+    pcall(vim.api.nvim_buf_call, buf, function() vim.cmd('silent! update') end)
+  end,
+})
