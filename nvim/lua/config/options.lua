@@ -28,7 +28,7 @@ o.termguicolors = true
 -- Mouse in every mode: nvim captures clicks itself (middle-click is ours
 -- to bind) instead of the emulator stealing them for selection paste.
 o.mouse = 'a'
--- Deliver mouse movements as <MouseMove> (see the mapping in keymaps.lua):
+-- Deliver mouse movements as <MouseMove> (see the map in config/keymaps/general.lua):
 -- resting the mouse on a word shows its hover docs. Tradeoff: moving the
 -- mouse aborts a half-typed mapping, same as pressing a wrong key would.
 o.mousemoveevent = true
@@ -74,6 +74,10 @@ o.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
 o.foldlevel = 99
 o.foldlevelstart = 99
 o.foldenable = true
+-- Compact fold line (see config/fold.lua): the stock foldtext stretches
+-- `+-- N lines: ...` dot padding across the whole window; this keeps the
+-- same facts (`+ 6 lines · first line`) with no fill.
+o.foldtext = [[v:lua.require('config.fold').foldtext()]]
 
 g.gitblame_enabled = 0
 

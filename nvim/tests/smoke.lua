@@ -3,7 +3,7 @@
 local home = vim.env.HOME
 local nvim = home .. '/.config/nvim'
 vim.opt.rtp:prepend(nvim)
--- Mirror init.lua: Space is the leader (keymaps.lua assumes it).
+-- Mirror init.lua: Space is the leader (config/keymaps/ assumes it).
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
@@ -43,6 +43,19 @@ require('config.options')
 check('showtabline shows when >1 tab', vim.opt.showtabline:get() == 1)
 check('foldmethod is treesitter expr', vim.opt.foldmethod:get() == 'expr')
 check('folds start open', vim.opt.foldlevel:get() == 99)
+check('foldtext is the compact label', vim.opt.foldtext:get():find("require('config.fold').foldtext", 1, true) ~= nil)
+do
+  local fold = require('config.fold')
+  check('fold module exposes foldtext', type(fold.foldtext) == 'function')
+  check('fold label keeps facts, drops fill',
+    fold.text(22, 27, 'function blankSettings() {', 80) == '+ 6 lines · function blankSettings() {')
+  check('fold label has no dot run', fold.text(1, 6, 'local x = 1', 80):find('...', 1, true) == nil)
+  check('fold label trims indent', fold.text(1, 3, '    const s = 1;', 80) == '+ 3 lines · const s = 1;')
+  check('fold label names the singular', fold.text(5, 5, 'x', 80) == '+ 1 line · x')
+  check('fold label covers blank first lines', fold.text(1, 2, '   ', 80) == '+ 2 lines · (blank)')
+  local long = fold.text(1, 4, 'const ' .. string.rep('ab', 60) .. ' = 1;', 40)
+  check('fold label truncates to the window', vim.fn.strwidth(long) <= 40 and long:sub(-3) == '…')
+end
 check('scrolloff pads past EOF', vim.opt.scrolloff:get() == 999)
 check('mouse captured in every mode', vim.o.mouse == 'a')
 
@@ -232,6 +245,9 @@ end
 -- 4. Lualine shows the project name, not a slot.
 local ui = read(nvim .. '/lua/plugins/ui.lua')
 check('lualine shows cwd basename', ui:find("fnamemodify(vim.fn.getcwd(), ':t')", 1, true) ~= nil)
+check('spare themes never cost startup',
+  ui:find("nightfox.nvim', lazy = true", 1, true) ~= nil
+  and ui:find("tokyonight.nvim', lazy = true", 1, true) ~= nil)
 check('lualine shortens toggleterm to term', ui:find("s == 'toggleterm' and 'term'", 1, true) ~= nil)
 check('lualine shows relative filepath', ui:find("'filename', path = 1", 1, true) ~= nil)
 check('lualine collapses term buffers to term N', ui:find("#toggleterm#(%d+)", 1, true) ~= nil)
@@ -514,6 +530,16 @@ check('<leader>uh toggles inlay hints', vim.fn.maparg(' uh', 'n') ~= '')
 check('which-key lists inlay toggle',
   read(nvim .. '/lua/config/whichkey.lua'):find("<leader>uh', desc", 1, true) ~= nil)
 do
+  -- One server list drives both install and enable: adding a server
+  -- means one entry, and the two sites can never drift apart.
+  check('one server table drives install+enable',
+    lsp_src:find('local servers = {', 1, true) ~= nil
+    and lsp_src:find('ensure_installed = servers', 1, true) ~= nil
+    and lsp_src:find('vim.lsp.enable(servers)', 1, true) ~= nil)
+  local _, entries = lsp_src:gsub("'rust_analyzer'", '')
+  check('server list written exactly once', entries == 1)
+end
+do
   local ib = vim.api.nvim_create_buf(true, false)
   vim.lsp.inlay_hint.enable(true, { bufnr = ib })
   check('inlay hints enable per buffer', vim.lsp.inlay_hint.is_enabled({ bufnr = ib }) == true)
@@ -610,6 +636,13 @@ check('kitty Shift+Cmd+W closes tab',
   read(home .. '/.config/kitty/kitty.conf'):find('shift+cmd+w close_tab', 1, true) ~= nil)
 check('kitty Ctrl+Shift+Cmd+W closes window',
   read(home .. '/.config/kitty/kitty.conf'):find('ctrl+shift+cmd+w close_window', 1, true) ~= nil)
+do
+  -- Slots are retired: no digit family may send sequences nvim ignores.
+  local kitty_conf = read(home .. '/.config/kitty/kitty.conf')
+  check('kitty slot digits stay retired',
+    kitty_conf:find('cmd+shift+1 send_text', 1, true) == nil
+    and kitty_conf:find('cmd+ctrl+1 send_text', 1, true) == nil)
+end
 local land2 = require('config.telescope_land')
 check('select_and_land helper exists', type(land2.select_and_land) == 'function')
 check('select_and_land on Enter in insert', type(land2.mappings.i['<CR>']) == 'function')
