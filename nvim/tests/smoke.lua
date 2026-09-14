@@ -37,9 +37,14 @@ check('scrolloff pads past EOF', vim.opt.scrolloff:get() == 999)
 check('mouse captured in every mode', vim.o.mouse == 'a')
 
 -- 3. Terminal toggles are simple global ids; slot selects are gone.
+-- Terminals own Cmd+digits (most-used), tabs live on Alt+digits in
+-- Ghostty; Alt+digits stay bound in nvim as fallback for terminals
+-- that pass Alt through (kitty).
 require('config.keymaps')
-check('Cmd+1 free for Ghostty tabs', vim.fn.maparg('<D-1>', 'n') == '')
-check('Cmd+2 free for Ghostty tabs', vim.fn.maparg('<D-2>', 't') == '')
+check('Cmd+2 toggles global terminal 2', vim.fn.maparg('<D-2>', 'n'):find('2ToggleTerm', 1, true) ~= nil)
+check('Cmd+2 works from terminal mode', vim.fn.maparg('<D-2>', 't'):find('2ToggleTerm', 1, true) ~= nil)
+check('Cmd+2 works while typing', vim.fn.maparg('<D-2>', 'i'):find('2ToggleTerm', 1, true) ~= nil)
+check('Cmd+0 toggles global terminal 10', vim.fn.maparg('<D-0>', 'n'):find('10ToggleTerm', 1, true) ~= nil)
 local a2 = vim.fn.maparg('<A-2>', 'n')
 check('Alt+2 toggles global terminal 2', a2:find('2ToggleTerm', 1, true) ~= nil)
 check('Alt+2 works from terminal mode', vim.fn.maparg('<A-2>', 't'):find('2ToggleTerm', 1, true) ~= nil)
@@ -56,7 +61,7 @@ check('terminal module exposes exit_focused', type(terminal.exit_focused) == 'fu
 check('Alt+X exits from normal', vim.fn.maparg('<A-x>', 'n') ~= '')
 check('Alt+X exits from inside terminal', vim.fn.maparg('<A-x>', 't') ~= '')
 check('Alt+X exits while typing', vim.fn.maparg('<A-x>', 'i') ~= '')
-check('<leader>tR still exits', vim.fn.maparg(' tR', 'n') ~= '')
+check('<leader>tR retired (Alt+X covers it)', vim.fn.maparg(' tR', 'n') == '')
 -- Float width on the brackets; pipe is the Terminal-Normal hatch,
 -- double-Esc is gone.
 check('Alt+[ narrows float', vim.fn.maparg('<A-[>', 'n') ~= '' and vim.fn.maparg('<A-[>', 't') ~= '')
@@ -86,6 +91,9 @@ local wk = read(nvim .. '/lua/config/whichkey.lua')
 check('no m-prefix LSP group', wk:find("'m', group", 1, true) == nil)
 check('no ma duplicate', wk:find("'ma'", 1, true) == nil)
 check('leader-e peeks like Shift+Cmd+E', wk:find("require('config.tree').peek(true)", 1, true) ~= nil)
+check('trouble lives under x, misc Q gone', wk:find("'<leader>xx'", 1, true) ~= nil
+  and wk:find("'<leader>xs'", 1, true) ~= nil
+  and wk:find("'<leader>Q'", 1, true) == nil)
 
 for _, p in ipairs({ home .. '/.config/ghostty/config', home .. '/.config/ghostty/nvim-launcher' }) do
   local tag = p:match('[^/]+$') .. '/copy'
@@ -93,8 +101,8 @@ for _, p in ipairs({ home .. '/.config/ghostty/config', home .. '/.config/ghostt
   check(tag .. ' Cmd+C reaches nvim', c:find('super+c=text', 1, true) ~= nil)
 end
 
--- 11. Tree ergonomics: <leader>h peeks (no focus), indent guides are on.
-check('<leader>h peeks tree', vim.fn.maparg(' h', 'n') ~= '')
+-- 11. Tree ergonomics: <leader>h focuses (cursor moves in).
+check('<leader>h focuses tree', vim.fn.maparg(' h', 'n') ~= '')
 local tree_src = read(nvim .. '/lua/config/tree.lua')
 check('peek never focuses', tree_src:find('focus = false', 1, true) ~= nil)
 check('focus helper exists', tree_src:find('function M.focus', 1, true) ~= nil
@@ -115,6 +123,7 @@ check('middle-click opens tree', vim.fn.maparg('<MiddleMouse>', 'n') ~= ''
 check('Alt+E focuses like Cmd+E', keymaps_src:find("<A-e>', function() require('config.tree').focus(true)", 1, true) ~= nil
   and keymaps_src:find('NvimTreeFindFileToggle', 1, true) == nil)
 check('no pre-0.12 fallback maps', keymaps_src:find("'<Esc>['", 1, true) == nil)
+check('<leader>h jumps in unrevealed', keymaps_src:find("h', function() require('config.tree').focus(false)", 1, true) ~= nil)
 -- Short tab title: project + short label, no full terminal buffer path.
 local options_src = read(nvim .. '/lua/config/options.lua')
 local title_line = options_src:match('[^\n]*titlestring[^\n]*') or ''
@@ -173,8 +182,9 @@ for _, p in ipairs({ home .. '/.config/ghostty/config', home .. '/.config/ghostt
   check(tag .. ' Shift+Cmd+L next tab', c:find('super+shift+l=next_tab', 1, true) ~= nil)
   check(tag .. ' Cmd+Opt+[ fold transport', c:find('super+alt+[=text', 1, true) ~= nil)
   check(tag .. ' Cmd+Opt+] unfold transport', c:find('super+alt+]=text', 1, true) ~= nil)
-  check(tag .. ' Cmd+digits left native (tabs)', not c:find('super+digit_1=text', 1, true))
-  check(tag .. ' no digit unbinds', not c:find('super+1=unbind', 1, true))
+  check(tag .. ' Cmd+digits reach nvim', c:find('super+digit_1=text', 1, true) ~= nil)
+  check(tag .. ' bare Cmd+digits unbound (one send)', c:find('super+1=unbind', 1, true) ~= nil)
+  check(tag .. ' Alt+digits jump tabs', c:find('alt+1=goto_tab:1', 1, true) ~= nil)
   check(tag .. ' Cmd+E focuses tree', c:find('super+e=text', 1, true) ~= nil)
   check(tag .. ' Shift+Cmd+E peeks tree', c:find('super+shift+e=text', 1, true) ~= nil)
 end
@@ -327,6 +337,92 @@ do
   vim.lsp.inlay_hint.enable(false, { bufnr = ib })
   check('inlay hints disable per buffer', vim.lsp.inlay_hint.is_enabled({ bufnr = ib }) == false)
   vim.api.nvim_buf_delete(ib, { force = true })
+end
+
+-- 15. Terminal cycling: Cmd+[/] transport in both Ghostty files, nvim
+-- maps in every mode, and pure pick logic with wraparound.
+for _, p in ipairs({ home .. '/.config/ghostty/config', home .. '/.config/ghostty/nvim-launcher' }) do
+  local tag, c = p:match('[^/]+$'), read(p)
+  check(tag .. ' Cmd+[ cycles back', c:find('super+[=text', 1, true) ~= nil)
+  check(tag .. ' Cmd+] cycles forward', c:find('super+]=text', 1, true) ~= nil)
+end
+for _, mode in ipairs({ 'n', 'i', 't' }) do
+  check('Cmd+[ cycles from ' .. mode, vim.fn.maparg('<D-[>', mode) ~= '')
+  check('Cmd+] cycles from ' .. mode, vim.fn.maparg('<D-]>', mode) ~= '')
+end
+check('cycle with no plugin is safe', terminal.cycle(1) == 'no-plugin')
+check('cycle order empty without plugin', #terminal._order() == 0)
+check('cycle next wraps', terminal._pick({ 1, 2, 5 }, 5, 1) == 1)
+check('cycle prev wraps', terminal._pick({ 1, 2, 5 }, 1, -1) == 5)
+check('cycle next steps', terminal._pick({ 1, 2, 5 }, 2, 1) == 5)
+check('cycle prev steps', terminal._pick({ 1, 2, 5 }, 2, -1) == 1)
+check('cycle unfocused goes first/last', terminal._pick({ 1, 2, 5 }, nil, 1) == 1
+  and terminal._pick({ 1, 2, 5 }, nil, -1) == 5)
+check('cycle stale id restarts', terminal._pick({ 1, 2 }, 9, 1) == 1)
+check('cycle single stays', terminal._pick({ 3 }, 3, -1) == 3)
+check('cycle empty is nil', terminal._pick({}, nil, 1) == nil)
+
+-- 16. Cmd+W closes the buffer (never the tab); Cmd+Shift+W closes window.
+-- Telescope Enter roots the tree at the opened file's dir; <leader>cr
+-- prompts for a new tree root (.. goes up).
+check('Cmd+W closes buffer via Bdelete', keymaps_src:find("<D-w>", 1, true) ~= nil
+  and keymaps_src:find('Bdelete', 1, true) ~= nil)
+check('Cmd+W works from inside float', vim.fn.maparg('<D-w>', 't') ~= '')
+for _, p in ipairs({ home .. '/.config/ghostty/config', home .. '/.config/ghostty/nvim-launcher' }) do
+  local tag, c = p:match('[^/]+$'), read(p)
+  check(tag .. ' Cmd+W reaches nvim', c:find('super+w=text', 1, true) ~= nil)
+  check(tag .. ' Shift+Cmd+W closes window', c:find('super+shift+w=close_window', 1, true) ~= nil)
+end
+local land2 = require('config.telescope_land')
+check('select_and_land helper exists', type(land2.select_and_land) == 'function')
+check('select_and_land on Enter in insert', type(land2.mappings.i['<CR>']) == 'function')
+check('select_and_land on Enter in normal', type(land2.mappings.n['<CR>']) == 'function')
+check('land_here still on Cmd+O', type(land2.mappings.i['<D-o>']) == 'function')
+local tree = require('config.tree')
+check('tree exposes change_root_prompt', type(tree.change_root_prompt) == 'function')
+check('<leader>cr prompts tree root', vim.fn.maparg(' cr', 'n') ~= '')
+do
+  -- Enter on a file: opens it, tab-cds to its dir, moves the tree too.
+  local root = vim.fn.tempname()
+  vim.fn.mkdir(root .. '/SUB', 'p')
+  vim.fn.writefile({ 'hi' }, root .. '/SUB/file.txt')
+  local opened, tree_root, selected = nil, nil, nil
+  -- Section 12 cached its own mocks in package.loaded: drop them so the
+  -- preloads below take effect.
+  package.loaded['telescope.actions'] = nil
+  package.loaded['telescope.actions.state'] = nil
+  package.loaded['nvim-tree.api'] = nil
+  package.preload['telescope.actions'] = function()
+    return { select_default = function(bufnr) opened = bufnr end }
+  end
+  package.preload['nvim-tree.api'] = function()
+    return { tree = { change_root = function(dir) tree_root = dir end } }
+  end
+  package.preload['telescope.actions.state'] = function()
+    return {
+      get_current_picker = function() return {} end,
+      get_selected_entry = function() return selected end,
+    }
+  end
+  local back = vim.fn.getcwd()
+  local sub = vim.fn.resolve(root .. '/SUB')
+  selected = { value = root .. '/SUB/file.txt', path = root .. '/SUB/file.txt' }
+  land2.select_and_land(9)
+  check('select_and_land opens the file', opened == 9)
+  check('select_and_land cds to file dir', vim.fn.getcwd() == sub)
+  check('select_and_land moves tree too', tree_root == root .. '/SUB')
+  -- Enter on a directory: default open only, no re-root.
+  opened, tree_root = nil, nil
+  vim.cmd('tcd ' .. vim.fn.fnameescape(back))
+  selected = { value = root .. '/SUB', path = root .. '/SUB' }
+  land2.select_and_land(9)
+  check('select_and_land opens dirs normally', opened == 9)
+  check('select_and_land leaves cwd on dirs', vim.fn.getcwd() == back and tree_root == nil)
+  vim.cmd('tcd ' .. vim.fn.fnameescape(back))
+  package.preload['telescope.actions'] = nil
+  package.preload['nvim-tree.api'] = nil
+  package.preload['telescope.actions.state'] = nil
+  vim.fn.delete(root, 'rf')
 end
 
 if failures > 0 then

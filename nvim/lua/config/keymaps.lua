@@ -66,19 +66,37 @@ map('n', '<A-f>', 'w', { noremap = true, silent = true, desc = 'Word forward' })
 -- (Retired: Alt+V toggled terminal 2, byte-for-byte the same terminal as
 -- Cmd+2/Alt+2. One binding per terminal now.)
 -- Floating terminals, one Ghostty tab = one project so plain global ids are
--- enough: Alt+N toggles terminal N of THIS tab's nvim. A dev server on
--- term 2 keeps running in that tab while you work in another Ghostty tab
--- (separate nvim process, fully isolated). Digit 0 means 10. Cmd+N is
--- Ghostty's: Cmd+1..8 jump to project tabs, Cmd+9 to the last tab.
+-- enough: Cmd+N toggles terminal N of THIS tab's nvim (terminals switch
+-- most, so they own the easiest key). A dev server on term 2 keeps
+-- running in that tab while you work in another Ghostty tab (separate
+-- nvim process, fully isolated). Digit 0 means 10. Project tabs moved to
+-- Alt+1..0 (Ghostty goto_tab, handled before nvim ever sees them).
+-- Cmd+[/] steps prev/next through them with wraparound (see below) for
+-- the high digits that are awkward to reach.
 for _i = 1, 10 do
   local _n, _d = _i, (_i == 10 and '0' or tostring(_i))
   local _rhs = '<cmd>' .. _n .. 'ToggleTerm direction=float<cr>'
-  -- Insert included: Alt+digits must work while typing, since the
-  -- emulators deliver modifiers as Esc sequences. toggleterm's on_open
-  -- startinsert lands the opened float in Terminal-Insert no matter which
-  -- mode we toggled from.
+  -- Insert included on both: digits must work while typing, since the
+  -- emulators deliver modifiers as Esc/CSI-u sequences. toggleterm's
+  -- on_open startinsert lands the opened float in Terminal-Insert no
+  -- matter which mode we toggled from.
+  map({ 'n', 't', 'i' }, '<D-' .. _d .. '>', _rhs, opts)
+  -- Alt+N kept as fallback: Ghostty eats Alt+digits for tabs, but other
+  -- terminals (kitty leaves Alt alone) still deliver them to nvim.
   map({ 'n', 't', 'i' }, '<A-' .. _d .. '>', _rhs, opts)
 end
+-- Terminal cycling (Alt+N jumps direct, these step with wraparound):
+-- Cmd+[ previous, Cmd+] next, from code or from inside a float. Ghostty
+-- transport lives in shared-keybinds.conf (super+[/]); to rebind later,
+-- change those two lines plus these two maps and nothing else.
+map({ 'n', 'v', 'i' }, '<D-[>', function() require('config.terminal').cycle(-1) end,
+  { noremap = true, silent = true, desc = 'Previous terminal' })
+map({ 'n', 'v', 'i' }, '<D-]>', function() require('config.terminal').cycle(1) end,
+  { noremap = true, silent = true, desc = 'Next terminal' })
+-- Same from inside a toggleterm float: drop to Terminal-Normal first, like
+-- the <D-e> float maps (a bare command RHS would be typed into the shell).
+map('t', '<D-[>', '<C-\\><C-n><cmd>lua require("config.terminal").cycle(-1)<cr>', opts)
+map('t', '<D-]>', '<C-\\><C-n><cmd>lua require("config.terminal").cycle(1)<cr>', opts)
 -- (Retired 2026-09-14: the pre-0.12 <Esc>[9xx;1~ fallback maps lived here
 -- alongside every live map above. Nothing sends those sequences anymore —
 -- Ghostty and Kitty both emit CSI-u super encodings, which Neovim 0.12
@@ -101,6 +119,14 @@ map('n', '<C-r>', '<cmd>Telescope projects<cr>', { noremap = true, silent = true
 -- the tree on it. Recents on Ctrl+R.
 map('n', '<D-o>', '<cmd>Telescope file_browser path=%:p:h select_buffer=true hidden=true<cr>',
   { noremap = true, silent = true, desc = 'Browse files…' })
+-- Cmd+W closes the current buffer (VSCode editor-close), never the tab:
+-- Bdelete keeps the window layout, leaving an empty buffer when it was
+-- the last one (same engine as <leader>bd, force like it). The Ghostty
+-- tab/window survives; Shift+Cmd+W stays native and closes the window.
+map({ 'n', 'v', 'i' }, '<D-w>', '<cmd>Bdelete!<cr>', { noremap = true, silent = true, desc = 'Close buffer' })
+-- Same from inside a toggleterm float: drop to Terminal-Normal first, like
+-- the <D-e> float maps (a bare command RHS would be typed into the shell).
+map('t', '<D-w>', '<C-\\><C-n><cmd>Bdelete!<cr>', opts)
 -- VSCode-style folding: Cmd+Opt+[ folds, Cmd+Opt+] unfolds (folds come from
 -- the treesitter grammar, see options.lua). `za` still toggles, `zM`/`zR`
 -- close/open everything.
@@ -111,11 +137,16 @@ map('n', '<D-S-z>', '<cmd>redo<cr>', { noremap = true, silent = true, desc = 'Re
 -- Cmd+Z: undo (VSCode undo). Kept out of terminal mode on purpose so it
 -- still reaches the shell job (suspend). Visual uses <Esc>u because bare
 -- u there means lowercase, not undo.
--- Space+h peeks the tree (open, cursor stays in code); Shift+Cmd+E
--- peeks with the current file revealed, Cmd+E focuses it.
--- See config/tree.lua for the mechanism.
-map('n', '<leader>h', function() require('config.tree').peek(false) end,
-  { noremap = true, silent = true, desc = 'Peek file tree' })
+-- Space+h jumps INTO the tree (no reveal, so it lands wherever the tree
+-- already is); Shift+Cmd+E peeks with the current file revealed,
+-- Cmd+E focuses it revealed. See config/tree.lua for the mechanism.
+map('n', '<leader>h', function() require('config.tree').focus(false) end,
+  { noremap = true, silent = true, desc = 'Focus file tree' })
+-- <leader>cr prompts for a new tree root (completion=dir, so Tab
+-- completes paths; `..` goes up one, `~`/absolute/relative all work).
+-- The tab cwd follows, so terminals land there too.
+map('n', '<leader>cr', function() require('config.tree').change_root_prompt() end,
+  { noremap = true, silent = true, desc = 'Change tree root…' })
 -- Inlay hints (VSCode inferred types / parameter names): on by default
 -- wherever the server supports them (see lsp.lua), this toggles them for
 -- the current buffer.
@@ -177,14 +208,14 @@ map({ 'n', 't' }, '\\', '<cmd>ToggleTerm direction=float<cr>', { noremap = true,
 map('t', '|', '<C-\\><C-n>', { noremap = true, silent = true, desc = 'Terminal to Normal mode' })
 -- Exit the focused terminal (see config/terminal.lua): types `exit` +
 -- Enter into its shell, so the shell ends and the float goes away;
--- reopen with Alt+N for a fresh shell. <leader>tR stays Normal-only on
--- purpose: a <leader> mapping in terminal mode would make every Space
--- typed into the shell wait timeoutlen for a follow-up key (from inside
--- a terminal: `|` first). Alt+X is a bare Alt key with no such timeout
--- cost, so it binds in normal, terminal, and insert modes and works
--- straight from Terminal-Insert.
-map('n', '<leader>tR', function() require('config.terminal').exit_focused() end,
-  { noremap = true, silent = true, desc = 'Exit focused terminal' })
+-- reopen with Alt+N for a fresh shell. Alt+X is a bare Alt key, so it
+-- binds in normal, terminal, and insert modes with no timeout cost —
+-- unlike a <leader> mapping, which would make every Space typed into
+-- the shell wait timeoutlen for a follow-up key. (From Terminal-Normal,
+-- `Space t R` is gone too: use Alt+X straight from Terminal-Insert.)
+-- (Retired 2026-09-14: <leader>tR did the same thing from normal mode,
+-- but sat one Shift away from <leader>Tr "run nearest test" — a shell
+-- up for the killing with a single typo. Alt+X covers every mode.)
 map({ 'n', 't', 'i' }, '<A-x>', function() require('config.terminal').exit_focused() end,
   { noremap = true, silent = true, desc = 'Exit focused terminal' })
 
