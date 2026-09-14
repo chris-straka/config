@@ -545,13 +545,60 @@ check('cycle stale id restarts', terminal._pick({ 1, 2 }, 9, 1) == 1)
 check('cycle single stays', terminal._pick({ 3 }, 3, -1) == 3)
 check('cycle empty is nil', terminal._pick({}, nil, 1) == nil)
 
--- 16. Escalating close: Cmd+W closes the buffer (never the tab),
--- Shift+Cmd+W the tab, Ctrl+Shift+Cmd+W the window. Telescope Enter
--- roots the tree at the opened file's dir; <leader>cr prompts for a new
--- tree root (.. goes up).
-check('Cmd+W closes buffer via MiniBufremove', keymaps_src:find("<D-w>", 1, true) ~= nil
-  and keymaps_src:find('MiniBufremove', 1, true) ~= nil)
-check('Cmd+W works from inside float', vim.fn.maparg('<D-w>', 't') ~= '')
+-- 16. Escalating close: Cmd+W closes the buffer, or the tab when the
+-- buffer is empty (never the window); Shift+Cmd+W the tab,
+-- Ctrl+Shift+Cmd+W the window. Telescope Enter roots the tree at the
+-- opened file's dir; <leader>cr prompts for a new tree root (.. goes up).
+check('Cmd+W routes through buffer_close', keymaps_src:find("<D-w>", 1, true) ~= nil
+  and keymaps_src:find('config.buffer_close', 1, true) ~= nil
+  and keymaps_src:find('close_buffer_or_tab', 1, true) ~= nil)
+do
+  local bc_src = read(nvim .. '/lua/config/buffer_close.lua')
+  check('empty buffer tries tabclose, never window close',
+    bc_src:find('tabclose', 1, true) ~= nil
+    and bc_src:find('MiniBufremove', 1, true) ~= nil
+    and bc_src:find("'quit", 1, true) == nil
+    and bc_src:find("'close", 1, true) == nil
+    and bc_src:find("'qa", 1, true) == nil
+    and bc_src:find("close_window", 1, true) == nil)
+end
+for _, mode in ipairs({ 'n', 'v', 'i', 't' }) do
+  check('Cmd+W works from ' .. mode, vim.fn.maparg('<D-w>', mode) ~= '')
+end
+do
+  local bc = require('config.buffer_close')
+  check('buffer_close module exposes close_buffer_or_tab', type(bc.close_buffer_or_tab) == 'function')
+  local empty = vim.api.nvim_create_buf(true, false)
+  check('fresh buffer counts as empty', bc.is_empty_buffer(empty))
+  vim.api.nvim_buf_set_lines(empty, 0, -1, false, { 'hello' })
+  check('buffer with text is not empty', not bc.is_empty_buffer(empty))
+  vim.api.nvim_buf_delete(empty, { force = true })
+  local named = vim.api.nvim_create_buf(true, false)
+  vim.api.nvim_buf_set_name(named, vim.fn.tempname())
+  check('named buffer is not empty', not bc.is_empty_buffer(named))
+  vim.api.nvim_buf_delete(named, { force = true })
+  -- Empty buffer closes the tab: open a second tab, close from its
+  -- empty buffer, land back on one tab.
+  vim.cmd('tabnew')
+  vim.api.nvim_set_current_buf(vim.api.nvim_create_buf(true, false))
+  check('empty Cmd+W closes the tab', bc.close_buffer_or_tab() == 'tabclose'
+    and vim.fn.tabpagenr('$') == 1)
+  -- Last tab is a no-op (tabclose fails), never an error.
+  vim.api.nvim_set_current_buf(vim.api.nvim_create_buf(true, false))
+  local ok = pcall(bc.close_buffer_or_tab)
+  check('empty Cmd+W on last tab is safe', ok and vim.fn.tabpagenr('$') == 1)
+  -- Non-empty buffer goes to MiniBufremove, tabs untouched.
+  local tabs = vim.fn.tabpagenr('$')
+  local full = vim.api.nvim_create_buf(true, false)
+  vim.api.nvim_set_current_buf(full)
+  vim.api.nvim_buf_set_lines(full, 0, -1, false, { 'keep me' })
+  local deleted = nil
+  _G.MiniBufremove = { delete = function(...) deleted = { ... } end }
+  check('full Cmd+W closes the buffer', bc.close_buffer_or_tab() == 'buffer'
+    and deleted ~= nil and vim.fn.tabpagenr('$') == tabs)
+  _G.MiniBufremove = nil
+  vim.api.nvim_buf_delete(full, { force = true })
+end
 for _, p in ipairs({ home .. '/.config/ghostty/config', home .. '/.config/ghostty/nvim-launcher' }) do
   local tag, c = p:match('[^/]+$'), read(p)
   check(tag .. ' Cmd+W reaches nvim', c:find('super+w=text', 1, true) ~= nil)

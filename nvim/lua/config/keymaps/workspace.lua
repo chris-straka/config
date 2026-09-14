@@ -54,15 +54,14 @@ map('n', '<C-r>', '<cmd>Telescope projects<cr>', { noremap = true, silent = true
 map('n', '<D-o>', '<cmd>Telescope file_browser path=%:p:h select_buffer=true hidden=true<cr>',
   { noremap = true, silent = true, desc = 'Browse files…' })
 
--- Cmd+W closes the current buffer (VSCode editor-close), never the tab:
--- MiniBufremove keeps the window layout, leaving an empty buffer when it
--- was the last one (same engine as <leader>bd, force like it). The
--- Ghostty tab/window survives; Shift+Cmd+W stays native and closes
--- the tab, Ctrl+Shift+Cmd+W the window.
-map({ 'n', 'v', 'i' }, '<D-w>', '<cmd>lua MiniBufremove.delete(0, true)<cr>', { noremap = true, silent = true, desc = 'Close buffer' })
--- Same from inside a toggleterm float: drop to Terminal-Normal first, like
--- the <D-e> float maps (a bare command RHS would be typed into the shell).
-map('t', '<D-w>', '<C-\\><C-n><cmd>lua MiniBufremove.delete(0, true)<cr>', opts)
+-- Cmd+W closes the current buffer (VSCode editor-close); on an empty
+-- buffer it tries :tabclose instead (never a window close). MiniBufremove
+-- keeps the window layout, leaving an empty buffer when it was the last
+-- one (same engine as <leader>bd, force like it). The Ghostty
+-- tab/window survives; Shift+Cmd+W stays native and closes the tab,
+-- Ctrl+Shift+Cmd+W the window. See config/buffer_close.lua.
+map({ 'n', 'v', 'i', 't' }, '<D-w>', function() require('config.buffer_close').close_buffer_or_tab() end,
+  { noremap = true, silent = true, desc = 'Close buffer' })
 
 -- Code runner (VSCode code-runner button): <leader>of runs the current
 -- file with the right interpreter via overseer (see config/runner.lua);
