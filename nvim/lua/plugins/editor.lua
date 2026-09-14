@@ -53,7 +53,6 @@ return {
   },
   { 'folke/which-key.nvim', event = 'VeryLazy', opts = {} },
   { 'folke/flash.nvim', event = 'VeryLazy', opts = {} }, -- replaces ggandor/lightspeed
-  { 'windwp/nvim-autopairs', event = 'InsertEnter', opts = {} },
   { 'windwp/nvim-ts-autotag', event = 'InsertEnter', opts = {} },
 
   { 'JoosepAlviste/nvim-ts-context-commentstring', lazy = true, opts = {} },
@@ -70,8 +69,9 @@ return {
     -- a glyph (nvim-tree, lualine, Telescope…) gets mini.icons' set
     -- instead, with zero changes on their side.
     require('mini.icons').mock_nvim_web_devicons()
+    require('mini.pairs').setup() -- auto-closing brackets/quotes
+    require('mini.bufremove').setup() -- buffer delete that keeps windows
   end },
-  { 'famiu/bufdelete.nvim', cmd = { 'Bdelete', 'Bwipeout' } },
   -- NOTE: eager on purpose (no `cmd` key, so the setup's `lazy = false`
   -- default applies): the Alt+digit keymaps call `:NToggleTerm` with a
   -- count, and lazy's command stub declares range (not count), so the first

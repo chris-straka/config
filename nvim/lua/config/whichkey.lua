@@ -13,7 +13,7 @@ wk.add {
   { '<leader>w', ':w!<cr>', desc = 'Write' },
   { '<leader>b', group = 'Buffers' },
   { '<leader>bb', "<cmd>lua require'telescope.builtin'.buffers({ sort_mru = true })<cr>", desc = 'Find buffer' },
-  { '<leader>bd', '<cmd>Bdelete!<CR>', desc = 'Close buffer' },
+  { '<leader>bd', '<cmd>lua MiniBufremove.delete(0, true)<CR>', desc = 'Close buffer' },
   { '<leader>bD', '<cmd>%bd<cr>', desc = 'Close all buffers' },
   { '<leader>L', '<cmd>Lazy<cr>', desc = 'Plugins (load state)' },
   { '<leader>x', group = 'Trouble' },

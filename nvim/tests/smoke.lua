@@ -136,6 +136,11 @@ check('tree indent guides on', editor_src:find('indent_markers = { enable = true
 check('svelte parser installed', editor_src:find("'svelte'", 1, true) ~= nil)
 check('mini.icons set up and mocking devicons', editor_src:find("require('mini.icons').setup()", 1, true) ~= nil
   and editor_src:find('mock_nvim_web_devicons', 1, true) ~= nil)
+check('mini.pairs replaces autopairs', editor_src:find("require('mini.pairs').setup()", 1, true) ~= nil
+  and editor_src:find('nvim-autopairs', 1, true) == nil)
+check('mini.bufremove replaces bufdelete', editor_src:find("require('mini.bufremove').setup()", 1, true) ~= nil
+  and editor_src:find('bufdelete', 1, true) == nil
+  and keymaps_src:find('Bdelete', 1, true) == nil)
 -- NOTE: lazy `keys` bind at runtime (see test.lua note above); here we
 -- assert the declarations, shadowing the conflict check from 2026-09-14.
 check('harpoon keys declared', editor_src:find("'<leader>a'", 1, true) ~= nil
@@ -367,8 +372,8 @@ check('cycle empty is nil', terminal._pick({}, nil, 1) == nil)
 -- 16. Cmd+W closes the buffer (never the tab); Cmd+Shift+W closes window.
 -- Telescope Enter roots the tree at the opened file's dir; <leader>cr
 -- prompts for a new tree root (.. goes up).
-check('Cmd+W closes buffer via Bdelete', keymaps_src:find("<D-w>", 1, true) ~= nil
-  and keymaps_src:find('Bdelete', 1, true) ~= nil)
+check('Cmd+W closes buffer via MiniBufremove', keymaps_src:find("<D-w>", 1, true) ~= nil
+  and keymaps_src:find('MiniBufremove', 1, true) ~= nil)
 check('Cmd+W works from inside float', vim.fn.maparg('<D-w>', 't') ~= '')
 for _, p in ipairs({ home .. '/.config/ghostty/config', home .. '/.config/ghostty/nvim-launcher' }) do
   local tag, c = p:match('[^/]+$'), read(p)
