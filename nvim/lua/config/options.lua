@@ -16,7 +16,10 @@ o.title = true
 -- project (cwd basename) plus a short label instead: files show their
 -- tail, terminals show `term`, empty buffers show `nvim`.
 o.titlestring = [[%{fnamemodify(getcwd(), ':t')} – %{&buftype == 'terminal' ? 'term' : expand('%:t') == '' ? 'nvim' : expand('%:t')}]]
-o.scrolloff = 10
+-- Huge scrolloff keeps the cursor centered, so scrolling past end-of-file
+-- shows empty space below the last line (G parks the last line
+-- mid-screen instead of pinning it to the bottom).
+o.scrolloff = 999
 o.expandtab = true
 o.tabstop = 2
 o.smartindent = true

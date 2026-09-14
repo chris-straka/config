@@ -9,12 +9,14 @@
 # If you change key translations in the main config, mirror them here.
 config-file = /Users/c/.config/ghostty/config
 command = /bin/zsh -l -i -c "exec nvim"
+# Large default (mirrors main config): launcher windows open zoomed in too.
+font-size = 20
 # Duplicated (not just included): the tab bar must survive the
 # `open --args --config-file=...` handoff that drops includes.
 macos-titlebar-style = transparent
-# `auto`: bar appears once you have 2+ tabs; lualine already names the
-# current tab's project, so a single-tab window stays clean.
-window-show-tab-bar = auto
+# `never`: no top tab bar — lualine already names the current tab's
+# project at the bottom, and Shift+Cmd+H/L still steps between tabs.
+window-show-tab-bar = never
 # Spotlight launches inherit `/` as cwd — pin home so every launch starts
 # somewhere predictable (slots take you to projects from there).
 working-directory = home

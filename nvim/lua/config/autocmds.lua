@@ -20,13 +20,14 @@ autocmd('TextYankPost', {
 })
 
 -- One Ghostty tab = one project: every fresh nvim opens the file tree so
--- you can see where you are. Only when launched without file arguments
+-- you can see where you are, but the cursor stays in the empty buffer
+-- (peek, no focus). Only when launched without file arguments
 -- (the launcher flow — `exec nvim` at home, then Ctrl+R/Cmd+O into the
 -- project); `nvim somefile` leaves you in the file. Picking a file closes
 -- the tree (quit_on_open), VSCode-explorer style.
 autocmd('VimEnter', {
   group = vim.api.nvim_create_augroup('TreeOnStartup', { clear = true }),
   callback = function()
-    if vim.fn.argc() == 0 then vim.cmd('NvimTreeToggle') end
+    if vim.fn.argc() == 0 then require('config.tree').peek(false) end
   end,
 })

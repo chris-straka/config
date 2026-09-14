@@ -14,7 +14,10 @@
 # the bare forms are UNBOUND (not mirrored with text:) so a single press
 # can never fire twice — a double-send would open+instantly-close toggles.
 font-family = "FiraCode Nerd Font"
-font-size = 16
+# Large default so new windows open already zoomed in (Cmd+Shift+= rarely
+# needed). Tweak this number to taste; reloads re-read it, though open
+# windows keep their zoom (window-inherit-font-size below).
+font-size = 20
 # New windows inherit the current window's zoom instead of resetting to
 # font-size above (reloads still re-read font-size).
 window-inherit-font-size = true
@@ -23,9 +26,9 @@ theme = "Catppuccin Mocha"
 # visible: `hidden` removes the titlebar chrome tabs live in, so a new tab
 # opened invisibly. `transparent` keeps the minimal look with tabs intact.
 macos-titlebar-style = transparent
-# `auto`: bar appears once you have 2+ tabs; lualine already names the
-# current tab's project, so a single-tab window stays clean.
-window-show-tab-bar = auto
+# `never`: no top tab bar — lualine already names the current tab's
+# project at the bottom, and Shift+Cmd+H/L still steps between tabs.
+window-show-tab-bar = never
 # Left Option acts as Alt (sends an Esc prefix): without this,
 # Option sends accented chars and every Alt-hjkl / Alt+digit map in Neovim
 # silently fails. Right Option still types special characters.

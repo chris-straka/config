@@ -173,26 +173,17 @@ map({ 'n', 't' }, '\\', '<cmd>ToggleTerm direction=float<cr>', { noremap = true,
 -- Ctrl+C is untouched and reaches the shell too — but in Muse it quits,
 -- so interrupt with Esc, not Ctrl+C.
 map('t', '<Esc><Esc>', '<C-\\><C-n>', { noremap = true, silent = true, desc = 'Terminal to Normal mode' })
--- Reset the focused terminal: kill its job (toggleterm auto-deletes the
--- dead shell) and close the float; reopen with Cmd+N for a fresh shell in
--- the current directory. For wedged shells — otherwise
--- just type `exit`. Normal mode only on purpose: a <leader> mapping in
--- terminal mode would make every Space typed into the shell wait
--- timeoutlen for a follow-up key. From inside a terminal: Esc Esc first.
-map('n', '<leader>tR', function()
-  local terms = require('toggleterm.terminal')
-  local id = terms.get_focused_id()
-  if not id then
-    vim.notify('no focused terminal to reset', vim.log.levels.WARN)
-    return
-  end
-  local term = terms.get(id, true)
-  if term and term:is_open() then term:close() end
-  if term and term.job_id then pcall(vim.fn.jobstop, term.job_id) end
-  local digit = ((id - 1) % 10) + 1
-  vim.notify('terminal ' .. id .. ' killed — reopen fresh with Alt+' .. (digit == 10 and 0 or digit),
-    vim.log.levels.INFO)
-end, { noremap = true, silent = true, desc = 'Reset focused terminal' })
+-- Exit the focused terminal (see config/terminal.lua): types `exit` +
+-- Enter into its shell, so the shell ends and the float goes away;
+-- reopen with Alt+N for a fresh shell. <leader>tR stays Normal-only on
+-- purpose: a <leader> mapping in terminal mode would make every Space
+-- typed into the shell wait timeoutlen for a follow-up key. Alt+X is a
+-- bare Alt key with no such timeout cost, so it binds in normal,
+-- terminal, and insert modes and works straight from Terminal-Insert.
+map('n', '<leader>tR', function() require('config.terminal').exit_focused() end,
+  { noremap = true, silent = true, desc = 'Exit focused terminal' })
+map({ 'n', 't', 'i' }, '<A-x>', function() require('config.terminal').exit_focused() end,
+  { noremap = true, silent = true, desc = 'Exit focused terminal' })
 
 -- Resize the current float: Alt-, shrink width, Alt-. grow width,
 -- Alt-- shrink height, Alt-= grow height. No-op on non-floats.

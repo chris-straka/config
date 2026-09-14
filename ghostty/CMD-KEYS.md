@@ -51,8 +51,9 @@ care — in terminal mode it would be typed into the shell).
   natively; Cmd+T new tab, Cmd+W / Cmd+Opt+W close. Zero legacy sequences. The launcher duplicates
   the binds inline because the `open --args --config-file=…` handoff
   proved unreliable for includes — **mirror any keybind change in both
-  files**. Window chrome (`transparent` titlebar, always-show tab bar) is
-  duplicated too, for the same reason.
+  files**. Window chrome (`transparent` titlebar, hidden tab bar —
+  lualine names the project, Shift+Cmd+H/L switches) and the zoomed-in
+  `font-size` are duplicated too, for the same reason.
 - Kitty config converted the same way (other track).
 - `nvim/lua/config/keymaps.lua`: `<D-…>` maps are the live path; the old
   `<Esc>[9xx…` maps stay as harmless fallback; `<D-e>` and `<D-S-e>` have

@@ -33,6 +33,7 @@ require('config.options')
 check('showtabline shows when >1 tab', vim.opt.showtabline:get() == 1)
 check('foldmethod is treesitter expr', vim.opt.foldmethod:get() == 'expr')
 check('folds start open', vim.opt.foldlevel:get() == 99)
+check('scrolloff pads past EOF', vim.opt.scrolloff:get() == 999)
 
 -- 3. Terminal toggles are simple global ids; slot selects are gone.
 require('config.keymaps')
@@ -40,6 +41,23 @@ check('Cmd+1 free for Ghostty tabs', vim.fn.maparg('<D-1>', 'n') == '')
 check('Cmd+2 free for Ghostty tabs', vim.fn.maparg('<D-2>', 't') == '')
 local a2 = vim.fn.maparg('<A-2>', 'n')
 check('Alt+2 toggles global terminal 2', a2:find('2ToggleTerm', 1, true) ~= nil)
+check('Alt+2 works from terminal mode', vim.fn.maparg('<A-2>', 't'):find('2ToggleTerm', 1, true) ~= nil)
+check('Alt+2 works while typing', vim.fn.maparg('<A-2>', 'i'):find('2ToggleTerm', 1, true) ~= nil)
+-- Alt+digit floats open ready to type: triple insert guarantee.
+local editor_src = read(nvim .. '/lua/plugins/editor.lua')
+check('terms open in Terminal-Insert', editor_src:find('start_in_insert = true', 1, true) ~= nil
+  and editor_src:find('persist_mode = false', 1, true) ~= nil
+  and editor_src:find('startinsert!', 1, true) ~= nil)
+-- Alt+X exits the focused terminal (types `exit`) from normal, terminal,
+-- and insert modes.
+local terminal = require('config.terminal')
+check('terminal module exposes exit_focused', type(terminal.exit_focused) == 'function')
+check('Alt+X exits from normal', vim.fn.maparg('<A-x>', 'n') ~= '')
+check('Alt+X exits from inside terminal', vim.fn.maparg('<A-x>', 't') ~= '')
+check('Alt+X exits while typing', vim.fn.maparg('<A-x>', 'i') ~= '')
+check('<leader>tR still exits', vim.fn.maparg(' tR', 'n') ~= '')
+local term_src = read(nvim .. '/lua/config/terminal.lua')
+check('exit sends exit+enter to the job', term_src:find("chansend(term.job_id, 'exit\\n')", 1, true) ~= nil)
 check('Cmd+Opt+[ folds', vim.fn.maparg('<D-M-[>', 'n') == 'zc')
 check('Cmd+Opt+] unfolds', vim.fn.maparg('<D-M-]>', 'n') == 'zo')
 
@@ -74,6 +92,9 @@ local tree_src = read(nvim .. '/lua/config/tree.lua')
 check('peek never focuses', tree_src:find('focus = false', 1, true) ~= nil)
 check('focus helper exists', tree_src:find('function M.focus', 1, true) ~= nil
   and tree_src:find('focus = true', 1, true) ~= nil)
+check('focus never toggles a visible tree shut', tree_src:find('is_visible()', 1, true) ~= nil
+  and tree_src:find('api.tree.focus()', 1, true) ~= nil
+  and tree_src:find('api.tree.find_file()', 1, true) ~= nil)
 -- Cmd+E focuses, Shift+Cmd+E peeks (normal + terminal modes).
 local keymaps_src = read(nvim .. '/lua/config/keymaps.lua')
 check('Cmd+E focuses tree', keymaps_src:find("<D-e>', function() require('config.tree').focus(true)", 1, true) ~= nil)
@@ -112,18 +133,19 @@ check('tree bg brightened, theme kept', ui:find('catppuccin-mocha', 1, true) ~= 
   and ui:find('NvimTreeNormal', 1, true) ~= nil
   and ui:find('surface0', 1, true) ~= nil)
 
--- 6. Fresh nvim opens the file tree (launcher flow: no file arguments).
+-- 6. Fresh nvim opens the file tree UNFOCUSED (launcher flow: no args).
 local autocmds = read(nvim .. '/lua/config/autocmds.lua')
 check('tree auto-opens on VimEnter with no args', autocmds:find('TreeOnStartup', 1, true) ~= nil
-  and autocmds:find('NvimTreeToggle', 1, true) ~= nil
+  and autocmds:find("require('config.tree').peek(false)", 1, true) ~= nil
   and autocmds:find('argc() == 0', 1, true) ~= nil)
 
--- 5. Ghostty: visible tab bar + H/L nav, slot banks gone (both files).
+-- 5. Ghostty: no top tab bar (lualine names the project) + H/L nav (both files).
 for _, p in ipairs({ home .. '/.config/ghostty/config', home .. '/.config/ghostty/nvim-launcher' }) do
   local tag = p:match('[^/]+$')
   local c = read(p)
   check(tag .. ' titlebar keeps tabs visible', c:find('macos-titlebar-style = transparent', 1, true) ~= nil)
-  check(tag .. ' tab bar appears with 2+ tabs', c:find('window-show-tab-bar = auto', 1, true) ~= nil)
+  check(tag .. ' top tab bar stays hidden', c:find('window-show-tab-bar = never', 1, true) ~= nil)
+  check(tag .. ' opens already zoomed in', c:find('font-size = 20', 1, true) ~= nil)
   check(tag .. ' Shift+Cmd+H prev tab', c:find('super+shift+h=previous_tab', 1, true) ~= nil)
   check(tag .. ' Shift+Cmd+L next tab', c:find('super+shift+l=next_tab', 1, true) ~= nil)
   check(tag .. ' Cmd+Opt+[ fold transport', c:find('super+alt+[=text', 1, true) ~= nil)
