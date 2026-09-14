@@ -48,6 +48,7 @@ sync_ghostty() { # splice shared-keybinds.conf into config + nvim-launcher
 sync_ghostty
 link nvim "$HOME/.config/nvim"
 link ghostty "$HOME/.config/ghostty"
+link kitty/kitty.conf "$HOME/.config/kitty/kitty.conf"
 link muse/settings.json "$HOME/.config/muse/settings.json"
 link zsh/.zshrc "$HOME/.zshrc"
 link zsh/.zprofile "$HOME/.zprofile"

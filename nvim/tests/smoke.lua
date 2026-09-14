@@ -189,6 +189,12 @@ local function keybinds(path)
 end
 check('launcher mirrors main keybinds',
   keybinds(home .. '/.config/ghostty/config') == keybinds(home .. '/.config/ghostty/nvim-launcher'))
+-- Kitty lives in the repo too and install.sh links it; its Cmd+E takes
+-- the same CSI-u live path (no legacy sequences anywhere).
+local root = vim.fn.fnamemodify(vim.fn.resolve(nvim), ':h')
+check('install.sh manages kitty conf', read(root .. '/install.sh'):find('kitty/kitty.conf', 1, true) ~= nil)
+local kitty = read(home .. '/.config/kitty/kitty.conf')
+check('kitty Cmd+E reaches nvim', kitty:find('cmd+e send_text all \\e[101;9u', 1, true) ~= nil)
 
 -- 12. Cmd+O "land here": file_browser mappings cd the tab to the browsed
 -- or highlighted folder, close the picker, and move the tree too.
