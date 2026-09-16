@@ -164,6 +164,28 @@ return {
         -- mirroring Finder (needs the `trash` CLI; prompts to confirm).
         -- Transport: Ghostty/kitty send CSI-u super (see shared-keybinds).
         vim.keymap.set({ 'n', 'x' }, '<D-BS>', api.fs.trash, opts('Trash'))
+        vim.keymap.set('n', 'n', api.fs.create, opts('Create file'))
+        vim.keymap.set('n', 'N', function()
+          local node = api.tree.get_node_under_cursor()
+          local base
+          if node and node.type == 'file' then
+            base = vim.fn.fnamemodify(node.absolute_path, ':h')
+          elseif node and node.type == 'directory' and node.absolute_path then
+            base = node.absolute_path
+          else
+            base = vim.fn.getcwd()
+          end
+          vim.ui.input({ prompt = 'Create folder: ', default = base .. '/', completion = 'dir' }, function(input)
+            if input == nil or input == '' then return end
+            local dir = vim.fn.expand(input):gsub('/$', '')
+            if vim.fn.isdirectory(dir) == 1 then
+              vim.notify('Already exists: ' .. dir, vim.log.levels.WARN)
+              return
+            end
+            vim.fn.mkdir(dir, 'p')
+            api.tree.reload()
+          end)
+        end, opts('Create folder'))
         vim.keymap.set('n', '<CR>', function()
           local node = api.tree.get_node_under_cursor()
           if node and node.type == 'directory' then
