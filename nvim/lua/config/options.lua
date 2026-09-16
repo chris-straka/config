@@ -13,9 +13,12 @@ o.title = true
 -- Short tab titles: Ghostty shows nvim's terminal title, and the default
 -- includes the full terminal buffer path, so a toggleterm float reads
 -- like `zsh;#toggleterm#1 - (term protocol path) - Nvim`. Show just the
--- project (cwd basename) plus a short label instead: files show their
--- tail, terminals show `term`, empty buffers show `nvim`.
-o.titlestring = [[%{fnamemodify(getcwd(), ':t')} – %{&buftype == 'terminal' ? 'term' : expand('%:t') == '' ? 'nvim' : expand('%:t')}]]
+-- project (cwd basename) plus a short label instead (see
+-- config.terminal.title_label): files show their tail, terminals show
+-- this tab's position over its terminal count (`term 2 / 3`, lone
+-- terminals plain `term 1`), empty buffers `nvim`.
+o.titlestring =
+  [[%{fnamemodify(getcwd(), ':t')} – %{v:lua.require('config.terminal').title_label()}]]
 -- Huge scrolloff keeps the cursor centered, so scrolling past end-of-file
 -- shows empty space below the last line (G parks the last line
 -- mid-screen instead of pinning it to the bottom).

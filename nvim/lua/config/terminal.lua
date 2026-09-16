@@ -49,6 +49,79 @@ function M._order()
   return ids
 end
 
+-- Ids of the toggleterm terminals displayed in the current tabpage,
+-- sorted: toggleterm objects live globally in the nvim process, so the
+-- label counts "what you can see here". A terminal shown in two of the
+-- tab's windows counts once. Reads buffer names (the same #toggleterm#N
+-- convention the statusline matches on), so it needs no plugin API.
+function M.tab_order()
+  local ok, wins = pcall(vim.api.nvim_tabpage_list_wins, 0)
+  if not ok or type(wins) ~= 'table' then return {} end
+  local seen = {}
+  for _, win in ipairs(wins) do
+    local name = vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(win))
+    local n = name:match('#toggleterm#(%d+)')
+    if n then seen[tonumber(n)] = true end
+  end
+  local ids = {}
+  for id in pairs(seen) do ids[#ids + 1] = id end
+  table.sort(ids)
+  return ids
+end
+
+-- How many terminals the current tab shows; 0 with none.
+function M.count()
+  return #M.tab_order()
+end
+
+-- Statusline label: this tab's position over its terminal count
+-- (`term 2 / 3`), so two tabs with one terminal each both read
+-- `term 1`. A lone terminal stays plain `term 1`; ids missing from
+-- this tab (stale renders) fall back to their slot `term N`, and
+-- garbage input to `term`.
+---@param id integer|string toggleterm id, as matched from #toggleterm#N
+---@return string
+function M.label(id)
+  local n = tonumber(id)
+  if not n then return 'term' end
+  local ids = M.tab_order()
+  local pos = nil
+  for i, v in ipairs(ids) do
+    if v == n then
+      pos = i
+      break
+    end
+  end
+  if pos == nil then return string.format('term %d', n) end
+  if #ids > 1 then return string.format('term %d / %d', pos, #ids) end
+  return 'term 1'
+end
+
+-- Window title label for the current buffer: files show their tail,
+-- terminals show the count-aware label above, empty buffers `nvim`.
+-- Lives here (not options.lua) so the titlestring stays a one-liner.
+-- The pure `title_label_for` core keeps the headless smoke test honest
+-- (a `terminal` buftype cannot be faked onto a scratch buffer).
+---@param buftype string
+---@param bufname string
+---@param tail string
+---@return string
+function M.title_label_for(buftype, bufname, tail)
+  if buftype == 'terminal' then
+    local n = (bufname or ''):match('#toggleterm#(%d+)')
+    if n then return M.label(n) end
+    return 'term'
+  end
+  if (tail or '') == '' then return 'nvim' end
+  return tail
+end
+
+---@return string
+function M.title_label()
+  local buf = vim.api.nvim_get_current_buf()
+  return M.title_label_for(vim.bo[buf].buftype, vim.api.nvim_buf_get_name(buf), vim.fn.expand('%:t'))
+end
+
 -- Pure next/previous pick with wraparound. current may be nil (nothing
 -- focused) or a stale id; dir >= 0 means next, else previous.
 function M._pick(ids, current, dir)

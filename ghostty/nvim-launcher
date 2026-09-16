@@ -18,6 +18,9 @@ macos-titlebar-style = transparent
 # `never`: no top tab bar — lualine already names the current tab's
 # project at the bottom, and Shift+Cmd+H/L still steps between tabs.
 window-show-tab-bar = never
+# New tabs open at the far right end (mirrors main config — this file
+# must work standalone, see header).
+window-new-tab-position = end
 # Spotlight launches inherit `/` as cwd — pin home so every launch starts
 # somewhere predictable (slots take you to projects from there).
 working-directory = home
@@ -125,6 +128,10 @@ keybind = super+c=text:\x1b[99;9u
 # modifier 9 is super, like the letters above. Overwrites the default
 # Cmd+Backspace (kill-line, \x15).
 keybind = super+backspace=text:\x1b[127;9u
+# Shift+Backspace toggles terminal Insert <-> Normal (nvim <S-BS>, see
+# keymaps/terminal.lua). CSI-u shift = modifier 2. Plain Backspace is
+# untouched so the shell keeps erase.
+keybind = shift+backspace=text:\x1b[127;2u
 # <<SHARED-KEYBINDS-END>>
 # (Retired: Cmd+Ctrl+digits used to select project slots. Slots are gone —
 # one Ghostty tab per project now — so this family is intentionally left

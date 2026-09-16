@@ -33,6 +33,14 @@ map({ 'n', 'v', 'i', 't' }, '<MiddleMouse>', function() require('config.tree').f
 -- Cmd+E focuses it revealed. See config/tree.lua for the mechanism.
 map('n', '<leader>h', function() require('config.tree').focus(false) end,
   { noremap = true, silent = true, desc = 'Focus file tree' })
+-- Space+j jumps INTO the tree, but only from an empty buffer (fresh nvim
+-- with the tree peeked): in a one-line empty buffer `j` has nowhere to go,
+-- so it becomes the down-and-out gesture. Elsewhere the key does nothing
+-- and stays free for a future motion. Empty is the Cmd+W definition (see
+-- config/buffer_close.lua): unnamed, unmodified, all-blank.
+map('n', '<leader>j', function()
+  if require('config.buffer_close').is_empty_buffer() then require('config.tree').focus(false) end
+end, { noremap = true, silent = true, desc = 'Focus tree from empty buffer' })
 -- <leader>cr prompts for a new tree root (completion=dir, so Tab
 -- completes paths; `..` goes up one, `~`/absolute/relative all work).
 -- The tab cwd follows, so terminals land there too.

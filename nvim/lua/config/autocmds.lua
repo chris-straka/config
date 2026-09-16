@@ -52,3 +52,33 @@ autocmd({ 'InsertLeave', 'TextChanged', 'BufLeave', 'FocusLost' }, {
     pcall(vim.api.nvim_buf_call, buf, function() vim.cmd('silent! update') end)
   end,
 })
+
+-- Terminal scrollback stays put: the global scrolloff=999 keeps the cursor
+-- centered, so any cursor nudge in a terminal (click back into the float
+-- after Cmd-Tabbing away, a keypress on return) recenters the window and a
+-- scrolled-up view is lost completely instead of shifting a line or two.
+-- Terminals keep scrolloff=0 so history you scrolled to stays on screen;
+-- files keep the centered cursor (pinned by the smoke test below).
+autocmd('TermOpen', {
+  group = vim.api.nvim_create_augroup('TerminalScrolloff', { clear = true }),
+  callback = function() vim.opt_local.scrolloff = 0 end,
+})
+
+-- Terminal count in the statusline/title (`term 2 / 3`): creating or
+-- exiting a terminal fires no BufEnter on the remaining floats, so the
+-- tab count would sit stale without a nudge. Never force-loads
+-- lualine (it is VeryLazy): when it is absent there is nothing stale.
+autocmd({ 'TermOpen', 'TermClose', 'BufDelete', 'BufWipeout' }, {
+  group = vim.api.nvim_create_augroup('TerminalCountRefresh', { clear = true }),
+  callback = function(args)
+    if args.event == 'BufDelete' or args.event == 'BufWipeout' then
+      local ok, bt = pcall(function() return vim.bo[args.buf].buftype end)
+      if not ok or bt ~= 'terminal' then return end
+    end
+    if package.loaded['lualine'] == nil then return end
+    local ok, lualine = pcall(require, 'lualine')
+    if ok and type(lualine) == 'table' and type(lualine.refresh) == 'function' then
+      pcall(lualine.refresh)
+    end
+  end,
+})

@@ -70,6 +70,33 @@ function M.at_reference(file, s, e, total)
   return '@' .. file .. '#' .. s .. '-' .. e
 end
 
+---Line range of the visual selection (1-based, first <= last). While a
+---selection is active its '< / '> marks still hold the PREVIOUS selection
+---(they update on visual exit), so read the live anchor ('v') and cursor
+---('.') instead; fall back to the marks once visual is over.
+---@return integer s first selected line
+---@return integer e last selected line
+function M.visual_range()
+  local m = vim.fn.mode()
+  local s, e
+  if m == 'v' or m == 'V' or m == '\22' then
+    s, e = vim.fn.getpos('v')[2], vim.fn.getpos('.')[2]
+  else
+    s, e = vim.fn.line("'<"), vim.fn.line("'>")
+  end
+  if s > e then s, e = e, s end
+  return s, e
+end
+
+---Brief @file reference for the current visual selection (pure part of
+---send_at_reference, kept separate so tests can drive it headlessly).
+---@return string|nil brief reference, nil when there is no file
+function M.ref_for_visual()
+  local file = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(0), ':.')
+  local s, e = M.visual_range()
+  return M.at_reference(file, s, e, vim.api.nvim_buf_line_count(0))
+end
+
 ---Option+K from visual mode (Claude Code's @-mention habit): types
 ---`@file` / `@file#l1-l2` into the visible floating terminal — a Muse
 ---prompt, a shell, whatever runs there. No Enter is sent; review the text
@@ -77,8 +104,7 @@ end
 ---window navigation (<A-k>), which stays. Whether the agent expands the
 ---reference is up to the agent; worst case it is visible pasted text.
 function M.send_at_reference()
-  local file = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(0), ':.')
-  local ref = M.at_reference(file, vim.fn.line("'<"), vim.fn.line("'>"), vim.api.nvim_buf_line_count(0))
+  local ref = M.ref_for_visual()
   if not ref then
     vim.notify('save the file first — nothing to reference', vim.log.levels.WARN)
     return

@@ -55,6 +55,17 @@ map({ 'n', 't' }, '\\', '<cmd>ToggleTerm direction=float<cr>', { noremap = true,
 -- Ctrl+C is untouched and reaches the shell too — but in Muse it quits,
 -- so interrupt with Esc, not Ctrl+C.
 map('t', '|', '<C-\\><C-n>', { noremap = true, silent = true, desc = 'Terminal to Normal mode' })
+-- Shift+Backspace toggles terminal Insert <-> Normal both ways (Ghostty
+-- sends CSI-u 127;2u as <S-BS>, see shared-keybinds.conf; plain
+-- Backspace still erases for the shell). Terminal-Normal reports
+-- mode() == 'nt', the job (Insert) reports 't'.
+map('t', '<S-BS>', function()
+  if vim.fn.mode() == 'nt' then
+    vim.cmd('startinsert')
+  else
+    vim.cmd('stopinsert')
+  end
+end, { noremap = true, silent = true, desc = 'Toggle terminal Insert/Normal' })
 -- Exit the focused terminal (see config/terminal.lua): types `exit` +
 -- Enter into its shell, so the shell ends and the float goes away;
 -- reopen with Alt+N for a fresh shell. Alt+X is a bare Alt key, so it

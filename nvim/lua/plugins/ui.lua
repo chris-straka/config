@@ -37,15 +37,21 @@ return {
       lualine_c = { { function()
         return '󰉋 ' .. vim.fn.fnamemodify(vim.fn.getcwd(), ':t')
       end }, { 'filename', path = 1, fmt = function(s)
-        -- Terminal floats name their buffers zsh;#toggleterm#N: the
-        -- only part worth statusline space is the terminal number.
+        -- Terminal floats name their buffers zsh;#toggleterm#N: show
+        -- this tab's position over its terminal count (`term 2 / 3`,
+        -- see config.terminal.label); lone terminals stay `term 1`.
         local n = s:match('#toggleterm#(%d+)')
-        if n then return 'term ' .. n end
+        if n then return require('config.terminal').label(n) end
         return s
       end } },
       -- `fmt` shortens the filetype label only (`toggleterm` -> `term`);
       -- icon and everything else stay as the stock component renders them.
+      -- C++ buffers show their standard instead (`C++23` from the file's
+      -- -std= flag or CMAKE_CXX_STANDARD, plain `C++` when unset).
       lualine_x = { 'encoding', 'fileformat', { 'filetype', fmt = function(s)
+        if vim.bo.filetype == 'cpp' then
+          return require('config.cxx_standard').label()
+        end
         return s == 'toggleterm' and 'term' or s
       end } },
       lualine_y = { 'progress' },
@@ -68,7 +74,23 @@ return {
     opts = {
       width = 120,
       autocmds = { enableOnVimEnter = 'safe', enableOnTabEnter = true },
-    } },
+    },
+    config = function(_, opts)
+      require('no-neck-pain').setup(opts)
+      -- Guard the WinEnter/WinClosed -> debounce -> init chain: the
+      -- debounced init can land after the tab is torn down (e.g. a tree
+      -- toggle from <D-e>), where upstream hard-errors
+      -- ("called the internal `init` method on a `nil` tab",
+      -- main.lua in the debounce frame). A stale callback should no-op.
+      -- Revisit on plugin updates past 0df6659.
+      local main = require('no-neck-pain.main')
+      local state = require('no-neck-pain.state')
+      local orig_init = main.init
+      main.init = function(scope)
+        if not state:is_active_tab_registered() then return end
+        return orig_init(scope)
+      end
+    end },
   { 'folke/trouble.nvim', cmd = { 'Trouble' }, opts = {} },
   -- VS Code's Error Lens: diagnostics as inline virtual text at the line.
   -- Replaces the default virtual_text (upstream recommendation).

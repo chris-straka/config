@@ -59,6 +59,25 @@ end
 check('scrolloff pads past EOF', vim.opt.scrolloff:get() == 999)
 check('mouse captured in every mode', vim.o.mouse == 'a')
 
+-- Terminal scrollback keeps its view: TermOpen scopes scrolloff to 0 (a
+-- scrolled-up view survives cursor nudges on return) while files keep the
+-- centered 999.
+do
+  local ac_src = read(nvim .. '/lua/config/autocmds.lua')
+  check('terminals scope scrolloff to zero',
+    ac_src:find('TerminalScrolloff', 1, true) ~= nil
+    and ac_src:find('TermOpen', 1, true) ~= nil
+    and ac_src:find('scrolloff = 0', 1, true) ~= nil)
+  require('config.autocmds')
+  vim.cmd('enew')
+  local job = vim.fn.termopen({ 'echo', 'scrollback probe' })
+  check('terminal window drops scrolloff', job > 0
+    and vim.api.nvim_get_option_value('scrolloff', { win = 0 }) == 0)
+  check('global scrolloff still centers files',
+    vim.api.nvim_get_option_value('scrolloff', { scope = 'global' }) == 999)
+  vim.api.nvim_buf_delete(vim.api.nvim_get_current_buf(), { force = true })
+end
+
 -- 3. Terminal toggles are simple global ids; slot selects are gone.
 -- Terminals own Cmd+digits (most-used), tabs live on Alt+digits in
 -- Ghostty; Alt+digits stay bound in nvim as fallback for terminals
@@ -91,6 +110,15 @@ check('Alt+[ narrows float', vim.fn.maparg('<A-[>', 'n') ~= '' and vim.fn.maparg
 check('Alt+] widens float', vim.fn.maparg('<A-]>', 'n') ~= '' and vim.fn.maparg('<A-]>', 't') ~= '')
 check('pipe drops terminal to Normal', vim.fn.maparg('|', 't') == '<C-\\><C-N>')
 check('double-Esc ramp retired', vim.fn.maparg('<Esc><Esc>', 't') == '')
+-- Shift+Backspace toggles Insert <-> Normal (Ghostty sends it as <S-BS>).
+check('Shift+BS bound in terminal mode', vim.fn.maparg('<S-BS>', 't') ~= '')
+do
+  local km_src = read_keymaps()
+  check('Shift+BS toggles both ways',
+    km_src:find("'<S-BS>'", 1, true) ~= nil
+    and km_src:find('stopinsert', 1, true) ~= nil
+    and km_src:find('startinsert', 1, true) ~= nil)
+end
 local term_src = read(nvim .. '/lua/config/terminal.lua')
 check('exit sends exit+enter to the job', term_src:find("chansend(term.job_id, 'exit\\n')", 1, true) ~= nil)
 check('Cmd+Opt+[ folds', vim.fn.maparg('<D-M-[>', 'n') == 'zc')
@@ -162,6 +190,30 @@ check('ref whole file collapses', runner.at_reference('personal/README.md', 1, 1
 check('ref single line', runner.at_reference('a.ts', 5, 5, 100) == '@a.ts#5')
 check('ref no file is nil', runner.at_reference('', 1, 1, 10) == nil)
 check('visual Option+K sends ref', vim.fn.maparg('<A-k>', 'v') ~= '')
+-- Option+K reads the LIVE selection: '< / '> still hold the previous
+-- selection while visual is active (the one-step-behind bug), so the
+-- sender reads the anchor/cursor instead, falling back to marks after.
+do
+  local runner_src = read(nvim .. '/lua/config/runner.lua')
+  check('sender uses the live visual range',
+    runner_src:find('M.ref_for_visual', 1, true) ~= nil
+    and runner_src:find("getpos('v')", 1, true) ~= nil)
+  local esc = vim.api.nvim_replace_termcodes('<Esc>', true, false, true)
+  local function keys(s) vim.api.nvim_feedkeys(s, 'x!', false) end
+  vim.cmd('enew')
+  vim.api.nvim_buf_set_lines(0, 0, -1, false, { 'a', 'b', 'c', 'd', 'e', 'f' })
+  keys('ggVj')
+  local s1, e1 = runner.visual_range()
+  check('active selection reads live, not previous marks', s1 == 1 and e1 == 2)
+  keys(esc)
+  keys('4GV2j')
+  local s2, e2 = runner.visual_range()
+  check('second selection is not one step behind', s2 == 4 and e2 == 6)
+  keys(esc)
+  local s3, e3 = runner.visual_range()
+  check('exited selection still reads from marks', s3 == 4 and e3 == 6)
+  vim.api.nvim_buf_delete(0, { force = true })
+end
 check('visual Cmd+C copies', vim.fn.maparg('<D-c>', 'v') == '"+y')
 
 -- 10. gd-style LSP only: the m-prefix duplicates are gone from whichkey.
@@ -181,6 +233,17 @@ end
 
 -- 11. Tree ergonomics: <leader>h focuses (cursor moves in).
 check('<leader>h focuses tree', vim.fn.maparg(' h', 'n') ~= '')
+-- <leader>j focuses the tree, but only from an empty buffer (the Cmd+W
+-- definition in buffer_close.lua, covered further below).
+check('<leader>j is bound', vim.fn.maparg(' j', 'n') ~= '')
+do
+  -- keymaps_src for the later sections is defined further below; read our
+  -- own copy here so this block stays position-independent.
+  local keymaps_src = read_keymaps()
+  check('<leader>j jumps in from empty buffers only', keymaps_src:find(
+    "if require('config.buffer_close').is_empty_buffer() then require('config.tree').focus(false) end",
+    1, true) ~= nil)
+end
 local tree_src = read(nvim .. '/lua/config/tree.lua')
 check('peek never focuses', tree_src:find('focus = false', 1, true) ~= nil)
 check('focus helper exists', tree_src:find('function M.focus', 1, true) ~= nil
@@ -202,12 +265,16 @@ check('Alt+E focuses like Cmd+E', keymaps_src:find("<A-e>', function() require('
   and keymaps_src:find('NvimTreeFindFileToggle', 1, true) == nil)
 check('no pre-0.12 fallback maps', keymaps_src:find("'<Esc>['", 1, true) == nil)
 check('<leader>h jumps in unrevealed', keymaps_src:find("h', function() require('config.tree').focus(false)", 1, true) ~= nil)
+-- Focusing the tree holds no-neck-pain off for the tab (it otherwise
+-- closes the tree and kicks focus back) and restores it on tree close.
+check('tree focus holds centering off', tree_src:find('hold_nnp_off', 1, true) ~= nil
+  and tree_src:find('nnp_guard', 1, true) ~= nil)
 -- Short tab title: project + short label, no full terminal buffer path.
 local options_src = read(nvim .. '/lua/config/options.lua')
 local title_line = options_src:match('[^\n]*titlestring[^\n]*') or ''
 check('titlestring is short', options_src:find('titlestring', 1, true) ~= nil
   and options_src:find("fnamemodify(getcwd(), ':t')", 1, true) ~= nil
-  and options_src:find("'term'", 1, true) ~= nil
+  and options_src:find("require('config.terminal').title_label", 1, true) ~= nil
   and title_line:find('://', 1, true) == nil)
 local editor_src = read(nvim .. '/lua/plugins/editor.lua')
 check('tree indent guides on', editor_src:find('indent_markers = { enable = true }', 1, true) ~= nil)
@@ -251,6 +318,52 @@ check('spare themes never cost startup',
 check('lualine shortens toggleterm to term', ui:find("s == 'toggleterm' and 'term'", 1, true) ~= nil)
 check('lualine shows relative filepath', ui:find("'filename', path = 1", 1, true) ~= nil)
 check('lualine collapses term buffers to term N', ui:find("#toggleterm#(%d+)", 1, true) ~= nil)
+check('lualine labels terms with the tab count', ui:find("require('config.terminal').label", 1, true) ~= nil)
+-- C++ buffers show their standard: the file's own -std= flag wins,
+-- CMAKE_CXX_STANDARD covers files the db skips (headers), and unknown
+-- files stay plain C++.
+check('lualine shows the C++ standard',
+  ui:find("config.cxx_standard').label()", 1, true) ~= nil)
+do
+  local cxx = require('config.cxx_standard')
+  local root = vim.fn.resolve(vim.fn.tempname())
+  vim.fn.mkdir(root .. '/src', 'p')
+  vim.fn.mkdir(root .. '/build', 'p')
+  local cc = '[{"directory":"%s/build",'
+    .. '"command":"c++ -std=c++20 -c ../src/a.cpp",'
+    .. '"file":"%s/src/a.cpp"},'
+    .. '{"directory":"%s/build",'
+    .. '"arguments":["c++","-std=gnu++23","-c","../src/b.cpp"],'
+    .. '"file":"../src/b.cpp"},'
+    .. '{"directory":"%s/build",'
+    .. '"command":"c++ -std=c++2b -c ../src/c.cpp",'
+    .. '"file":"%s/src/c.cpp"}]'
+  vim.fn.writefile(
+    { string.format(cc, root, root, root, root, root) },
+    root .. '/build/compile_commands.json')
+  check('cc command flag resolves',
+    cxx.std_for_file(root .. '/src/a.cpp') == '20')
+  check('cc arguments and relative file resolve',
+    cxx.std_for_file(root .. '/src/b.cpp') == '23')
+  check('cc future flag names map back',
+    cxx.std_for_file(root .. '/src/c.cpp') == '23')
+  vim.fn.writefile(
+    { 'cmake_minimum_required(VERSION 3.28)', 'set(CMAKE_CXX_STANDARD 17)' },
+    root .. '/CMakeLists.txt')
+  check('cmake covers headers missing from db',
+    cxx.std_for_file(root .. '/src/h.hpp') == '17')
+  local bare = vim.fn.resolve(vim.fn.tempname())
+  vim.fn.mkdir(bare, 'p')
+  check('unknown stays nil for a plain label',
+    cxx.std_for_file(bare .. '/x.cpp') == nil)
+  vim.fn.writefile({ 'int main() {}' }, root .. '/src/a.cpp')
+  vim.cmd('edit ' .. vim.fn.fnameescape(root .. '/src/a.cpp'))
+  vim.bo.filetype = 'cpp'
+  check('label renders C++NN', cxx.label() == 'C++20')
+  vim.api.nvim_buf_delete(0, { force = true })
+  vim.fn.delete(root, 'rf')
+  vim.fn.delete(bare, 'rf')
+end
 check('center toggle installed on leader-z', ui:find('shortcuts/no-neck-pain.nvim', 1, true) ~= nil
   and ui:find("'<leader>z', '<cmd>NoNeckPain<cr>'", 1, true) ~= nil
   and ui:find('width = 120', 1, true) ~= nil)
@@ -738,6 +851,97 @@ do
     not vim.tbl_contains(popup, '-2-'))
   check('right-click menu keeps useful items',
     vim.tbl_contains(popup, 'Inspect') and vim.tbl_contains(popup, 'Copy'))
+end
+
+-- 20. Terminal tab label: floats read this tab's position over its
+-- terminal count (`term 2 / 3`), plain `term 1` when alone — so two tabs
+-- with one terminal each both read `term 1`. The count refreshes
+-- without forcing lualine to load.
+do
+  local term_label_src = read(nvim .. '/lua/config/terminal.lua')
+  check('terminal label counts this tab',
+    term_label_src:find('term %d / %d', 1, true) ~= nil
+    and term_label_src:find('function M.tab_order', 1, true) ~= nil
+    and term_label_src:find('function M.title_label_for', 1, true) ~= nil)
+  local ac_src20 = read(nvim .. '/lua/config/autocmds.lua')
+  check('tab count refreshes without forcing lualine',
+    ac_src20:find('TerminalCountRefresh', 1, true) ~= nil
+    and ac_src20:find('TermClose', 1, true) ~= nil
+    and ac_src20:find("package.loaded['lualine']", 1, true) ~= nil)
+  check('garbage term input stays plain', terminal.label(nil) == 'term')
+  -- Fake the terminals with named scratch buffers (a `terminal` buftype
+  -- cannot be faked onto a scratch buffer headless (E474), but the tab
+  -- order only reads the #toggleterm#N buffer names).
+  vim.cmd('tabnew')
+  local function term_buf(n)
+    local b = vim.api.nvim_create_buf(true, false)
+    vim.api.nvim_buf_set_name(b, 'zsh;#toggleterm#' .. n)
+    return b
+  end
+  local b1, b2, b5 = term_buf(1), term_buf(2), term_buf(5)
+  vim.api.nvim_set_current_buf(b1)
+  vim.cmd('vsplit')
+  vim.api.nvim_set_current_buf(b2)
+  check('tab with two terms counts two', terminal.count() == 2)
+  check('label shows tab position over size', terminal.label(2) == 'term 2 / 2')
+  check('title counts the tab too',
+    terminal.title_label_for('terminal', 'zsh;#toggleterm#2', '') == 'term 2 / 2')
+  -- Swap in the gappy slot: positions, not slot ids.
+  vim.api.nvim_set_current_buf(b5)
+  check('label numbers positions, not slots', terminal.label(5) == 'term 2 / 2')
+  check('stale slots fall back plain', terminal.label(9) == 'term 9')
+  -- Lone terminal reads `term 1` even on a high slot.
+  vim.api.nvim_buf_delete(b1, { force = true })
+  vim.api.nvim_buf_delete(b2, { force = true })
+  check('lone term stays plain', terminal.label(5) == 'term 1')
+  check('title on plain terminals stays term',
+    terminal.title_label_for('terminal', 'term://x', '') == 'term')
+  check('title on files stays the tail',
+    terminal.title_label_for('', '/x/foo.lua', 'foo.lua') == 'foo.lua')
+  vim.cmd('enew')
+  check('title on empty buffers stays nvim', terminal.title_label() == 'nvim')
+  vim.api.nvim_buf_delete(b5, { force = true })
+  vim.cmd('tabclose')
+  check('empty tab counts zero', terminal.count() == 0)
+end
+
+-- 21. Tailwind LS only where Tailwind lives: a tailwind config, a
+-- package.json depending on tailwindcss (v4 needs no config file), or a
+-- mix/Gemfile lock mentioning tailwind. A plain git checkout resolves
+-- to nil, so with workspace_required no server spawns there.
+do
+  local tw = dofile(nvim .. '/lsp/tailwindcss.lua')
+  check('tailwind config gates on root_dir', type(tw.root_dir) == 'function')
+  local base = vim.fn.resolve(vim.fn.tempname())
+  local function mk(rel, content)
+    local p = base .. '/' .. rel
+    vim.fn.mkdir(vim.fn.fnamemodify(p, ':h'), 'p')
+    vim.fn.writefile({ content or '' }, p)
+  end
+  mk('v3/tailwind.config.js', 'module.exports = {}')
+  mk('v3/src/a.css', '@tailwind base;')
+  mk('v4/package.json', '{"dependencies":{"@tailwindcss/vite":"4.0.0"}}')
+  mk('v4/src/a.css', '@import "tailwindcss";')
+  mk('plain/.git/HEAD', 'ref: refs/heads/main')
+  mk('plain/src/a.css', 'a {}')
+  mk('bare/src/a.css', 'a {}')
+  local function root_of(rel)
+    vim.cmd('edit ' .. vim.fn.fnameescape(base .. '/' .. rel))
+    local buf = vim.api.nvim_get_current_buf()
+    local called, dir = false, nil
+    tw.root_dir(buf, function(d) called, dir = true, d end)
+    vim.api.nvim_buf_delete(buf, { force = true })
+    return called, dir
+  end
+  local c, d = root_of('v3/src/a.css')
+  check('tailwind config file roots the project', c and d == base .. '/v3')
+  c, d = root_of('v4/src/a.css')
+  check('v4 package dep roots without a config', c and d == base .. '/v4')
+  c, d = root_of('plain/src/a.css')
+  check('plain git repo gets no tailwind root', c and d == nil)
+  c, d = root_of('bare/src/a.css')
+  check('bare dir gets no tailwind root', c and d == nil)
+  vim.fn.delete(base, 'rf')
 end
 
 if failures > 0 then

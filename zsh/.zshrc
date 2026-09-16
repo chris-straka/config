@@ -51,6 +51,18 @@ mr() {
   if [ -n "$1" ]; then muse resume "$1" --yolo; else muse resume --last --yolo; fi
 }
 
+# mc: start a Muse Code session with --yolo (approval + sandbox bypassed).
+# Usage: mc [muse args...]  (args pass through, e.g. mc "fix the build")
+mc() {
+  muse --yolo "$@"
+}
+
 # prompt: `c@z ~ %` shape — user@host white, directory mauve, dimmed %
 # (mauve moved from the username to the path on request)
 PROMPT='%F{#FFFFFF}%n@%m%f %F{#CBA6F7}%1~%f %F{#6C7086}%#%f '
+
+export NARGO_HOME="/Users/c/.nargo"
+
+export PATH="$PATH:$NARGO_HOME/bin"
+export PATH="${HOME}/.bb:${PATH}"
+export PATH="/Users/c/.bb:$PATH"
