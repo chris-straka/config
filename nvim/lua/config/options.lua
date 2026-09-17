@@ -79,8 +79,11 @@ o.foldlevelstart = 99
 o.foldenable = true
 -- Compact fold line (see config/fold.lua): the stock foldtext stretches
 -- `+-- N lines: ...` dot padding across the whole window; this keeps the
--- same facts (`+ 6 lines · first line`) with no fill.
+-- same facts (`+ 6 lines · first line`) with no fill. foldtext only
+-- builds the label — Neovim still pads the rest of a closed fold line
+-- with the `fold` fillchar (dots), so that goes to a space too.
 o.foldtext = [[v:lua.require('config.fold').foldtext()]]
+o.fillchars:append({ fold = ' ' })
 
 g.gitblame_enabled = 0
 

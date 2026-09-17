@@ -56,7 +56,11 @@ do
   local long = fold.text(1, 4, 'const ' .. string.rep('ab', 60) .. ' = 1;', 40)
   check('fold label truncates to the window', vim.fn.strwidth(long) <= 40 and long:sub(-3) == '…')
 end
-check('scrolloff pads past EOF', vim.opt.scrolloff:get() == 999)
+-- scrolloff=999 centers the cursor mid-file; at end-of-file Neovim still
+-- docks the last line at the window bottom (nothing pads past EOF —
+-- verified: winline == winheight on `G`). The old name claimed padding.
+check('scrolloff centers the cursor', vim.opt.scrolloff:get() == 999)
+check('closed folds pad with blank, not dots', vim.opt.fillchars:get().fold == ' ')
 check('mouse captured in every mode', vim.o.mouse == 'a')
 
 -- Terminal scrollback keeps its view: TermOpen scopes scrolloff to 0 (a
@@ -215,6 +219,21 @@ do
   vim.api.nvim_buf_delete(0, { force = true })
 end
 check('visual Cmd+C copies', vim.fn.maparg('<D-c>', 'v') == '"+y')
+do
+  -- Bare visual `y` must yank without a timeoutlen stall: no visual mapping
+  -- may start with `y` (surround-add lives on `S` instead). Runs the real
+  -- surround module headless, then inspects the live mappings.
+  vim.opt.rtp:append(vim.fn.stdpath('data') .. '/lazy/mini.nvim')
+  local ok, surround = pcall(require, 'config.surround')
+  check('surround module loads', ok and type(surround.setup) == 'function')
+  local ok_cfg = ok and pcall(surround.setup) or false
+  check('surround setup runs headless', ok_cfg)
+  if ok_cfg then
+    check('visual ys freed for instant yank', vim.fn.maparg('ys', 'x') == '')
+    check('visual S surrounds selection', vim.fn.maparg('S', 'x') ~= '')
+    check('normal ys still surrounds', vim.fn.maparg('ys', 'n') ~= '')
+  end
+end
 
 -- 10. gd-style LSP only: the m-prefix duplicates are gone from whichkey.
 local wk = read(nvim .. '/lua/config/whichkey.lua')
@@ -224,6 +243,34 @@ check('leader-e peeks like Shift+Cmd+E', wk:find("require('config.tree').peek(tr
 check('trouble lives under x, misc Q gone', wk:find("'<leader>xx'", 1, true) ~= nil
   and wk:find("'<leader>xs'", 1, true) ~= nil
   and wk:find("'<leader>Q'", 1, true) == nil)
+do
+  -- Bare `v` must not flash the visual help instantly: which-key waits
+  -- in visual/select but stays snappy in normal/operator-pending.
+  local ok, specs = pcall(require, 'plugins.editor')
+  check('editor specs load headless', ok and type(specs) == 'table')
+  local wk_spec = nil
+  if ok then
+    for _, s in ipairs(specs) do
+      if type(s) == 'table' and s[1] == 'folke/which-key.nvim' then
+        wk_spec = s
+        break
+      end
+    end
+  end
+  check('which-key spec found', wk_spec ~= nil)
+  local delay = wk_spec and wk_spec.opts and wk_spec.opts.delay
+  check('which-key delay is a function', type(delay) == 'function')
+  if type(delay) == 'function' then
+    check('normal stays snappy', delay { mode = 'n', keys = '' } == 200)
+    check(
+      'operator-pending stays snappy',
+      delay { mode = 'o', keys = '' } == 200
+    )
+    check('charwise visual waits', delay { mode = 'v', keys = '' } == 1000)
+    check('visual waits', delay { mode = 'x', keys = '' } == 1000)
+    check('select waits', delay { mode = 's', keys = '' } == 1000)
+  end
+end
 
 for _, p in ipairs({ home .. '/.config/ghostty/config', home .. '/.config/ghostty/nvim-launcher' }) do
   local tag = p:match('[^/]+$') .. '/copy'
@@ -942,6 +989,51 @@ do
   c, d = root_of('bare/src/a.css')
   check('bare dir gets no tailwind root', c and d == nil)
   vim.fn.delete(base, 'rf')
+end
+
+-- Image preview: image.nvim renders open images via Kitty graphics
+-- (Ghostty speaks the protocol), Telescope media_files thumbnails ride
+-- on chafa, and Markdown inline images need the markdown parsers.
+do
+  local image_src = read(nvim .. '/lua/plugins/image.lua')
+  check('image preview uses the kitty backend',
+    image_src:find("backend = 'kitty'", 1, true) ~= nil)
+  check('image preview shells out to magick',
+    image_src:find("processor = 'magick_cli'", 1, true) ~= nil)
+  check('image preview hijacks image files on open',
+    image_src:find('hijack_file_patterns', 1, true) ~= nil
+    and image_src:find("'*.png'", 1, true) ~= nil)
+  check('image preview stays off without the magick CLI',
+    image_src:find("vim.fn.executable('magick')", 1, true) ~= nil)
+  check('markdown parsers installed for inline images',
+    editor_src:find("'markdown'", 1, true) ~= nil
+    and editor_src:find("'markdown_inline'", 1, true) ~= nil)
+  check('telescope media extension wired with chafa filetypes',
+    editor_src:find('telescope-media-files.nvim', 1, true) ~= nil
+    and editor_src:find('media_files', 1, true) ~= nil
+    and editor_src:find("'webp'", 1, true) ~= nil
+    and editor_src:find("'pdf'", 1, true) ~= nil)
+  check('PDFs hijack to an in-buffer render',
+    image_src:find("'*.pdf'", 1, true) ~= nil)
+  check('SVG stays editable text, never hijacked',
+    image_src:find("'*.svg'", 1, true) == nil)
+  check('raw-bytes hatch bound on rendered buffers',
+    image_src:find('ImageRawView', 1, true) ~= nil
+    and image_src:find("'<leader>ir'", 1, true) ~= nil
+    and image_src:find('is_enabled()', 1, true) ~= nil)
+end
+
+-- Tree focus vs the centerer: the hold-off is synchronous (no debounce
+-- window for a re-init to land in) and the settle converges over bounded
+-- passes instead of a single shot.
+do
+  local tree_src = read(nvim .. '/lua/config/tree.lua')
+  check('tree hold-off is synchronous',
+    tree_src:find('nnp_hold_off_now', 1, true) ~= nil
+    and tree_src:find("main.disable, 'tree:hold'", 1, true) ~= nil)
+  check('tree settle converges over passes',
+    tree_src:find('settle_gaps', 1, true) ~= nil
+    and tree_src:find('want_focus', 1, true) ~= nil)
 end
 
 if failures > 0 then

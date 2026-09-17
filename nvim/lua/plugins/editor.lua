@@ -10,12 +10,19 @@ return {
         defaults = { file_ignore_patterns = { 'node_modules', '.terraform', '.git/' } },
         extensions = {
           file_browser = { mappings = require('config.telescope_land').mappings },
+          -- Picker thumbnails via chafa (brew install chafa): `:Telescope
+          -- media_files` previews images as block art. Enter on a file
+          -- copies its relative path (the extension's own behavior).
+          media_files = {
+            filetypes = { 'png', 'jpg', 'jpeg', 'gif', 'webp', 'avif', 'bmp', 'ico', 'svg', 'pdf' },
+          },
         },
       }
     end,
     config = function(_, opts)
       require('telescope').setup(opts)
       pcall(require('telescope').load_extension, 'projects')
+      pcall(require('telescope').load_extension, 'media_files')
     end,
   },
   {
@@ -32,6 +39,9 @@ return {
       pcall(require('telescope').load_extension, 'file_browser')
     end,
   },
+  { 'nvim-telescope/telescope-media-files.nvim', -- image thumbnails in `:Telescope media_files` (needs chafa)
+    dependencies = { 'nvim-telescope/telescope.nvim' },
+  },
   {
     'nvim-treesitter/nvim-treesitter',
     branch = 'main',
@@ -41,7 +51,8 @@ return {
       local ts = require 'nvim-treesitter'
       ts.setup {}
       ts.install { 'lua', 'vim', 'vimdoc', 'javascript', 'typescript', 'tsx', 'svelte', 'python', 'go', 'rust', 'bash', 'json', 'css', 'html',
-        'c', 'cpp', 'cmake', 'java', 'c_sharp', 'terraform', 'yaml', 'dockerfile', 'graphql', 'proto', 'toml', 'solidity', 'typst', 'http' }
+        'c', 'cpp', 'cmake', 'java', 'c_sharp', 'terraform', 'yaml', 'dockerfile', 'graphql', 'proto', 'toml', 'solidity', 'typst', 'http',
+        'markdown', 'markdown_inline' } -- image.nvim finds inline images via these parsers
       -- Neovim 0.11+ starts treesitter highlight/indent per-buffer; ensure it.
       vim.api.nvim_create_autocmd('FileType', {
         group = vim.api.nvim_create_augroup('TreesitterStart', { clear = true }),
@@ -51,7 +62,22 @@ return {
       })
     end,
   },
-  { 'folke/which-key.nvim', event = 'VeryLazy', opts = {} },
+  {
+    'folke/which-key.nvim',
+    event = 'VeryLazy',
+    opts = {
+      -- Bare `v` enters charwise visual with no defer (upstream only defers
+      -- V/<C-V>), and preset popups use delay 0, so the visual help covered
+      -- the selection almost instantly. Normal and operator-pending stay
+      -- snappy; visual/select wait a beat so selecting never flashes help.
+      delay = function(ctx)
+        if ctx.mode == 'n' or ctx.mode == 'o' then
+          return ctx.plugin and 0 or 200
+        end
+        return 1000
+      end,
+    },
+  },
   { 'folke/flash.nvim', event = 'VeryLazy', opts = {} }, -- replaces ggandor/lightspeed
   { 'windwp/nvim-ts-autotag', event = 'InsertEnter', opts = {} },
 
@@ -60,9 +86,7 @@ return {
   { 'echasnovski/mini.nvim', lazy = false, config = function() -- eager: ai/comment/surround ready immediately (no starter screen anymore)
     require('mini.ai').setup()
     require('mini.comment').setup() -- same gc/gcc keys as Comment.nvim
-    require('mini.surround').setup { -- same ys/ds/cs keys as nvim-surround
-      mappings = { add = 'ys', delete = 'ds', replace = 'cs' },
-    }
+    require('config.surround').setup() -- ys/ds/cs, visual add on S (see module)
     require('mini.sessions').setup() -- manual snapshots: <leader>Sw / <leader>Sr
     require('mini.icons').setup()
     -- Impersonate devicons: every plugin that asks nvim-web-devicons for
