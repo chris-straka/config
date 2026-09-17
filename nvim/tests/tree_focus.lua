@@ -31,6 +31,13 @@ for _, w in ipairs(vim.api.nvim_list_wins()) do
   if ok and ft == 'no-neck-pain' then sides = sides + 1 end
 end
 check('centerer held off while tree open', sides == 0)
+-- peek (startup tree, <leader>e) shares the guard table: it once errored
+-- on a nil global because it ran before the guard's local declaration.
+-- The tree is open here, so this takes the close path through that line.
+local pok, perr = pcall(require('config.tree').peek, false)
+check('peek toggles without error', pok)
+if not pok then print('peek error: ' .. tostring(perr)) end
+check('peek closed the tree', not api.tree.is_visible())
 if failures > 0 then
   print(failures .. ' check(s) failed')
   os.exit(1)

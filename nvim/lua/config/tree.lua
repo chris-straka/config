@@ -19,25 +19,6 @@ local function with_api()
   return api
 end
 
----@param find boolean reveal the current file in the tree
-function M.peek(find)
-  local api = with_api()
-  if not api then return end
-  local tab = vim.api.nvim_get_current_tabpage()
-  -- A second press while open closes: cancel any pending repair first
-  -- so it cannot reopen what was just closed.
-  nnp_guard[tab] = (nnp_guard[tab] or 0) + 1
-  if api.tree.is_visible() then
-    api.tree.toggle({ find_file = find, focus = false })
-    -- Shutting: the close-watch armed at open restores the centerer.
-  else
-    hold_nnp_off()
-    api.tree.toggle({ find_file = find, focus = false })
-    arm_nnp_restore(tab)
-    settle_tree_open(tab, find, false, nnp_guard[tab], 1)
-  end
-end
-
 -- Nudge the statusline after a programmatic cwd change: closing the
 -- picker fires no BufEnter and lualine's own timer can lag a beat, so
 -- the project widget would sit on the old name. Never force-loads
@@ -201,6 +182,28 @@ local function settle_tree_open(tab, find, want_focus, gen, pass)
     end
     settle_tree_open(tab, find, want_focus, gen, (pass or 1) + 1)
   end, gap)
+end
+
+-- Entry points sit after the helpers: both bump the guard table, and a
+-- function only sees locals declared above it (otherwise the name falls
+-- through to a nil global and the call errors).
+---@param find boolean reveal the current file in the tree
+function M.peek(find)
+  local api = with_api()
+  if not api then return end
+  local tab = vim.api.nvim_get_current_tabpage()
+  -- A second press while open closes: cancel any pending repair first
+  -- so it cannot reopen what was just closed.
+  nnp_guard[tab] = (nnp_guard[tab] or 0) + 1
+  if api.tree.is_visible() then
+    api.tree.toggle({ find_file = find, focus = false })
+    -- Shutting: the close-watch armed at open restores the centerer.
+  else
+    hold_nnp_off()
+    api.tree.toggle({ find_file = find, focus = false })
+    arm_nnp_restore(tab)
+    settle_tree_open(tab, find, false, nnp_guard[tab], 1)
+  end
 end
 
 ---@param find boolean reveal the current file in the tree
