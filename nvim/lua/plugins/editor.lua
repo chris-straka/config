@@ -50,11 +50,20 @@ return {
     config = function()
       local ts = require 'nvim-treesitter'
       ts.setup {}
-      -- Parsers install/update by hand (:TSUpdate or :TSUpdate <lang>),
-      -- never at startup: the old ts.install call shelled out to git on
-      -- every launch and errored in repos with no `origin` remote.
+      -- Parsers self-heal: install only languages with no compiled parser
+      -- on the runtime path, so a healthy startup never shells out to git
+      -- (an unconditional install errored in repos with no `origin`
+      -- remote). New languages still arrive on their own; force an update
+      -- with :TSUpdate.
       -- (markdown + markdown_inline stay installed: image.nvim finds
       -- inline images via those parsers.)
+      local langs = { 'lua', 'vim', 'vimdoc', 'javascript', 'typescript', 'tsx', 'svelte', 'python', 'go', 'rust', 'bash', 'json', 'css', 'html',
+        'c', 'cpp', 'cmake', 'java', 'c_sharp', 'terraform', 'yaml', 'dockerfile', 'graphql', 'proto', 'toml', 'solidity', 'typst', 'http',
+        'markdown', 'markdown_inline' }
+      local missing = vim.tbl_filter(function(l)
+        return #vim.api.nvim_get_runtime_file('parser/' .. l .. '.so', true) == 0
+      end, langs)
+      if #missing > 0 then ts.install(missing) end
       -- Neovim 0.11+ starts treesitter highlight/indent per-buffer; ensure it.
       vim.api.nvim_create_autocmd('FileType', {
         group = vim.api.nvim_create_augroup('TreesitterStart', { clear = true }),
