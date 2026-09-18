@@ -15,3 +15,14 @@
 require 'config.keymaps.general'
 require 'config.keymaps.workspace'
 require 'config.keymaps.terminal'
+
+-- <leader>ur: re-run every keymap module in place (luafile, not require:
+-- require would return the cached first load and change nothing). This is
+-- how new bindings take effect without a restart or a typed path.
+vim.keymap.set('n', '<leader>ur', function()
+  local dir = vim.fn.stdpath('config') .. '/lua/config/keymaps/'
+  vim.cmd('luafile ' .. dir .. 'general.lua')
+  vim.cmd('luafile ' .. dir .. 'workspace.lua')
+  vim.cmd('luafile ' .. dir .. 'terminal.lua')
+  vim.notify('Keymaps reloaded')
+end, { noremap = true, silent = true, desc = 'Reload keymaps' })
