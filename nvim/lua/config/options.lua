@@ -2,6 +2,7 @@ local o = vim.opt
 local g = vim.g
 
 o.autowrite = true
+o.autoread = true
 o.clipboard = 'unnamedplus'
 o.fileencoding = 'utf-8'
 o.number = true

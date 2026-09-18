@@ -34,7 +34,10 @@ return {
     -- runs one nvim for one project, so this is the tab's identity.
     sections = {
       lualine_a = { 'mode' },
-      lualine_b = { 'branch', 'diff', 'diagnostics' },
+      -- Yank flash (see YankStatus in config/autocmds.lua): appears briefly
+      -- after each yank, hidden otherwise.
+      lualine_b = { 'branch', 'diff', 'diagnostics', { function() return vim.g.yank_flash or '' end,
+        cond = function() return vim.g.yank_flash ~= nil end } },
       lualine_c = { { function()
         return '󰉋 ' .. vim.fn.fnamemodify(vim.fn.getcwd(), ':t')
       end }, { 'filename', path = 1, fmt = function(s)

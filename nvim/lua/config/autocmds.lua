@@ -3,6 +3,12 @@ local autocmd = vim.api.nvim_create_autocmd
 -- no auto-continue of comments on new line
 autocmd('BufEnter', { command = 'set formatoptions-=cro' })
 
+-- Pick up files changed on disk (e.g. agent edits): VSCode-style auto-reload.
+autocmd({ 'FocusGained', 'BufEnter', 'CursorHold' }, {
+  group = vim.api.nvim_create_augroup('AutoReload', { clear = true }),
+  command = 'checktime',
+})
+
 -- format on save via conform.nvim (replaces removed vim.lsp.buf.formatting_sync)
 autocmd('BufWritePre', {
   group = vim.api.nvim_create_augroup('ConformFormat', { clear = true }),
@@ -11,11 +17,24 @@ autocmd('BufWritePre', {
   end,
 })
 
--- highlight yanks (new since old config)
+-- Yank indicator in the statusline instead of a text highlight: record what
+-- was yanked; the lualine component in plugins/ui.lua shows it briefly.
+local yank_seq = 0
 autocmd('TextYankPost', {
-  group = vim.api.nvim_create_augroup('YankHighlight', { clear = true }),
+  group = vim.api.nvim_create_augroup('YankStatus', { clear = true }),
   callback = function()
-    vim.highlight.on_yank()
+    yank_seq = yank_seq + 1
+    local cur = yank_seq
+    local n = #vim.v.event.regcontents
+    vim.g.yank_flash = '󰆏 ' .. n .. (n == 1 and ' line' or ' lines')
+    -- Never force-loads lualine (it is VeryLazy): when it is absent there
+    -- is nothing to refresh (same guard as TerminalCountRefresh below).
+    if package.loaded['lualine'] ~= nil then pcall(require('lualine').refresh) end
+    vim.defer_fn(function()
+      if cur ~= yank_seq then return end
+      vim.g.yank_flash = nil
+      if package.loaded['lualine'] ~= nil then pcall(require('lualine').refresh) end
+    end, 1200)
   end,
 })
 
