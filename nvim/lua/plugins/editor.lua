@@ -149,7 +149,12 @@ return {
       update_focused_file = { enable = true },
       -- Indent guides: the tree's structure cue, which matters more here
       -- because every folder shares one glyph (see below).
-      renderer = { indent_markers = { enable = true } },
+      renderer = {
+        indent_markers = { enable = true },
+        -- VSCode behavior: single-child folders (dev/straka/ledger) show as
+        -- one compact row instead of deep Java-package nesting.
+        group_empty = true,
+      },
       -- Tree follows the working directory, so it always shows the
       -- current tab's project (one Ghostty tab = one project).
       sync_root_with_cwd = true,
