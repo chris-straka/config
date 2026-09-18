@@ -50,9 +50,11 @@ return {
     config = function()
       local ts = require 'nvim-treesitter'
       ts.setup {}
-      ts.install { 'lua', 'vim', 'vimdoc', 'javascript', 'typescript', 'tsx', 'svelte', 'python', 'go', 'rust', 'bash', 'json', 'css', 'html',
-        'c', 'cpp', 'cmake', 'java', 'c_sharp', 'terraform', 'yaml', 'dockerfile', 'graphql', 'proto', 'toml', 'solidity', 'typst', 'http',
-        'markdown', 'markdown_inline' } -- image.nvim finds inline images via these parsers
+      -- Parsers install/update by hand (:TSUpdate or :TSUpdate <lang>),
+      -- never at startup: the old ts.install call shelled out to git on
+      -- every launch and errored in repos with no `origin` remote.
+      -- (markdown + markdown_inline stay installed: image.nvim finds
+      -- inline images via those parsers.)
       -- Neovim 0.11+ starts treesitter highlight/indent per-buffer; ensure it.
       vim.api.nvim_create_autocmd('FileType', {
         group = vim.api.nvim_create_augroup('TreesitterStart', { clear = true }),

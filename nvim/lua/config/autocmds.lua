@@ -3,6 +3,17 @@ local autocmd = vim.api.nvim_create_autocmd
 -- no auto-continue of comments on new line
 autocmd('BufEnter', { command = 'set formatoptions-=cro' })
 
+-- Markdown reads soft-wrapped: long prose/table rows wrap on screen
+-- instead of trailing off past the right edge.
+autocmd('FileType', {
+  group = vim.api.nvim_create_augroup('MarkdownWrap', { clear = true }),
+  pattern = 'markdown',
+  callback = function()
+    vim.opt_local.wrap = true
+    vim.opt_local.linebreak = true
+  end,
+})
+
 -- Pick up files changed on disk (e.g. agent edits): VSCode-style auto-reload.
 autocmd({ 'FocusGained', 'BufEnter', 'CursorHold' }, {
   group = vim.api.nvim_create_augroup('AutoReload', { clear = true }),
