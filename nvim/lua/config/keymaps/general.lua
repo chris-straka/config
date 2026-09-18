@@ -69,6 +69,17 @@ map({ 'n', 'v' }, '<A-S-f>', function()
   require('conform').format { lsp_fallback = true, timeout_ms = 1000 }
 end, { noremap = true, silent = true, desc = 'Format code' })
 
+-- <leader>ym: copy the last message (warning, error, LSP notice) to the
+-- system clipboard. The :messages history can't be yanked with visual
+-- mode, so this skips the scratch-buffer dance entirely.
+map('n', '<leader>ym', function()
+  local out = vim.api.nvim_exec2('messages', { output = true }).output or ''
+  local lines = vim.tbl_filter(function(l) return l ~= '' end, vim.split(out, '\n'))
+  local last = lines[#lines] or ''
+  vim.fn.setreg('+', last)
+  vim.notify('Copied: ' .. last)
+end, { noremap = true, silent = true, desc = 'Copy last message' })
+
 -- Cmd+Shift+Z: redo (VSCode redo). u undoes, this re-applies.
 map('n', '<D-S-z>', '<cmd>redo<cr>', { noremap = true, silent = true, desc = 'Redo' })
 

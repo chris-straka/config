@@ -52,6 +52,11 @@ map('n', '<D-p>', '<cmd>Telescope find_files<cr>', { noremap = true, silent = tr
 -- Cmd+Shift+F: search text inside files (VSCode find-in-files).
 -- find_files matches file NAMES; live_grep matches file CONTENTS.
 map('n', '<D-S-f>', '<cmd>Telescope live_grep<cr>', { noremap = true, silent = true, desc = 'Search in files' })
+-- <leader>fw: search the project for the word under the cursor (VSCode
+-- "find all references" habit). From Markdown or any file without a
+-- language server, this is the poor man's gd: pick a match to jump.
+map('n', '<leader>fw', function() require('telescope.builtin').grep_string() end,
+  { noremap = true, silent = true, desc = 'Search word under cursor' })
 -- Ctrl+R: recent projects picker (VSCode Ctrl+R).
 -- This takes over Vim's built-in redo on Ctrl+R; redo lives on Cmd+Shift+Z.
 map('n', '<C-r>', '<cmd>Telescope projects<cr>', { noremap = true, silent = true, desc = 'Recent projects' })
