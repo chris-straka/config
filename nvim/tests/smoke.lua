@@ -373,7 +373,7 @@ check('spare themes never cost startup',
 check('lualine shortens toggleterm to term', ui:find("s == 'toggleterm' and 'term'", 1, true) ~= nil)
 check('lualine shows relative filepath', ui:find("'filename', path = 1", 1, true) ~= nil)
 check('lualine collapses term buffers to term N', ui:find("#toggleterm#(%d+)", 1, true) ~= nil)
-check('lualine labels terms with the tab count', ui:find("require('config.terminal').label", 1, true) ~= nil)
+check('lualine labels terms with the terminal count', ui:find("require('config.terminal').label", 1, true) ~= nil)
 -- C++ buffers show their standard: the file's own -std= flag wins,
 -- CMAKE_CXX_STANDARD covers files the db skips (headers), and unknown
 -- files stay plain C++.
@@ -908,16 +908,19 @@ do
     vim.tbl_contains(popup, 'Inspect') and vim.tbl_contains(popup, 'Copy'))
 end
 
--- 20. Terminal tab label: floats read this tab's position over its
--- terminal count (`term 2 / 3`), plain `term 1` when alone — so two tabs
--- with one terminal each both read `term 1`. The count refreshes
--- without forcing lualine to load.
+-- 20. Terminal tab label: floats read their slot over the terminal
+-- total (`term 2 / 3`), plain `term N` when alone. Hidden floats own
+-- no window, so the label counts live terminals, not windows. The
+-- count refreshes without forcing lualine to load. Cycling closes the
+-- other floats so only one stays visible.
 do
   local term_label_src = read(nvim .. '/lua/config/terminal.lua')
-  check('terminal label counts this tab',
+  check('terminal label shows slot over total',
     term_label_src:find('term %d / %d', 1, true) ~= nil
-    and term_label_src:find('function M.tab_order', 1, true) ~= nil
+    and term_label_src:find('M._order()', 1, true) ~= nil
     and term_label_src:find('function M.title_label_for', 1, true) ~= nil)
+  check('cycle closes other floats',
+    term_label_src:find('other:close()', 1, true) ~= nil)
   local ac_src20 = read(nvim .. '/lua/config/autocmds.lua')
   check('tab count refreshes without forcing lualine',
     ac_src20:find('TerminalCountRefresh', 1, true) ~= nil
@@ -938,17 +941,26 @@ do
   vim.cmd('vsplit')
   vim.api.nvim_set_current_buf(b2)
   check('tab with two terms counts two', terminal.count() == 2)
-  check('label shows tab position over size', terminal.label(2) == 'term 2 / 2')
-  check('title counts the tab too',
+  check('label shows slot over total', terminal.label(2) == 'term 2 / 2')
+  check('title shows slot too',
     terminal.title_label_for('terminal', 'zsh;#toggleterm#2', '') == 'term 2 / 2')
-  -- Swap in the gappy slot: positions, not slot ids.
+  -- Swap in the gappy slot: slots, not positions.
   vim.api.nvim_set_current_buf(b5)
-  check('label numbers positions, not slots', terminal.label(5) == 'term 2 / 2')
+  check('gappy slot keeps its id', terminal.label(5) == 'term 5 / 2')
   check('stale slots fall back plain', terminal.label(9) == 'term 9')
-  -- Lone terminal reads `term 1` even on a high slot.
+  -- Lone terminal keeps its slot (the old readout said `term 1` here).
   vim.api.nvim_buf_delete(b1, { force = true })
   vim.api.nvim_buf_delete(b2, { force = true })
-  check('lone term stays plain', terminal.label(5) == 'term 1')
+  check('lone term keeps its slot', terminal.label(5) == 'term 5')
+  -- Float reality: slots 1 and 2 are live but own no window (hidden
+  -- floats), only slot 5 is displayed. The label must still count
+  -- all three and name the viewed slot.
+  package.loaded['toggleterm.terminal'] = {
+    get_all = function() return { { id = 1 }, { id = 2 }, { id = 5 } } end,
+  }
+  check('hidden terms still count', terminal.label(2) == 'term 2 / 3')
+  check('viewed slot keeps its id', terminal.label(5) == 'term 5 / 3')
+  package.loaded['toggleterm.terminal'] = nil
   check('title on plain terminals stays term',
     terminal.title_label_for('terminal', 'term://x', '') == 'term')
   check('title on files stays the tail',

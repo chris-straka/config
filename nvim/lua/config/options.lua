@@ -15,8 +15,8 @@ o.title = true
 -- like `zsh;#toggleterm#1 - (term protocol path) - Nvim`. Show just the
 -- project (cwd basename) plus a short label instead (see
 -- config.terminal.title_label): files show their tail, terminals show
--- this tab's position over its terminal count (`term 2 / 3`, lone
--- terminals plain `term 1`), empty buffers `nvim`.
+-- their slot plus the terminal count (`term 2 / 3`, lone terminals
+-- plain `term N`), empty buffers `nvim`.
 o.titlestring =
   [[%{fnamemodify(getcwd(), ':t')} – %{v:lua.require('config.terminal').title_label()}]]
 -- Huge scrolloff keeps the cursor centered, so scrolling past end-of-file

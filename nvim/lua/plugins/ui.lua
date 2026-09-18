@@ -39,8 +39,8 @@ return {
         return '󰉋 ' .. vim.fn.fnamemodify(vim.fn.getcwd(), ':t')
       end }, { 'filename', path = 1, fmt = function(s)
         -- Terminal floats name their buffers zsh;#toggleterm#N: show
-        -- this tab's position over its terminal count (`term 2 / 3`,
-        -- see config.terminal.label); lone terminals stay `term 1`.
+        -- the slot plus how many terminals exist (`term 2 / 3`,
+        -- see config.terminal.label); lone terminals stay `term N`.
         local n = s:match('#toggleterm#(%d+)')
         if n then return require('config.terminal').label(n) end
         return s

@@ -34,6 +34,14 @@ function M.cycle(dir)
   local target = M._pick(ids, terms.get_focused_id(), dir)
   local term = terms.get(target, true)
   if term == nil then return 'missing' end
+  -- One float visible at a time: opening the next stacks its window over
+  -- the current one, leaving a "copy" of the old terminal behind it.
+  for _, id in ipairs(ids) do
+    if id ~= target then
+      local other = terms.get(id, true)
+      if other and other:is_open() then other:close() end
+    end
+  end
   if not term:is_open() then term:open() end
   term:focus()
   return 'focused'
@@ -50,10 +58,11 @@ function M._order()
 end
 
 -- Ids of the toggleterm terminals displayed in the current tabpage,
--- sorted: toggleterm objects live globally in the nvim process, so the
--- label counts "what you can see here". A terminal shown in two of the
--- tab's windows counts once. Reads buffer names (the same #toggleterm#N
--- convention the statusline matches on), so it needs no plugin API.
+-- sorted. A terminal shown in two of the tab's windows counts once.
+-- Reads buffer names (the same #toggleterm#N convention the statusline
+-- matches on), so it needs no plugin API. Feeds count() and the
+-- headless label fallback; the live label counts plugin terminals
+-- instead, since hidden floats own no window.
 function M.tab_order()
   local ok, wins = pcall(vim.api.nvim_tabpage_list_wins, 0)
   if not ok or type(wins) ~= 'table' then return {} end
@@ -74,27 +83,31 @@ function M.count()
   return #M.tab_order()
 end
 
--- Statusline label: this tab's position over its terminal count
--- (`term 2 / 3`), so two tabs with one terminal each both read
--- `term 1`. A lone terminal stays plain `term 1`; ids missing from
--- this tab (stale renders) fall back to their slot `term N`, and
--- garbage input to `term`.
+-- Statusline label: the terminal's own slot plus how many terminals
+-- exist (`term 2 / 3`), so the bar always says which terminal is
+-- shown. Counts the live terminals, not the tab's windows: hidden
+-- floats own no window, so a window scan collapsed every lone float
+-- to `term 1`. A lone terminal stays plain `term N`; ids with no live
+-- terminal (stale renders) fall back to their slot `term N`, and
+-- garbage input to `term`. Without the plugin (headless test) the
+-- window scan stands in for the live list.
 ---@param id integer|string toggleterm id, as matched from #toggleterm#N
 ---@return string
 function M.label(id)
   local n = tonumber(id)
   if not n then return 'term' end
-  local ids = M.tab_order()
-  local pos = nil
-  for i, v in ipairs(ids) do
+  local ids = M._order()
+  if #ids == 0 then ids = M.tab_order() end
+  local known = false
+  for _, v in ipairs(ids) do
     if v == n then
-      pos = i
+      known = true
       break
     end
   end
-  if pos == nil then return string.format('term %d', n) end
-  if #ids > 1 then return string.format('term %d / %d', pos, #ids) end
-  return 'term 1'
+  if not known then return string.format('term %d', n) end
+  if #ids > 1 then return string.format('term %d / %d', n, #ids) end
+  return string.format('term %d', n)
 end
 
 -- Window title label for the current buffer: files show their tail,
