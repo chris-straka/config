@@ -103,4 +103,16 @@ return {
       require('tiny-inline-diagnostic').setup()
       vim.diagnostic.config({ virtual_text = false })
     end },
+  -- Rendered Markdown (tables, checkboxes, code blocks) in the buffer, so
+  -- README tables read without leaving nvim. Off by default (raw text is
+  -- for editing); <leader>md renders when reading. PDFs stay with
+  -- image.nvim (ghostscript).
+  { 'MeanderingProgrammer/render-markdown.nvim',
+    ft = { 'markdown' },
+    dependencies = { 'nvim-treesitter/nvim-treesitter', 'echasnovski/mini.nvim' },
+    keys = {
+      { '<leader>md', '<cmd>RenderMarkdown toggle<cr>', desc = 'Markdown render on/off' },
+    },
+    opts = { enabled = false },
+  },
 }

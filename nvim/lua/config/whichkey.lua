@@ -27,6 +27,7 @@ wk.add {
   { '<leader>s', group = 'Snip' },
   { '<leader>o', group = 'Tasks' },
   { '<leader>R', group = 'REST' },
+  { '<leader>m', group = 'Markdown' },
   { '<leader>d', group = 'Debug' },
   { '<leader>f', group = 'Find' },
   { '<leader>ff', '<cmd>Telescope find_files<cr>', desc = 'Files' },
