@@ -1,9 +1,10 @@
 -- UI: colorschemes, statusline, diagnostics list
 return {
-  -- Alternates to the Catppuccin default below: lazy so neither costs
-  -- startup time unless :colorscheme names it.
-  { 'EdenEast/nightfox.nvim', lazy = true },
-  { 'folke/tokyonight.nvim', lazy = true },
+  -- Alternates to the Catppuccin default below: VeryLazy puts them on
+  -- the rtp after startup (no setup runs) so :colorscheme can name
+  -- them; bare `lazy = true` with no trigger left them unloadable.
+  { 'EdenEast/nightfox.nvim', event = 'VeryLazy' },
+  { 'folke/tokyonight.nvim', event = 'VeryLazy' },
   -- Matches the Ghostty theme (Catppuccin Mocha): purple/mauve accents
   -- instead of nightfox's flatter look. The colorscheme lives in `config`
   -- (not options.lua): options runs before lazy puts plugins on the rtp,

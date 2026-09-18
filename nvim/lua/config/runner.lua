@@ -42,6 +42,10 @@ function M.run_file()
     return
   end
   vim.cmd('silent! write')
+  -- overseer is cmd/keys-lazy: same preload as config.tree.with_api so
+  -- <leader>of works as the first overseer touch of the session.
+  local ok_lazy, lazy = pcall(require, 'lazy')
+  if ok_lazy then pcall(lazy.load, { plugins = { 'overseer.nvim' } }) end
   local ok, overseer = pcall(require, 'overseer')
   if not ok then
     vim.notify('overseer.nvim not loaded', vim.log.levels.ERROR)

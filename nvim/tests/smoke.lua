@@ -61,6 +61,14 @@ end
 -- verified: winline == winheight on `G`). The old name claimed padding.
 check('scrolloff centers the cursor', vim.opt.scrolloff:get() == 999)
 check('closed folds pad with blank, not dots', vim.opt.fillchars:get().fold == ' ')
+do
+  local ac_src = read(nvim .. '/lua/config/autocmds.lua')
+  check('EOF tail recenters the cursor',
+    ac_src:find('CenterCursorTail', 1, true) ~= nil
+    and ac_src:find('normal! zz', 1, true) ~= nil
+    and ac_src:find('setlocal scrolloff<', 1, true) ~= nil
+    and ac_src:find('InsertLeave', 1, true) ~= nil)
+end
 check('mouse captured in every mode', vim.o.mouse == 'a')
 
 -- Terminal scrollback keeps its view: TermOpen scopes scrolloff to 0 (a
@@ -360,8 +368,8 @@ end
 local ui = read(nvim .. '/lua/plugins/ui.lua')
 check('lualine shows cwd basename', ui:find("fnamemodify(vim.fn.getcwd(), ':t')", 1, true) ~= nil)
 check('spare themes never cost startup',
-  ui:find("nightfox.nvim', lazy = true", 1, true) ~= nil
-  and ui:find("tokyonight.nvim', lazy = true", 1, true) ~= nil)
+  ui:find("nightfox.nvim', event = 'VeryLazy'", 1, true) ~= nil
+  and ui:find("tokyonight.nvim', event = 'VeryLazy'", 1, true) ~= nil)
 check('lualine shortens toggleterm to term', ui:find("s == 'toggleterm' and 'term'", 1, true) ~= nil)
 check('lualine shows relative filepath', ui:find("'filename', path = 1", 1, true) ~= nil)
 check('lualine collapses term buffers to term N', ui:find("#toggleterm#(%d+)", 1, true) ~= nil)

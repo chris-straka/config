@@ -139,7 +139,9 @@ local function find_cc(dirs)
       else
         hit = false
       end
-      cc_found[dir] = hit
+      -- Hits only: a miss today is often a first build tomorrow, and a
+      -- cached `false` would pin the plain C++ label until restart.
+      if hit then cc_found[dir] = hit end
     end
     if hit then return hit end
   end
@@ -161,7 +163,9 @@ local function find_cmake_std(dirs)
           or text:match('cxx_std_(%d%d)')
         if valid_std(ver) then hit = ver end
       end
-      cmake_found[dir] = hit
+      -- Hits only, same as find_cc above: a later edit declaring the
+      -- standard must take effect without a restart.
+      if hit then cmake_found[dir] = hit end
     end
     if hit then return hit end
   end

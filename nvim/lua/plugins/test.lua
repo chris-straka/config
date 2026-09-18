@@ -10,6 +10,10 @@ return {
       'nvim-lua/plenary.nvim',
       'nvim-neotest/nvim-nio',
       'nvim-treesitter/nvim-treesitter',
+      -- Test output routes through overseer (consumers.overseer is
+      -- required in config below), so it must load first: without this,
+      -- the first <leader>Tr on a fresh start throws module-not-found.
+      'stevearc/overseer.nvim',
       'nvim-neotest/neotest-python',
       'rouge8/neotest-rust',
       'marilari88/neotest-vitest',

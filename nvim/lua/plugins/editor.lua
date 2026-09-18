@@ -81,7 +81,6 @@ return {
   { 'folke/flash.nvim', event = 'VeryLazy', opts = {} }, -- replaces ggandor/lightspeed
   { 'windwp/nvim-ts-autotag', event = 'InsertEnter', opts = {} },
 
-  { 'JoosepAlviste/nvim-ts-context-commentstring', lazy = true, opts = {} },
   { 'catgoose/nvim-colorizer.lua', event = 'VeryLazy', config = function() require('colorizer').setup() end },
   { 'echasnovski/mini.nvim', lazy = false, config = function() -- eager: ai/comment/surround ready immediately (no starter screen anymore)
     require('mini.ai').setup()
