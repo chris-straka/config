@@ -17,8 +17,29 @@ function M.exit_focused()
   if term and term.job_id then vim.fn.chansend(term.job_id, 'exit\n') end
 end
 
+-- New terminal for Cmd+T (see config/keymaps/terminal.lua): every press
+-- mints a fresh float with the next free id (max live id + 1), so the
+-- key always creates instead of toggling or reusing. One float stays
+-- visible: other floats close first (same stacking reason as cycle
+-- below). A Lua function RHS, so it runs in every mode (including
+-- inside a float) with no drop-to-Normal.
+---@return string status word (handy for tests)
+function M.new()
+  local ok, terms = pcall(require, 'toggleterm.terminal')
+  if not ok then return 'no-plugin' end
+  local ids = M._order()
+  local target = M._next(ids)
+  -- One float visible at a time (same stacking reason as cycle below).
+  for _, id in ipairs(ids) do
+    local other = terms.get(id, true)
+    if other and other:is_open() then other:close() end
+  end
+  vim.cmd(target .. 'ToggleTerm direction=float')
+  return 'opened'
+end
+
 -- Cycle focus across this tab's numbered terminals with wraparound
--- (Alt+N jumps direct, this steps). A lone terminal refocuses itself;
+-- (Cmd+[ previous, Cmd+] next). A lone terminal refocuses itself;
 -- with none open, terminal 1 opens instead of doing nothing. Closed
 -- terminals in between are reopened as they come up.
 ---@param dir integer 1 for next, -1 for previous
@@ -83,14 +104,14 @@ function M.count()
   return #M.tab_order()
 end
 
--- Statusline label: the terminal's own slot plus how many terminals
--- exist (`term 2 / 3`), so the bar always says which terminal is
--- shown. Counts the live terminals, not the tab's windows: hidden
--- floats own no window, so a window scan collapsed every lone float
--- to `term 1`. A lone terminal stays plain `term N`; ids with no live
--- terminal (stale renders) fall back to their slot `term N`, and
--- garbage input to `term`. Without the plugin (headless test) the
--- window scan stands in for the live list.
+-- Statusline label: the terminal's slot (position among the live
+-- terminals) plus how many exist (`term 2 / 3`), so the bar always
+-- says which terminal is shown. Counts the live terminals, not the
+-- tab's windows: hidden floats own no window, so a window scan
+-- collapsed every lone float to `term 1`. A lone terminal stays plain
+-- `term N`; ids with no live terminal (stale renders) fall back to
+-- their slot `term N`, and garbage input to `term`. Without the
+-- plugin (headless test) the window scan stands in for the live list.
 ---@param id integer|string toggleterm id, as matched from #toggleterm#N
 ---@return string
 function M.label(id)
@@ -98,15 +119,15 @@ function M.label(id)
   if not n then return 'term' end
   local ids = M._order()
   if #ids == 0 then ids = M.tab_order() end
-  local known = false
-  for _, v in ipairs(ids) do
+  local at = nil
+  for i, v in ipairs(ids) do
     if v == n then
-      known = true
+      at = i
       break
     end
   end
-  if not known then return string.format('term %d', n) end
-  if #ids > 1 then return string.format('term %d / %d', n, #ids) end
+  if not at then return string.format('term %d', n) end
+  if #ids > 1 then return string.format('term %d / %d', at, #ids) end
   return string.format('term %d', n)
 end
 
@@ -133,6 +154,15 @@ end
 function M.title_label()
   local buf = vim.api.nvim_get_current_buf()
   return M.title_label_for(vim.bo[buf].buftype, vim.api.nvim_buf_get_name(buf), vim.fn.expand('%:t'))
+end
+
+-- Pure next-id pick for new(): one past the largest live id, or 1 with
+-- none. ids must be sorted (see _order); gaps stay filled by reuse only
+-- when the top id is gone (max + 1 is always free).
+---@param ids integer[]
+---@return integer
+function M._next(ids)
+  return (ids[#ids] or 0) + 1
 end
 
 -- Pure next/previous pick with wraparound. current may be nil (nothing

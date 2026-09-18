@@ -53,12 +53,15 @@ care — in terminal mode it would be typed into the shell).
 
 ## File inventory (2026-09-14: slots retired, Ghostty tabs own projects)
 
-- Ghostty `config` and `nvim-launcher`: Cmd+digits go to nvim as CSI-u
-  (terminal toggles — most-used action owns the easiest key), Alt+digits
-  stay native (goto_tab),
+- Ghostty `config` and `nvim-launcher`: Cmd+T mints a fresh nvim float
+  as CSI-u (`<D-t>`), Cmd+[/] steps terminal floats, Cmd+digits are
+  unbound both spellings (positional slot jumps retired as confusing),
+  Alt+digits stay native (goto_tab), Shift+Cmd+T opens a tab (was
+  Ghostty's Cmd+T), Shift+Cmd+N opens a window (Cmd+N stays default
+  too);
   Cmd+letters go to nvim as CSI-u (Cmd+W closes nvim's buffer, or the
   tab when the buffer is empty — tabclose only, never a window close);
-  Shift+Cmd+H/L switch Ghostty tabs natively; Cmd+T new tab,
+  Shift+Cmd+H/L switch Ghostty tabs natively;
   escalating close (Cmd+W buffer, Shift+Cmd+W tab, Ctrl+Shift+Cmd+W
   window; Cmd+Opt+W still closes tabs, Ghostty default). Zero legacy sequences. The launcher duplicates
   the binds inline because the `open --args --config-file=…` handoff
@@ -67,7 +70,8 @@ care — in terminal mode it would be typed into the shell).
   (`transparent` titlebar, hidden tab bar — lualine names the project,
   Shift+Cmd+H/L switches) and the zoomed-in `font-size` are
   duplicated too, for the same reason.
-- Kitty config converted the same way (other track).
+- Kitty config converted the same way (other track): Cmd+T to nvim,
+  Shift+Cmd+T tab, Shift+Cmd+N window, Cmd+digits unmapped.
 - `nvim/lua/config/keymaps/`: `<D-…>` maps are the live path (the old
   single `keymaps.lua` was split into focused modules); the pre-0.12
   `<Esc>[9xx…` fallback maps are retired — both terminals speak CSI-u.

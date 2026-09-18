@@ -6,31 +6,27 @@
 local map = vim.keymap.set
 local opts = { noremap = true, silent = true }
 
--- (old Alt bank lived here; Alt+N now toggles the current slot's terminal — loop below)
--- Floating terminals, one Ghostty tab = one project so plain global ids are
--- enough: Cmd+N toggles terminal N of THIS tab's nvim (terminals switch
--- most, so they own the easiest key). A dev server on term 2 keeps
--- running in that tab while you work in another Ghostty tab (separate
--- nvim process, fully isolated). Digit 0 means 10. Project tabs moved to
--- Alt+1..0 (Ghostty goto_tab, handled before nvim ever sees them).
--- Cmd+[/] steps prev/next through them with wraparound (see below) for
--- the high digits that are awkward to reach.
-for _i = 1, 10 do
-  local _n, _d = _i, (_i == 10 and '0' or tostring(_i))
-  local _rhs = '<cmd>' .. _n .. 'ToggleTerm direction=float<cr>'
-  -- Insert included on both: digits must work while typing, since the
-  -- emulators deliver modifiers as Esc/CSI-u sequences. toggleterm's
-  -- on_open startinsert lands the opened float in Terminal-Insert no
-  -- matter which mode we toggled from.
-  map({ 'n', 't', 'i' }, '<D-' .. _d .. '>', _rhs, opts)
-  -- Alt+N kept as fallback: Ghostty eats Alt+digits for tabs, but other
-  -- terminals (kitty leaves Alt alone) still deliver them to nvim.
-  map({ 'n', 't', 'i' }, '<A-' .. _d .. '>', _rhs, opts)
-end
--- Terminal cycling (Alt+N jumps direct, these step with wraparound):
--- Cmd+[ previous, Cmd+] next, from code or from inside a float. Ghostty
--- transport lives in shared-keybinds.conf (super+[/]); to rebind later,
--- change those two lines plus these two maps and nothing else.
+-- (Retired: Cmd+digits / Alt+digits used to jump to terminal slots by
+-- position. Positional jumps proved confusing — a digit past the last
+-- terminal landed on a different shell than the number named — so digits
+-- are unbound in both emulators and no digit maps live here. Terminals
+-- open on Cmd+T and step on Cmd+[/] only.)
+-- New floating terminal, one Ghostty tab = one project: Cmd+T mints a
+-- fresh float in THIS tab's nvim (see new() in config/terminal.lua —
+-- always creates, never toggles). A dev server keeps running in that
+-- tab while you work in another Ghostty tab (separate nvim process,
+-- fully isolated). Ghostty's default Cmd+T (new tab) moves to
+-- Shift+Cmd+T; the Cmd+T press itself reaches nvim as CSI-u super
+-- (see shared-keybinds.conf). A Lua function RHS, so it runs in every
+-- mode — including inside a float — with no drop-to-Normal, and
+-- toggleterm's on_open startinsert lands the new float in
+-- Terminal-Insert no matter which mode we created it from.
+map({ 'n', 'v', 'i', 't' }, '<D-t>', function() require('config.terminal').new() end,
+  { noremap = true, silent = true, desc = 'New terminal' })
+-- Terminal cycling (Cmd+[ previous, Cmd+] next, with wraparound):
+-- from code or from inside a float. Ghostty transport lives in
+-- shared-keybinds.conf (super+[/]); to rebind later, change those two
+-- lines plus these two maps and nothing else.
 map({ 'n', 'v', 'i' }, '<D-[>', function() require('config.terminal').cycle(-1) end,
   { noremap = true, silent = true, desc = 'Previous terminal' })
 map({ 'n', 'v', 'i' }, '<D-]>', function() require('config.terminal').cycle(1) end,

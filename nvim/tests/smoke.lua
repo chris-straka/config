@@ -47,12 +47,12 @@ check('foldtext is the compact label', vim.opt.foldtext:get():find("require('con
 do
   local fold = require('config.fold')
   check('fold module exposes foldtext', type(fold.foldtext) == 'function')
-  check('fold label keeps facts, drops fill',
-    fold.text(22, 27, 'function blankSettings() {', 80) == '+ 6 lines · function blankSettings() {')
+  check('fold label shows the first line only',
+    fold.text(22, 27, 'function blankSettings() {', 80) == 'function blankSettings() {')
   check('fold label has no dot run', fold.text(1, 6, 'local x = 1', 80):find('...', 1, true) == nil)
-  check('fold label trims indent', fold.text(1, 3, '    const s = 1;', 80) == '+ 3 lines · const s = 1;')
-  check('fold label names the singular', fold.text(5, 5, 'x', 80) == '+ 1 line · x')
-  check('fold label covers blank first lines', fold.text(1, 2, '   ', 80) == '+ 2 lines · (blank)')
+  check('fold label trims indent', fold.text(1, 3, '    const s = 1;', 80) == 'const s = 1;')
+  check('fold label ignores fold size', fold.text(5, 5, 'x', 80) == 'x')
+  check('fold label covers blank first lines', fold.text(1, 2, '   ', 80) == '(blank)')
   local long = fold.text(1, 4, 'const ' .. string.rep('ab', 60) .. ' = 1;', 40)
   check('fold label truncates to the window', vim.fn.strwidth(long) <= 40 and long:sub(-3) == '…')
 end
@@ -90,19 +90,21 @@ do
   vim.api.nvim_buf_delete(vim.api.nvim_get_current_buf(), { force = true })
 end
 
--- 3. Terminal toggles are simple global ids; slot selects are gone.
--- Terminals own Cmd+digits (most-used), tabs live on Alt+digits in
--- Ghostty; Alt+digits stay bound in nvim as fallback for terminals
--- that pass Alt through (kitty).
+-- 3. Terminals open on Cmd+T (always mints a fresh float) and step on
+-- Cmd+[/]: digits jump nowhere. Positional slot jumps retired as
+-- confusing (a digit past the last terminal landed on a different
+-- shell than the number named), so Cmd+digits are unbound in both
+-- emulators and no digit maps live here; project tabs live on
+-- Alt+digits in Ghostty (handled before nvim ever sees them).
 require('config.keymaps')
-check('Cmd+2 toggles global terminal 2', vim.fn.maparg('<D-2>', 'n'):find('2ToggleTerm', 1, true) ~= nil)
-check('Cmd+2 works from terminal mode', vim.fn.maparg('<D-2>', 't'):find('2ToggleTerm', 1, true) ~= nil)
-check('Cmd+2 works while typing', vim.fn.maparg('<D-2>', 'i'):find('2ToggleTerm', 1, true) ~= nil)
-check('Cmd+0 toggles global terminal 10', vim.fn.maparg('<D-0>', 'n'):find('10ToggleTerm', 1, true) ~= nil)
-local a2 = vim.fn.maparg('<A-2>', 'n')
-check('Alt+2 toggles global terminal 2', a2:find('2ToggleTerm', 1, true) ~= nil)
-check('Alt+2 works from terminal mode', vim.fn.maparg('<A-2>', 't'):find('2ToggleTerm', 1, true) ~= nil)
-check('Alt+2 works while typing', vim.fn.maparg('<A-2>', 'i'):find('2ToggleTerm', 1, true) ~= nil)
+check('Cmd+T opens a new terminal', vim.fn.maparg('<D-t>', 'n') ~= '')
+check('Cmd+T works from terminal mode', vim.fn.maparg('<D-t>', 't') ~= '')
+check('Cmd+T works while typing', vim.fn.maparg('<D-t>', 'i') ~= '')
+check('Cmd+T works from visual', vim.fn.maparg('<D-t>', 'v') ~= '')
+check('no Cmd+digit terminal jumps', vim.fn.maparg('<D-2>', 'n') == ''
+  and vim.fn.maparg('<D-0>', 'n') == '' and vim.fn.maparg('<D-4>', 't') == '')
+check('no Alt+digit terminal jumps', vim.fn.maparg('<A-2>', 'n') == ''
+  and vim.fn.maparg('<A-2>', 't') == '' and vim.fn.maparg('<A-2>', 'i') == '')
 -- Alt+digit floats open ready to type: triple insert guarantee.
 local editor_src = read(nvim .. '/lua/plugins/editor.lua')
 check('terms open in Terminal-Insert', editor_src:find('start_in_insert = true', 1, true) ~= nil
@@ -449,8 +451,12 @@ for _, p in ipairs({ home .. '/.config/ghostty/config', home .. '/.config/ghostt
   check(tag .. ' Shift+Cmd+L next tab', c:find('super+shift+l=next_tab', 1, true) ~= nil)
   check(tag .. ' Cmd+Opt+[ fold transport', c:find('super+alt+[=text', 1, true) ~= nil)
   check(tag .. ' Cmd+Opt+] unfold transport', c:find('super+alt+]=text', 1, true) ~= nil)
-  check(tag .. ' Cmd+digits reach nvim', c:find('super+digit_1=text', 1, true) ~= nil)
-  check(tag .. ' bare Cmd+digits unbound (one send)', c:find('super+1=unbind', 1, true) ~= nil)
+  check(tag .. ' Cmd+T reaches nvim', c:find('super+t=text', 1, true) ~= nil)
+  check(tag .. ' Shift+Cmd+T opens a tab', c:find('super+shift+t=new_tab', 1, true) ~= nil)
+  check(tag .. ' Shift+Cmd+N opens a window', c:find('super+shift+n=new_window', 1, true) ~= nil)
+  check(tag .. ' Cmd+digits unbound (no slot jumps)', c:find('super+digit_1=unbind', 1, true) ~= nil)
+  check(tag .. ' bare Cmd+digits unbound', c:find('super+1=unbind', 1, true) ~= nil)
+  check(tag .. ' no digit sends to nvim', c:find('super+digit_1=text', 1, true) == nil)
   check(tag .. ' Alt+digits jump tabs', c:find('alt+1=goto_tab:1', 1, true) ~= nil)
   check(tag .. ' Cmd+E focuses tree', c:find('super+e=text', 1, true) ~= nil)
   check(tag .. ' Shift+Cmd+E peeks tree', c:find('super+shift+e=text', 1, true) ~= nil)
@@ -738,6 +744,43 @@ check('cycle unfocused goes first/last', terminal._pick({ 1, 2, 5 }, nil, 1) == 
 check('cycle stale id restarts', terminal._pick({ 1, 2 }, 9, 1) == 1)
 check('cycle single stays', terminal._pick({ 3 }, 3, -1) == 3)
 check('cycle empty is nil', terminal._pick({}, nil, 1) == nil)
+-- Cmd+T always mints: the next id is one past the largest live id, so
+-- closing terminal 2 of {1,2,3} leaves {1,3} and the next new terminal
+-- is 4 — never a reuse of 2, never a jump to 3.
+check('next id follows the top', terminal._next({ 1, 2, 3 }) == 4
+  and terminal._next({ 1, 3 }) == 4
+  and terminal._next({ 2, 3 }) == 4)
+check('next id starts at 1', terminal._next({}) == 1)
+check('slot helpers retired', terminal.goto_slot == nil and terminal._slot == nil)
+check('new with no plugin is safe', terminal.new() == 'no-plugin')
+do
+  local actions = {}
+  local seen_cmd = nil
+  local live = { { id = 1 }, { id = 3 } }
+  package.loaded['toggleterm.terminal'] = {
+    get_all = function() return live end,
+    get = function(id)
+      for _, t in ipairs(live) do
+        if t.id == id then
+          return {
+            is_open = function() return true end,
+            close = function() actions[#actions + 1] = 'close' .. id end,
+          }
+        end
+      end
+      return nil
+    end,
+  }
+  local real_cmd = vim.cmd
+  vim.cmd = function(c) seen_cmd = c end
+  local ok, res = pcall(terminal.new)
+  vim.cmd = real_cmd
+  check('new terminal mints max+1', ok and res == 'opened'
+    and seen_cmd == '4ToggleTerm direction=float')
+  check('new terminal closes other floats first',
+    vim.tbl_contains(actions, 'close1') and vim.tbl_contains(actions, 'close3'))
+  package.loaded['toggleterm.terminal'] = nil
+end
 
 -- 16. Escalating close: Cmd+W closes the buffer, or the tab when the
 -- buffer is empty (never the window); Shift+Cmd+W the tab,
@@ -805,11 +848,19 @@ check('kitty Shift+Cmd+W closes tab',
 check('kitty Ctrl+Shift+Cmd+W closes window',
   read(home .. '/.config/kitty/kitty.conf'):find('ctrl+shift+cmd+w close_window', 1, true) ~= nil)
 do
-  -- Slots are retired: no digit family may send sequences nvim ignores.
+  -- Slot digits are retired: no digit family may send terminal jumps.
   local kitty_conf = read(home .. '/.config/kitty/kitty.conf')
   check('kitty slot digits stay retired',
     kitty_conf:find('cmd+shift+1 send_text', 1, true) == nil
-    and kitty_conf:find('cmd+ctrl+1 send_text', 1, true) == nil)
+    and kitty_conf:find('cmd+ctrl+1 send_text', 1, true) == nil
+    and kitty_conf:find('cmd+1 send_text', 1, true) == nil
+    and kitty_conf:find('cmd+4 send_text', 1, true) == nil)
+  check('kitty Cmd+T reaches nvim',
+    kitty_conf:find('cmd+t send_text all \\e[116;9u', 1, true) ~= nil)
+  check('kitty Shift+Cmd+T opens a tab',
+    kitty_conf:find('shift+cmd+t new_tab', 1, true) ~= nil)
+  check('kitty Shift+Cmd+N opens a window',
+    kitty_conf:find('shift+cmd+n new_window', 1, true) ~= nil)
 end
 local land2 = require('config.telescope_land')
 check('select_and_land helper exists', type(land2.select_and_land) == 'function')
@@ -944,9 +995,10 @@ do
   check('label shows slot over total', terminal.label(2) == 'term 2 / 2')
   check('title shows slot too',
     terminal.title_label_for('terminal', 'zsh;#toggleterm#2', '') == 'term 2 / 2')
-  -- Swap in the gappy slot: slots, not positions.
+  -- Swap in the gappy id: the label names the position
+  -- (physical 5 is slot 2 of {1,5}).
   vim.api.nvim_set_current_buf(b5)
-  check('gappy slot keeps its id', terminal.label(5) == 'term 5 / 2')
+  check('gappy slot shows its position', terminal.label(5) == 'term 2 / 2')
   check('stale slots fall back plain', terminal.label(9) == 'term 9')
   -- Lone terminal keeps its slot (the old readout said `term 1` here).
   vim.api.nvim_buf_delete(b1, { force = true })
@@ -959,7 +1011,7 @@ do
     get_all = function() return { { id = 1 }, { id = 2 }, { id = 5 } } end,
   }
   check('hidden terms still count', terminal.label(2) == 'term 2 / 3')
-  check('viewed slot keeps its id', terminal.label(5) == 'term 5 / 3')
+  check('viewed slot shows its position', terminal.label(5) == 'term 3 / 3')
   package.loaded['toggleterm.terminal'] = nil
   check('title on plain terminals stays term',
     terminal.title_label_for('terminal', 'term://x', '') == 'term')
