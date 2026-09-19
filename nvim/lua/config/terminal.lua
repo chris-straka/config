@@ -192,6 +192,24 @@ function M.title_label()
   return M.title_label_for(vim.bo[buf].buftype, vim.api.nvim_buf_get_name(buf), vim.fn.expand('%:t'))
 end
 
+-- Pure terminal-count suffix for the window title: '' with none, else
+-- ` – N term` / ` – N terms`. Shown on file/empty buffers only —
+-- terminal buffers already carry the count (`term 2 / 3`).
+---@param count integer
+---@return string
+function M._count_suffix(count)
+  if not count or count < 1 then return '' end
+  if count == 1 then return ' – 1 term' end
+  return string.format(' – %d terms', count)
+end
+
+---@return string
+function M.title_count_suffix()
+  local buf = vim.api.nvim_get_current_buf()
+  if vim.bo[buf].buftype == 'terminal' then return '' end
+  return M._count_suffix(M.count())
+end
+
 -- Pure next-id pick for new(): one past the largest live id, or 1 with
 -- none. ids must be sorted (see _order); gaps stay filled by reuse only
 -- when the top id is gone (max + 1 is always free).

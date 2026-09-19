@@ -1190,6 +1190,20 @@ do
     ui_src:find("ft == 'NvimTree'", 1, true) ~= nil)
 end
 
+-- Window title: folder – file – N terms. File buffers carry the tab's
+-- terminal count; terminal buffers keep their own count-aware label.
+do
+  check('terminal module exposes title_count_suffix', type(terminal.title_count_suffix) == 'function')
+  check('no terminals means no suffix', terminal._count_suffix(0) == '' and terminal._count_suffix(nil) == '')
+  check('one terminal reads singular', terminal._count_suffix(1) == ' – 1 term')
+  check('many terminals read plural', terminal._count_suffix(3) == ' – 3 terms')
+  check('file label still just the tail', terminal.title_label_for('', '', 'skeleton.cpp') == 'skeleton.cpp')
+  check('empty buffer still nvim', terminal.title_label_for('', '', '') == 'nvim')
+  local opt_src = read(nvim .. '/lua/config/options.lua')
+  check('titlestring appends the count suffix',
+    opt_src:find('title_count_suffix', 1, true) ~= nil)
+end
+
 if failures > 0 then
   print(failures .. ' check(s) failed')
   os.exit(1)

@@ -17,9 +17,11 @@ o.title = true
 -- project (cwd basename) plus a short label instead (see
 -- config.terminal.title_label): files show their tail, terminals show
 -- their slot plus the terminal count (`term 2 / 3`, lone terminals
--- plain `term N`), empty buffers `nvim`.
+-- plain `term N`), empty buffers `nvim`. File/empty buffers also carry
+-- the tab's terminal count (` – 2 terms`), so the bar always answers
+-- folder, file, and how many terminals are open.
 o.titlestring =
-  [[%{fnamemodify(getcwd(), ':t')} – %{v:lua.require('config.terminal').title_label()}]]
+  [[%{fnamemodify(getcwd(), ':t')} – %{v:lua.require('config.terminal').title_label()}%{v:lua.require('config.terminal').title_count_suffix()}]]
 -- Huge scrolloff keeps the cursor centered, so scrolling past end-of-file
 -- shows empty space below the last line (G parks the last line
 -- mid-screen instead of pinning it to the bottom).
