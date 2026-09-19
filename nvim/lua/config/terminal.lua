@@ -1,8 +1,8 @@
--- Focused-terminal exit via Alt+X, plus numbered
--- terminal cycling on Cmd+[/] (see config/keymaps/). Exit types `exit`
--- + Enter into the focused terminal's shell job — the plain-`exit`
--- equivalent — so the shell ends and the float goes away; reopen with
--- Alt+N for a fresh shell.
+-- Focused-terminal exit via Alt+X, numbered terminal cycling on
+-- Cmd+[/], and positional jumps on Cmd+1..0 (see config/keymaps/).
+-- Exit types `exit` + Enter into the focused terminal's shell job —
+-- the plain-`exit` equivalent — so the shell ends and the float goes
+-- away; reopen with Alt+N for a fresh shell.
 local M = {}
 
 function M.exit_focused()
@@ -57,6 +57,42 @@ function M.cycle(dir)
   if term == nil then return 'missing' end
   -- One float visible at a time: opening the next stacks its window over
   -- the current one, leaving a "copy" of the old terminal behind it.
+  for _, id in ipairs(ids) do
+    if id ~= target then
+      local other = terms.get(id, true)
+      if other and other:is_open() then other:close() end
+    end
+  end
+  if not term:is_open() then term:open() end
+  term:focus()
+  return 'focused'
+end
+
+-- Positional jump to the Nth live terminal (Cmd+1..0, 0 means 10; see
+-- config/keymaps/terminal.lua). The slot is the position among the
+-- sorted live ids — the same number the statusline label shows
+-- (`term 2 / 3`) — never the raw toggleterm id, so gaps from closed
+-- terminals can't land on the wrong shell. A digit past the last
+-- terminal (or any digit with none open) warns and stays put instead
+-- of landing elsewhere; digits never mint — Cmd+T does that.
+---@param slot integer 1-based position
+---@return string status word (handy for tests)
+function M.goto_slot(slot)
+  local ok, terms = pcall(require, 'toggleterm.terminal')
+  if not ok then return 'no-plugin' end
+  local ids = M._order()
+  if #ids == 0 then
+    vim.notify('no terminals yet (Cmd+T opens one)', vim.log.levels.WARN)
+    return 'empty'
+  end
+  local target = M._at(ids, slot)
+  if not target then
+    vim.notify(string.format('terminal %d: only %d open', slot, #ids), vim.log.levels.WARN)
+    return 'missing'
+  end
+  local term = terms.get(target, true)
+  if term == nil then return 'missing' end
+  -- One float visible at a time (same stacking reason as cycle above).
   for _, id in ipairs(ids) do
     if id ~= target then
       local other = terms.get(id, true)
@@ -163,6 +199,31 @@ end
 ---@return integer
 function M._next(ids)
   return (ids[#ids] or 0) + 1
+end
+
+-- First open terminal with a live shell, or nil: where Option+K
+-- senders (see send_at_reference in config/runner.lua) type. Scans the
+-- live ids in order instead of a fixed 1..10 range, so high ids from
+-- Cmd+T minting (max id + 1, unbounded) are found too.
+---@return table|nil toggleterm terminal
+function M.first_open()
+  local ok, terms = pcall(require, 'toggleterm.terminal')
+  if not ok then return nil end
+  for _, id in ipairs(M._order()) do
+    local term = terms.get(id, true)
+    if term and term:is_open() and term.job_id then return term end
+  end
+  return nil
+end
+
+-- Pure positional pick for goto_slot: the slot-th live id, or nil past
+-- the end. ids must be sorted (see _order).
+---@param ids integer[]
+---@param slot integer 1-based position
+---@return integer|nil
+function M._at(ids, slot)
+  if slot < 1 or slot > #ids then return nil end
+  return ids[slot]
 end
 
 -- Pure next/previous pick with wraparound. current may be nil (nothing

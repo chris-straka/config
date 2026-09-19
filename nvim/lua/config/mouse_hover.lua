@@ -12,8 +12,8 @@ M.delay = 250
 -- Hover float width cap (columns). open_floating_preview() defaults its
 -- wrap width to the current window width, so on a wide monitor the docs
 -- span the whole screen (see screenshot). max_width caps both the window
--- and the wrap, keeping the tooltip a readable column. Keep in sync with
--- the K hover mapping in lua/plugins/lsp.lua.
+-- and the wrap, keeping the tooltip a readable column. Read by the K
+-- hover mapping in lua/plugins/lsp.lua — one value for both.
 M.max_width = 80
 
 -- Mouse position source (seam for tests).

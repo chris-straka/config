@@ -63,6 +63,10 @@ o.showtabline = 1
 o.signcolumn = 'yes'
 o.updatetime = 250
 o.undofile = true
+-- :restart restores the session, and the default restores empty unnamed
+-- windows too: after wiping buffers those empties come back and confuse
+-- file-reveal and centering. Drop 'blank' so restarts restore real files.
+o.sessionoptions:remove('blank')
 o.swapfile = false
 -- VSCode-style: no .swp files, so the E325 "swap file exists" prompt can
 -- never appear. Crash recovery still has persistent undo (above) plus
@@ -79,10 +83,10 @@ o.foldlevel = 99
 o.foldlevelstart = 99
 o.foldenable = true
 -- Compact fold line (see config/fold.lua): the stock foldtext stretches
--- `+-- N lines: ...` dot padding across the whole window; this keeps the
--- same facts (`+ 6 lines · first line`) with no fill. foldtext only
--- builds the label — Neovim still pads the rest of a closed fold line
--- with the `fold` fillchar (dots), so that goes to a space too.
+-- `+-- N lines: ...` dot padding across the whole window; this shows just
+-- the first line with no fill. foldtext only builds the label — Neovim
+-- still pads the rest of a closed fold line with the `fold` fillchar
+-- (dots), so that goes to a space too.
 o.foldtext = [[v:lua.require('config.fold').foldtext()]]
 o.fillchars:append({ fold = ' ' })
 

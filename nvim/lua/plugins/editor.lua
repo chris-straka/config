@@ -7,7 +7,19 @@ return {
     dependencies = { 'nvim-lua/plenary.nvim', 'nvim-tree/nvim-web-devicons' },
     opts = function()
       return {
-        defaults = { file_ignore_patterns = { 'node_modules', '.terraform', '.git/' } },
+        defaults = {
+          file_ignore_patterns = { 'node_modules', '.terraform', '.git/' },
+          -- Java packages nest so deep that full paths truncate to identical
+          -- prefixes; show those filename-first, leave other languages alone.
+          path_display = function(_, path)
+            if path:sub(-5) ~= '.java' then return path end
+            return string.format(
+              '%s  %s',
+              vim.fn.fnamemodify(path, ':t'),
+              vim.fn.fnamemodify(path, ':h')
+            )
+          end,
+        },
         extensions = {
           file_browser = { mappings = require('config.telescope_land').mappings },
           -- Picker thumbnails via chafa (brew install chafa): `:Telescope
@@ -107,9 +119,10 @@ return {
     require('mini.bufremove').setup() -- buffer delete that keeps windows
   end },
   -- NOTE: eager on purpose (no `cmd` key, so the setup's `lazy = false`
-  -- default applies): the Alt+digit keymaps call `:NToggleTerm` with a
-  -- count, and lazy's command stub declares range (not count), so the first
-  -- counted toggle mis-parses the count as a line range and dies with E16.
+  -- default applies): the Cmd+T / Cmd+digit Lua paths run `:NToggleTerm`
+  -- with a count, and lazy's command stub declares range (not count), so
+  -- the first counted toggle mis-parses the count as a line range and
+  -- dies with E16.
   { 'akinsho/toggleterm.nvim', opts = {
     open_mapping = [[<c-\>]],
     -- Follow mode: every terminal (re)opens in the current directory, so
@@ -196,9 +209,18 @@ return {
           end
           return false
         end
+        -- File opens recenter synchronously (see file_opened in
+        -- config/tree.lua): on screens where the sides stood beside the
+        -- tree, the open lands final and this no-ops; where they had
+        -- closed for space, it rebuilds them before any redraw.
+        local function open_file_centered()
+          api.node.open.edit()
+          require('config.tree').file_opened()
+        end
         vim.keymap.set('n', 'l', function()
-          if not preview_pdf(api.tree.get_node_under_cursor()) then api.node.open.edit() end
+          if not preview_pdf(api.tree.get_node_under_cursor()) then open_file_centered() end
         end, opts('Expand'))
+        vim.keymap.set('n', 'o', open_file_centered, opts('Open'))
         -- Cmd+Delete (Backspace) trashes the node under the cursor,
         -- mirroring Finder (needs the `trash` CLI; prompts to confirm).
         -- Transport: Ghostty/kitty send CSI-u super (see shared-keybinds).
@@ -230,7 +252,7 @@ return {
           if node and node.type == 'directory' then
             api.tree.change_root_to_node()
           elseif not preview_pdf(node) then
-            api.node.open.edit()
+            open_file_centered()
           end
         end, opts('Open / change directory'))
       end,

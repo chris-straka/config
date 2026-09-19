@@ -90,19 +90,21 @@ do
   vim.api.nvim_buf_delete(vim.api.nvim_get_current_buf(), { force = true })
 end
 
--- 3. Terminals open on Cmd+T (always mints a fresh float) and step on
--- Cmd+[/]: digits jump nowhere. Positional slot jumps retired as
--- confusing (a digit past the last terminal landed on a different
--- shell than the number named), so Cmd+digits are unbound in both
--- emulators and no digit maps live here; project tabs live on
--- Alt+digits in Ghostty (handled before nvim ever sees them).
+-- 3. Terminals open on Cmd+T (always mints a fresh float), step on
+-- Cmd+[/], and jump by position on Cmd+1..0 (0 is 10): the slot the
+-- statusline names, so the digit always matches the bar. A digit past
+-- the last terminal warns and stays put instead of landing on another
+-- shell — and digits never mint. Project tabs live on Alt+digits in
+-- Ghostty (handled before nvim ever sees them).
 require('config.keymaps')
 check('Cmd+T opens a new terminal', vim.fn.maparg('<D-t>', 'n') ~= '')
 check('Cmd+T works from terminal mode', vim.fn.maparg('<D-t>', 't') ~= '')
 check('Cmd+T works while typing', vim.fn.maparg('<D-t>', 'i') ~= '')
 check('Cmd+T works from visual', vim.fn.maparg('<D-t>', 'v') ~= '')
-check('no Cmd+digit terminal jumps', vim.fn.maparg('<D-2>', 'n') == ''
-  and vim.fn.maparg('<D-0>', 'n') == '' and vim.fn.maparg('<D-4>', 't') == '')
+check('Cmd+1 jumps from normal', vim.fn.maparg('<D-1>', 'n') ~= '')
+check('Cmd+0 jumps to slot 10', vim.fn.maparg('<D-0>', 'n') ~= '')
+check('Cmd+digits jump from every mode', vim.fn.maparg('<D-2>', 'i') ~= ''
+  and vim.fn.maparg('<D-2>', 'v') ~= '' and vim.fn.maparg('<D-4>', 't') ~= '')
 check('no Alt+digit terminal jumps', vim.fn.maparg('<A-2>', 'n') == ''
   and vim.fn.maparg('<A-2>', 't') == '' and vim.fn.maparg('<A-2>', 'i') == '')
 -- Alt+digit floats open ready to type: triple insert guarantee.
@@ -124,15 +126,8 @@ check('Alt+[ narrows float', vim.fn.maparg('<A-[>', 'n') ~= '' and vim.fn.maparg
 check('Alt+] widens float', vim.fn.maparg('<A-]>', 'n') ~= '' and vim.fn.maparg('<A-]>', 't') ~= '')
 check('pipe drops terminal to Normal', vim.fn.maparg('|', 't') == '<C-\\><C-N>')
 check('double-Esc ramp retired', vim.fn.maparg('<Esc><Esc>', 't') == '')
--- Shift+Backspace toggles Insert <-> Normal (Ghostty sends it as <S-BS>).
-check('Shift+BS bound in terminal mode', vim.fn.maparg('<S-BS>', 't') ~= '')
-do
-  local km_src = read_keymaps()
-  check('Shift+BS toggles both ways',
-    km_src:find("'<S-BS>'", 1, true) ~= nil
-    and km_src:find('stopinsert', 1, true) ~= nil
-    and km_src:find('startinsert', 1, true) ~= nil)
-end
+-- Shift+Backspace toggle retired with the maps (it fired on a habit
+-- keystroke): no binding, no assertions.
 local term_src = read(nvim .. '/lua/config/terminal.lua')
 check('exit sends exit+enter to the job', term_src:find("chansend(term.job_id, 'exit\\n')", 1, true) ~= nil)
 check('Cmd+Opt+[ folds', vim.fn.maparg('<D-M-[>', 'n') == 'zc')
@@ -322,10 +317,16 @@ check('Alt+E focuses like Cmd+E', keymaps_src:find("<A-e>', function() require('
   and keymaps_src:find('NvimTreeFindFileToggle', 1, true) == nil)
 check('no pre-0.12 fallback maps', keymaps_src:find("'<Esc>['", 1, true) == nil)
 check('<leader>h jumps in unrevealed', keymaps_src:find("h', function() require('config.tree').focus(false)", 1, true) ~= nil)
--- Focusing the tree holds no-neck-pain off for the tab (it otherwise
--- closes the tree and kicks focus back) and restores it on tree close.
-check('tree focus holds centering off', tree_src:find('hold_nnp_off', 1, true) ~= nil
-  and tree_src:find('nnp_guard', 1, true) ~= nil)
+-- The centerer stays on while the tree is up (no-neck-pain treats
+-- NvimTree as an integration and centers around it): tree.lua holds
+-- nothing off, arms nothing, repairs nothing — no off/on cycle, no
+-- recenter flash when a file opens.
+check('tree leaves the centerer alone', tree_src:find('hold_nnp_off', 1, true) == nil
+  and tree_src:find('nnp_guard', 1, true) == nil
+  and tree_src:find('settle_tree_open', 1, true) == nil
+  and tree_src:find('will_open_file', 1, true) == nil
+  and tree_src:find('main.disable', 1, true) == nil)
+check('tree exposes a sync post-open recenter', tree_src:find('function M.file_opened()', 1, true) ~= nil)
 -- Short tab title: project + short label, no full terminal buffer path.
 local options_src = read(nvim .. '/lua/config/options.lua')
 local title_line = options_src:match('[^\n]*titlestring[^\n]*') or ''
@@ -334,6 +335,7 @@ check('titlestring is short', options_src:find('titlestring', 1, true) ~= nil
   and options_src:find("require('config.terminal').title_label", 1, true) ~= nil
   and title_line:find('://', 1, true) == nil)
 local editor_src = read(nvim .. '/lua/plugins/editor.lua')
+check('tree file opens recenter through the wrapper', editor_src:find('open_file_centered()', 1, true) ~= nil)
 check('tree indent guides on', editor_src:find('indent_markers = { enable = true }', 1, true) ~= nil)
 check('svelte parser installed', editor_src:find("'svelte'", 1, true) ~= nil)
 check('mini.icons set up and mocking devicons', editor_src:find("require('mini.icons').setup()", 1, true) ~= nil
@@ -454,9 +456,9 @@ for _, p in ipairs({ home .. '/.config/ghostty/config', home .. '/.config/ghostt
   check(tag .. ' Cmd+T reaches nvim', c:find('super+t=text', 1, true) ~= nil)
   check(tag .. ' Shift+Cmd+T opens a tab', c:find('super+shift+t=new_tab', 1, true) ~= nil)
   check(tag .. ' Shift+Cmd+N opens a window', c:find('super+shift+n=new_window', 1, true) ~= nil)
-  check(tag .. ' Cmd+digits unbound (no slot jumps)', c:find('super+digit_1=unbind', 1, true) ~= nil)
+  check(tag .. ' Cmd+digits jump to nvim', c:find('super+digit_1=text', 1, true) ~= nil)
+  check(tag .. ' Cmd+0 jumps too', c:find('super+digit_0=text', 1, true) ~= nil)
   check(tag .. ' bare Cmd+digits unbound', c:find('super+1=unbind', 1, true) ~= nil)
-  check(tag .. ' no digit sends to nvim', c:find('super+digit_1=text', 1, true) == nil)
   check(tag .. ' Alt+digits jump tabs', c:find('alt+1=goto_tab:1', 1, true) ~= nil)
   check(tag .. ' Cmd+E focuses tree', c:find('super+e=text', 1, true) ~= nil)
   check(tag .. ' Shift+Cmd+E peeks tree', c:find('super+shift+e=text', 1, true) ~= nil)
@@ -532,6 +534,11 @@ do
   package.preload['telescope.actions'] = nil
   package.preload['nvim-tree.api'] = nil
   package.preload['telescope.actions.state'] = nil
+  -- Drop the loaded mocks too (see the second block below): a stale
+  -- mock without the full api aborts later BufEnter runs.
+  package.loaded['telescope.actions'] = nil
+  package.loaded['nvim-tree.api'] = nil
+  package.loaded['telescope.actions.state'] = nil
   vim.fn.delete(root, 'rf')
 end
 
@@ -751,8 +758,77 @@ check('next id follows the top', terminal._next({ 1, 2, 3 }) == 4
   and terminal._next({ 1, 3 }) == 4
   and terminal._next({ 2, 3 }) == 4)
 check('next id starts at 1', terminal._next({}) == 1)
-check('slot helpers retired', terminal.goto_slot == nil and terminal._slot == nil)
+check('positional pick names the slot', terminal._at({ 1, 2, 5 }, 1) == 1
+  and terminal._at({ 1, 2, 5 }, 2) == 2
+  and terminal._at({ 1, 2, 5 }, 3) == 5)
+check('positional pick past the end is nil', terminal._at({ 1, 2, 5 }, 4) == nil
+  and terminal._at({ 1, 2, 5 }, 0) == nil
+  and terminal._at({}, 1) == nil)
+check('goto with no plugin is safe', terminal.goto_slot(1) == 'no-plugin')
 check('new with no plugin is safe', terminal.new() == 'no-plugin')
+do
+  -- Gappy ids {1,3}: slot 2 is terminal 3, slot 3 warns and stays put.
+  local actions = {}
+  local notices = {}
+  local live = { { id = 1 }, { id = 3 } }
+  package.loaded['toggleterm.terminal'] = {
+    get_all = function() return live end,
+    get = function(id)
+      for _, t in ipairs(live) do
+        if t.id == id then
+          return {
+            is_open = function() return true end,
+            open = function() actions[#actions + 1] = 'open' .. id end,
+            focus = function() actions[#actions + 1] = 'focus' .. id end,
+            close = function() actions[#actions + 1] = 'close' .. id end,
+          }
+        end
+      end
+      return nil
+    end,
+  }
+  local real_notify = vim.notify
+  vim.notify = function(msg) notices[#notices + 1] = msg end
+  local ok, res = pcall(terminal.goto_slot, 2)
+  check('goto slot lands on the live id, not the digit',
+    ok and res == 'focused'
+    and vim.tbl_contains(actions, 'focus3')
+    and vim.tbl_contains(actions, 'close1'))
+  actions = {}
+  local ok_far, res_far = pcall(terminal.goto_slot, 3)
+  check('goto past the last warns and stays put',
+    ok_far and res_far == 'missing'
+    and #actions == 0
+    and notices[#notices] == 'terminal 3: only 2 open')
+  live = {}
+  local ok_none, res_none = pcall(terminal.goto_slot, 1)
+  check('goto with no terminals warns and mints nothing',
+    ok_none and res_none == 'empty'
+    and notices[#notices] == 'no terminals yet (Cmd+T opens one)')
+  vim.notify = real_notify
+  package.loaded['toggleterm.terminal'] = nil
+end
+do
+  -- First open terminal scans the live ids in order: a closed low id
+  -- and ids past the old 1..10 scan range are both handled.
+  package.loaded['toggleterm.terminal'] = {
+    get_all = function() return { { id = 7 }, { id = 12 } } end,
+    get = function(id)
+      if id == 7 then return { is_open = function() return false end, job_id = 1 } end
+      if id == 12 then return { is_open = function() return true end, job_id = 9 } end
+      return nil
+    end,
+  }
+  local first = terminal.first_open()
+  check('first open skips closed terminals, past id 10', first ~= nil and first.job_id == 9)
+  package.loaded['toggleterm.terminal'] = {
+    get_all = function() return {} end,
+    get = function() return nil end,
+  }
+  check('first open with none is nil', terminal.first_open() == nil)
+  package.loaded['toggleterm.terminal'] = nil
+  check('first open with no plugin is safe', terminal.first_open() == nil)
+end
 do
   local actions = {}
   local seen_cmd = nil
@@ -848,13 +924,16 @@ check('kitty Shift+Cmd+W closes tab',
 check('kitty Ctrl+Shift+Cmd+W closes window',
   read(home .. '/.config/kitty/kitty.conf'):find('ctrl+shift+cmd+w close_window', 1, true) ~= nil)
 do
-  -- Slot digits are retired: no digit family may send terminal jumps.
+  -- Cmd+digits jump to terminal slots by position (Bank A is live);
+  -- the Cmd+Shift / Cmd+Ctrl slot families stay retired.
   local kitty_conf = read(home .. '/.config/kitty/kitty.conf')
-  check('kitty slot digits stay retired',
+  check('kitty Cmd+digits jump to terminals',
+    kitty_conf:find('cmd+1 send_text', 1, true) ~= nil
+    and kitty_conf:find('cmd+4 send_text', 1, true) ~= nil
+    and kitty_conf:find('cmd+0 send_text', 1, true) ~= nil)
+  check('kitty slot selects stay retired',
     kitty_conf:find('cmd+shift+1 send_text', 1, true) == nil
-    and kitty_conf:find('cmd+ctrl+1 send_text', 1, true) == nil
-    and kitty_conf:find('cmd+1 send_text', 1, true) == nil
-    and kitty_conf:find('cmd+4 send_text', 1, true) == nil)
+    and kitty_conf:find('cmd+ctrl+1 send_text', 1, true) == nil)
   check('kitty Cmd+T reaches nvim',
     kitty_conf:find('cmd+t send_text all \\e[116;9u', 1, true) ~= nil)
   check('kitty Shift+Cmd+T opens a tab',
@@ -911,6 +990,12 @@ do
   package.preload['telescope.actions'] = nil
   package.preload['nvim-tree.api'] = nil
   package.preload['telescope.actions.state'] = nil
+  -- Drop the loaded mocks too: later code (the TreeWidthByFiletype
+  -- BufEnter below) requires these for real, and a stale mock without
+  -- the full api aborts the run (E5113 on api.tree.is_visible).
+  package.loaded['telescope.actions'] = nil
+  package.loaded['nvim-tree.api'] = nil
+  package.loaded['telescope.actions.state'] = nil
   vim.fn.delete(root, 'rf')
 end
 
@@ -1095,17 +1180,14 @@ do
     and image_src:find('is_enabled()', 1, true) ~= nil)
 end
 
--- Tree focus vs the centerer: the hold-off is synchronous (no debounce
--- window for a re-init to land in) and the settle converges over bounded
--- passes instead of a single shot.
+-- Tree focus vs the centerer: nothing left to hold off (see above) —
+-- the only guard kept is the tab-teardown one on the plugin init.
 do
-  local tree_src = read(nvim .. '/lua/config/tree.lua')
-  check('tree hold-off is synchronous',
-    tree_src:find('nnp_hold_off_now', 1, true) ~= nil
-    and tree_src:find("main.disable, 'tree:hold'", 1, true) ~= nil)
-  check('tree settle converges over passes',
-    tree_src:find('settle_gaps', 1, true) ~= nil
-    and tree_src:find('want_focus', 1, true) ~= nil)
+  local ui_src = read(nvim .. '/lua/plugins/ui.lua')
+  check('centerer init still guards torn-down tabs',
+    ui_src:find('is_active_tab_registered', 1, true) ~= nil)
+  check('centerer init skips under a tree cursor',
+    ui_src:find("ft == 'NvimTree'", 1, true) ~= nil)
 end
 
 if failures > 0 then

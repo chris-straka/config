@@ -92,6 +92,16 @@ return {
       local orig_init = main.init
       main.init = function(scope)
         if not state:is_active_tab_registered() then return end
+        -- Never re-init under a tree cursor: recreating the sides drags
+        -- focus through the new splits back into `curr` (the code
+        -- window), so entering the tree always ends kicked out. Leaving
+        -- the tree fires WinEnter elsewhere, which re-runs init with the
+        -- final layout — nothing starves. An enable issued from inside
+        -- the tree likewise applies on leave.
+        if state.enabled then
+          local ok, ft = pcall(function() return vim.bo[vim.api.nvim_get_current_buf()].filetype end)
+          if ok and ft == 'NvimTree' then return end
+        end
         return orig_init(scope)
       end
     end },

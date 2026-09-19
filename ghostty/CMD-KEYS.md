@@ -47,6 +47,9 @@ that steps out to Terminal-Normal first (`<C-\><C-n>`). Currently covered:
 `<D-e>` (tree focus), `<D-S-e>` (tree peek), `<D-[>` / `<D-]>`
 (terminal cycling), and `<D-w>` (buffer close / empty-buffer tabclose —
 a Lua function RHS, so it runs in every mode with no drop-to-Normal).
+`<D-t>` (new terminal) and `<D-1>`..`<D-0>` (positional jumps) are Lua
+functions too, so they run in every mode — including inside a float —
+with no drop-to-Normal.
 Still missing: `<D-p>`,
 `<D-o>`, `<D-S-f>`, `<D-z>`-family from floats (undo's bare-`u` RHS needs
 care — in terminal mode it would be typed into the shell).
@@ -54,11 +57,11 @@ care — in terminal mode it would be typed into the shell).
 ## File inventory (2026-09-14: slots retired, Ghostty tabs own projects)
 
 - Ghostty `config` and `nvim-launcher`: Cmd+T mints a fresh nvim float
-  as CSI-u (`<D-t>`), Cmd+[/] steps terminal floats, Cmd+digits are
-  unbound both spellings (positional slot jumps retired as confusing),
-  Alt+digits stay native (goto_tab), Shift+Cmd+T opens a tab (was
-  Ghostty's Cmd+T), Shift+Cmd+N opens a window (Cmd+N stays default
-  too);
+  as CSI-u (`<D-t>`), Cmd+[/] steps terminal floats, Cmd+1..0 jumps to
+  the Nth live terminal (`<D-1>`..`<D-0>`, positional — out-of-range
+  warns and stays put), Alt+digits stay native (goto_tab),
+  Shift+Cmd+T opens a tab (was Ghostty's Cmd+T), Shift+Cmd+N opens a
+  window (Cmd+N stays default too);
   Cmd+letters go to nvim as CSI-u (Cmd+W closes nvim's buffer, or the
   tab when the buffer is empty — tabclose only, never a window close);
   Shift+Cmd+H/L switch Ghostty tabs natively;
@@ -71,7 +74,7 @@ care — in terminal mode it would be typed into the shell).
   Shift+Cmd+H/L switches) and the zoomed-in `font-size` are
   duplicated too, for the same reason.
 - Kitty config converted the same way (other track): Cmd+T to nvim,
-  Shift+Cmd+T tab, Shift+Cmd+N window, Cmd+digits unmapped.
+  Shift+Cmd+T tab, Shift+Cmd+N window, Cmd+1..0 jumps to terminal slots.
 - `nvim/lua/config/keymaps/`: `<D-…>` maps are the live path (the old
   single `keymaps.lua` was split into focused modules); the pre-0.12
   `<Esc>[9xx…` fallback maps are retired — both terminals speak CSI-u.

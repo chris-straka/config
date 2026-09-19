@@ -6,11 +6,21 @@
 local map = vim.keymap.set
 local opts = { noremap = true, silent = true }
 
--- (Retired: Cmd+digits / Alt+digits used to jump to terminal slots by
--- position. Positional jumps proved confusing — a digit past the last
--- terminal landed on a different shell than the number named — so digits
--- are unbound in both emulators and no digit maps live here. Terminals
--- open on Cmd+T and step on Cmd+[/] only.)
+-- Cmd+1..0 jumps to the Nth live terminal by position (0 means 10):
+-- the same slot the statusline names (`term 2 / 3`, see goto_slot in
+-- config/terminal.lua), so the digit always matches the bar. A digit
+-- past the last terminal warns and stays put instead of landing on a
+-- different shell — and digits never mint (Cmd+T does that). Transport
+-- lives in shared-keybinds.conf (super+digit_N) and kitty.conf (cmd+N);
+-- Ghostty's bare super+N spellings stay unbound so one press can never
+-- fire twice. A Lua function RHS, so digits work in every mode —
+-- including inside a float — with no drop-to-Normal, and toggleterm's
+-- on_open startinsert lands the jumped-to float in Terminal-Insert.
+for _i = 1, 10 do
+  local _slot, _digit = _i, (_i == 10 and '0' or tostring(_i))
+  map({ 'n', 'v', 'i', 't' }, '<D-' .. _digit .. '>', function() require('config.terminal').goto_slot(_slot) end,
+    { noremap = true, silent = true, desc = 'Go to terminal ' .. _slot })
+end
 -- New floating terminal, one Ghostty tab = one project: Cmd+T mints a
 -- fresh float in THIS tab's nvim (see new() in config/terminal.lua —
 -- always creates, never toggles). A dev server keeps running in that

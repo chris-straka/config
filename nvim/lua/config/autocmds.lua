@@ -186,3 +186,23 @@ autocmd({ 'TermOpen', 'TermClose', 'BufDelete', 'BufWipeout' }, {
     end
   end,
 })
+
+-- Tree width follows the tab: Java packages nest deep, so a tab showing Java
+-- gets a 40-column tree, everything else keeps 30. Scans the tab's windows
+-- (one tab = one project), so entering the tree itself keeps the width too.
+autocmd('BufEnter', {
+  group = vim.api.nvim_create_augroup('TreeWidthByFiletype', { clear = true }),
+  callback = function()
+    local ok, api = pcall(require, 'nvim-tree.api')
+    if not ok or not api.tree.is_visible() then return end
+    local width = 30
+    for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+      local buf = vim.api.nvim_win_get_buf(win)
+      if vim.bo[buf].filetype == 'java' then
+        width = 40
+        break
+      end
+    end
+    vim.cmd('NvimTreeResize ' .. width)
+  end,
+})

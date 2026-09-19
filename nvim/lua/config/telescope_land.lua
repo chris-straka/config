@@ -22,27 +22,40 @@ local function strictly_inside(dir, base)
   return #d > #b and d:sub(1, #b) == b
 end
 
+-- Resolve a highlighted entry to a path plus whether it is a
+-- directory: plenary Path objects (method calls, pcall-guarded) or
+-- plain string paths (`value`/`path` keys). One place owns the dual
+-- shape so land_here and select_and_land cannot drift apart. Returns
+-- path, is_dir; nil path when nothing is highlighted or the entry
+-- carries no usable path.
+---@param entry table|nil telescope entry
+---@return string?, boolean
+local function entry_info(entry)
+  if entry == nil then return nil, false end
+  if entry.Path ~= nil then
+    local ok_abs, abs = pcall(function() return entry.Path:absolute() end)
+    if not ok_abs or type(abs) ~= 'string' then return nil, false end
+    local ok_dir, is_dir = pcall(function() return entry.Path:is_dir() end)
+    if ok_dir and is_dir then return abs, true end
+    if vim.fn.isdirectory(abs) == 1 then return abs, true end
+    return abs, false
+  end
+  local path = entry.value or entry.path
+  if type(path) ~= 'string' then return nil, false end
+  if vim.fn.isdirectory(path) == 1 then return path, true end
+  return path, false
+end
+
 -- Resolve a highlighted entry to the directory landing should consider:
 -- a directory itself, or a file's parent. Returns nil when nothing is
 -- highlighted or the entry carries no usable path.
 ---@param entry table|nil telescope entry
 ---@return string|nil
 function M.entry_dir(entry)
-  if entry == nil then return nil end
-  if entry.Path ~= nil then
-    local ok, is_dir = pcall(function() return entry.Path:is_dir() end)
-    if ok then
-      local ok_abs, abs = pcall(function() return entry.Path:absolute() end)
-      if ok_abs then return is_dir and abs or vim.fn.fnamemodify(abs, ':h') end
-    end
-  elseif entry.path ~= nil then
-    if vim.fn.isdirectory(entry.path) == 1 then
-      return entry.path
-    else
-      return vim.fn.fnamemodify(entry.path, ':h')
-    end
-  end
-  return nil
+  local path, is_dir = entry_info(entry)
+  if path == nil then return nil end
+  if is_dir then return path end
+  return vim.fn.fnamemodify(path, ':h')
 end
 
 ---@param prompt_bufnr number telescope prompt buffer
@@ -70,25 +83,9 @@ end
 function M.select_and_land(prompt_bufnr)
   local action_state = require 'telescope.actions.state'
   local actions = require 'telescope.actions'
-  local entry = action_state.get_selected_entry()
-  local path = nil
-  if entry ~= nil then
-    path = entry.value or entry.path
-    if path == nil and entry.Path ~= nil then
-      local ok, abs = pcall(function() return entry.Path:absolute() end)
-      if ok then path = abs end
-    end
-  end
+  local path, is_dir = entry_info(action_state.get_selected_entry())
   local dir = nil
-  if path ~= nil then
-    local is_dir = false
-    if entry.Path ~= nil then
-      local ok, d = pcall(function() return entry.Path:is_dir() end)
-      is_dir = ok and d or false
-    end
-    if not is_dir and vim.fn.isdirectory(path) == 1 then is_dir = true end
-    if not is_dir then dir = vim.fn.fnamemodify(path, ':h') end
-  end
+  if path ~= nil and not is_dir then dir = vim.fn.fnamemodify(path, ':h') end
   actions.select_default(prompt_bufnr)
   if dir ~= nil then require('config.tree').change_root(dir) end
 end

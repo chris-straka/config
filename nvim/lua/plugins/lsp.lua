@@ -34,8 +34,6 @@ return {
       -- autoload): lsp/lua_ls.lua, lsp/tailwindcss.lua, lsp/omnisharp.lua.
       vim.lsp.config('*', { capabilities = caps })
 
-      -- Java formats via jdtls itself, so it stays out of the conform
-      -- table on purpose.
       vim.lsp.enable(servers)
 
       vim.api.nvim_create_autocmd('LspAttach', {
@@ -46,13 +44,17 @@ return {
           vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, b)
           vim.keymap.set('n', 'gr', vim.lsp.buf.references, b)
           vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, b)
-          -- Cap the hover/signature floats at 80 columns: without
-          -- max_width, open_floating_preview() wraps at the current
-          -- window width, so docs span the whole screen on a wide
-          -- monitor. Keep in sync with M.max_width in
-          -- lua/config/mouse_hover.lua (same tooltip via mouse).
-          vim.keymap.set('n', 'K', function() vim.lsp.buf.hover({ max_width = 80 }) end, b)
-          vim.keymap.set('n', '<C-k>', function() vim.lsp.buf.signature_help({ max_width = 80 }) end, b)
+          -- Cap the hover/signature floats (without max_width,
+          -- open_floating_preview() wraps at the current window width,
+          -- so docs span the whole screen on a wide monitor). The cap
+          -- lives on M.max_width in lua/config/mouse_hover.lua — same
+          -- tooltip via mouse, one value for both.
+          vim.keymap.set('n', 'K', function()
+            vim.lsp.buf.hover({ max_width = require('config.mouse_hover').max_width })
+          end, b)
+          vim.keymap.set('n', '<C-k>', function()
+            vim.lsp.buf.signature_help({ max_width = require('config.mouse_hover').max_width })
+          end, b)
           vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, b)
           vim.keymap.set('n', '<leader>ca', vim.lsp.buf.code_action, b)
 
@@ -108,11 +110,17 @@ return {
         python = { 'ruff_format' },
         go = { 'gofumpt', 'gofmt', stop_after_first = true },
         rust = { 'rustfmt' },
+        -- Java: google-java-format to match the Ledger repo's Spotless pin
+        -- (googleJavaFormat 1.28.0). With this set, conform handles Java and
+        -- the lsp_fallback in the Shift+Alt+F map / format-on-save stays as
+        -- backup only. jdtls formatting is NOT used when this resolves.
+        java = { 'google_java_format' },
         csharp = { 'csharpier' }, -- replaces the csharpier VS Code extension
         bash = { 'shfmt' }, -- replaces foxundermoon's shell-format
         terraform = { 'terraform_fmt' }, -- ships with terraform itself
         javascript = { 'prettierd', 'prettier', stop_after_first = true },
         typescript = { 'prettierd', 'prettier', stop_after_first = true },
+        svelte = { 'prettierd', 'prettier', stop_after_first = true },
         markdown = { 'prettierd', 'prettier', stop_after_first = true },
       },
     },
@@ -140,6 +148,7 @@ return {
     -- ~/go/bin, which is on PATH (see .zshrc).
     opts = { ensure_installed = {
       'stylua', 'prettierd', 'eslint_d', 'csharpier', 'shfmt',
+      'google-java-format',
       -- debug adapters (see dap.lua keymaps under <leader>d)
       'codelldb', 'debugpy', 'js-debug-adapter', 'netcoredbg',
       'firefox-debug-adapter',

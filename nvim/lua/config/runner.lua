@@ -114,14 +114,7 @@ function M.send_at_reference()
     return
   end
   local terms = require('toggleterm.terminal')
-  local target
-  for id = 1, 10 do
-    local t = terms.get(id, true)
-    if t and t:is_open() and t.job_id then
-      target = t
-      break
-    end
-  end
+  local target = require('config.terminal').first_open()
   if not target then
     vim.cmd('1ToggleTerm direction=float')
     target = terms.get(1, true)

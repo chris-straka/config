@@ -1,24 +1,21 @@
 -- Compact fold indicator (wired as `foldtext` in options.lua): the stock
 -- foldtext pads `+-- N lines: ...` with dots across the whole window;
--- this shows the same facts (`+ 6 lines · first line`) with no fill.
+-- this shows just the first line with no fill. Fold size is visible on
+-- demand by opening the fold, so no count prefix is kept.
 local M = {}
 
----@param start integer first folded line
----@param finish integer last folded line
+---@param _start integer first folded line (unused; size shown on demand)
+---@param _finish integer last folded line (unused; size shown on demand)
 ---@param first string raw first line of the fold
 ---@param width integer window width to trim the label to
 ---@return string compact single-line fold label
-function M.text(start, finish, first, width)
+function M.text(_start, _finish, first, width)
   local trimmed = first:gsub('^%s*', ''):gsub('%s*$', '')
   if trimmed == '' then trimmed = '(blank)' end
-  local n = finish - start + 1
-  local head = string.format(n == 1 and '+ 1 line · ' or '+ %d lines · ', n)
-  local room = width - vim.fn.strwidth(head) - 1
-  if room < 1 then return head:gsub('%s+$', '') end
-  if vim.fn.strwidth(trimmed) > room then
-    trimmed = vim.fn.strcharpart(trimmed, 0, math.max(room - 1, 0)) .. '…'
+  if vim.fn.strwidth(trimmed) > width then
+    trimmed = vim.fn.strcharpart(trimmed, 0, math.max(width - 1, 0)) .. '…'
   end
-  return head .. trimmed
+  return trimmed
 end
 
 -- Foldtext entry point: Neovim sets vim.v.foldstart/foldend around this.
