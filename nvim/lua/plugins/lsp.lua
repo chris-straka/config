@@ -165,6 +165,9 @@ return {
       poll_rate = 0.5,
       suppress_on_insert = true,
       ignore_done_already = true,
+      -- Done items vanish instantly instead of lingering with a checkmark: the "Validate
+      -- documents" flicker is the done state, not live progress.
+      display = { done_ttl = 0 },
     },
   } },
 }

@@ -1340,6 +1340,19 @@ do
     lsp_spec:find('ignore_done_already = true', 1, true) ~= nil)
   check('fidget holds popups while typing',
     lsp_spec:find('suppress_on_insert = true', 1, true) ~= nil)
+  check('fidget drops done items instantly',
+    lsp_spec:find('done_ttl = 0', 1, true) ~= nil)
+end
+
+-- Comment continuation: Enter in insert mode extends the comment leader
+-- (the javadoc habit), while auto-wrap and o/O continuation stay off.
+do
+  require('config.autocmds')
+  vim.api.nvim_exec_autocmds('BufEnter', {})
+  local fo = vim.opt.formatoptions:get()
+  check('enter continues comments', fo.r == true)
+  check('comments never auto-wrap', not fo.c)
+  check('o/O never continues comments', not fo.o)
 end
 
 if failures > 0 then

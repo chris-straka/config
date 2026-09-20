@@ -1,7 +1,8 @@
 local autocmd = vim.api.nvim_create_autocmd
 
--- no auto-continue of comments on new line
-autocmd('BufEnter', { command = 'set formatoptions-=cro' })
+-- Comments never auto-wrap (c) and o/O never continues them, but Enter keeps writing the
+-- comment: `r` inserts the ` * ` leader on <CR> in insert mode (the javadoc habit).
+autocmd('BufEnter', { command = 'set formatoptions-=c formatoptions-=o formatoptions+=r' })
 
 -- Markdown reads soft-wrapped: long prose/table rows wrap on screen
 -- instead of trailing off past the right edge.
