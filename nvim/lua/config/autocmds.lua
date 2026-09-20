@@ -175,6 +175,39 @@ autocmd({ 'InsertEnter', 'InsertLeave' }, {
   end,
 })
 
+-- Doc floats (LSP hover, diagnostics, signature help): a second K focuses
+-- the hover float on purpose so long docs scroll and yank. That float is
+-- markdown with no LSP attached, so a further K falls back to
+-- keywordprg=man — on the ```java fence tag it opens man://java(1) in a
+-- split. Inside markdown floats K/q/Esc dismiss instead. Only floating
+-- markdown: real markdown files, terminals, and pickers keep their keys.
+-- Both events: the float opens before its filetype is set (hover) or the
+-- filetype is set before it opens, depending on the caller.
+local function pin_float_keys(buf)
+  if not vim.api.nvim_buf_is_valid(buf) then return end
+  if vim.bo[buf].filetype ~= 'markdown' then return end
+  local floating = false
+  for _, win in ipairs(vim.fn.win_findbuf(buf)) do
+    local ok, cfg = pcall(vim.api.nvim_win_get_config, win)
+    if ok and cfg.relative ~= '' then floating = true break end
+  end
+  if not floating then return end
+  local b = { buffer = buf, noremap = true, silent = true, desc = 'Dismiss docs' }
+  vim.keymap.set('n', 'K', '<cmd>close<cr>', b)
+  vim.keymap.set('n', 'q', '<cmd>close<cr>', b)
+  vim.keymap.set('n', '<Esc>', '<cmd>close<cr>', b)
+end
+local float_keys = vim.api.nvim_create_augroup('FloatKeys', { clear = true })
+autocmd('FileType', {
+  group = float_keys,
+  pattern = 'markdown',
+  callback = function(args) pin_float_keys(args.buf) end,
+})
+autocmd('BufWinEnter', {
+  group = float_keys,
+  callback = function(args) pin_float_keys(args.buf) end,
+})
+
 -- Terminal count in the statusline/title (`term 2 / 3`): creating or
 -- exiting a terminal fires no BufEnter on the remaining floats, so the
 -- tab count would sit stale without a nudge. Never force-loads

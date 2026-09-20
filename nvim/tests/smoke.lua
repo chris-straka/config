@@ -1266,6 +1266,47 @@ do
     opt_src:find('title_count_suffix', 1, true) ~= nil)
 end
 
+-- Doc floats: K/q/Esc dismiss instead of falling back to :Man.
+do
+  require('config.autocmds')
+  local home_win = vim.api.nvim_get_current_win()
+  local function float_with(ft)
+    -- Hover order: the float opens before its filetype is set.
+    local buf = vim.api.nvim_create_buf(false, true)
+    local win = vim.api.nvim_open_win(buf, true, {
+      relative = 'editor', width = 40, height = 10, row = 2, col = 2,
+      style = 'minimal', border = 'single',
+    })
+    vim.bo[buf].filetype = ft
+    return buf, win
+  end
+  local mbuf, mwin = float_with('markdown')
+  local krhs = vim.fn.maparg('K', 'n', false, true).rhs or ''
+  check('doc float maps K to dismiss', krhs:find('close', 1, true) ~= nil)
+  local qrhs = vim.fn.maparg('q', 'n', false, true).rhs or ''
+  check('doc float maps q to dismiss', qrhs:find('close', 1, true) ~= nil)
+  vim.cmd('normal K')
+  check('K in doc float closes instead of :Man', not vim.api.nvim_win_is_valid(mwin))
+  check('no man buffer opened by float K',
+    vim.fn.bufnr('man://java(1)') == -1)
+  vim.api.nvim_set_current_win(home_win)
+  vim.api.nvim_buf_delete(mbuf, { force = true })
+  local pbuf, pwin = float_with('TelescopePrompt')
+  check('picker float keeps its own K',
+    (vim.fn.maparg('K', 'n', false, true).rhs or '') == '')
+  vim.api.nvim_win_close(pwin, true)
+  vim.api.nvim_buf_delete(pbuf, { force = true })
+  vim.api.nvim_set_current_win(home_win)
+  local fbuf = vim.api.nvim_create_buf(true, false)
+  vim.api.nvim_set_current_buf(fbuf)
+  vim.bo[fbuf].filetype = 'markdown'
+  vim.api.nvim_set_current_win(home_win)
+  vim.api.nvim_set_current_buf(fbuf)
+  check('plain markdown file keeps its K',
+    (vim.fn.maparg('K', 'n', false, true).rhs or '') == '')
+  vim.api.nvim_buf_delete(fbuf, { force = true })
+end
+
 if failures > 0 then
   print(failures .. ' check(s) failed')
   os.exit(1)
