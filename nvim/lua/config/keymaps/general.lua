@@ -80,6 +80,19 @@ map('n', '<leader>ym', function()
   vim.notify('Copied: ' .. last)
 end, { noremap = true, silent = true, desc = 'Copy last message' })
 
+-- <leader>yp: show the current file's full path and copy it to the
+-- system clipboard. For moments like K-hover showing a definition's
+-- absolute path while the statusline only shows parent + file.
+map('n', '<leader>yp', function()
+  local path = vim.api.nvim_buf_get_name(0)
+  if path == '' then
+    vim.notify('no file path — buffer is unnamed', vim.log.levels.WARN)
+    return
+  end
+  vim.fn.setreg('+', path)
+  vim.notify('Copied: ' .. path)
+end, { noremap = true, silent = true, desc = 'Copy full file path' })
+
 -- Cmd+Shift+Z: redo (VSCode redo). u undoes, this re-applies.
 map('n', '<D-S-z>', '<cmd>redo<cr>', { noremap = true, silent = true, desc = 'Redo' })
 

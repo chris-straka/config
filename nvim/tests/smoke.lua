@@ -224,6 +224,7 @@ do
   vim.api.nvim_buf_delete(0, { force = true })
 end
 check('visual Cmd+C copies', vim.fn.maparg('<D-c>', 'v') == '"+y')
+check('leader-yp copies full path', vim.fn.maparg(' yp', 'n') ~= '')
 do
   -- Bare visual `y` must yank without a timeoutlen stall: no visual mapping
   -- may start with `y` (surround-add lives on `S` instead). Runs the real
