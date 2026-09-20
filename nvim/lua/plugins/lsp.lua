@@ -126,22 +126,6 @@ return {
         svelte = { 'prettierd', 'prettier', stop_after_first = true },
         markdown = { 'prettierd', 'prettier', stop_after_first = true },
       },
-      -- The formatter NAME above resolves to this command, not Mason's
-      -- binary: Mason only ships google-java-format 1.36.1, but the Ledger
-      -- repo's Spotless pins 1.28.0, so conform runs a Maven Central
-      -- 1.28.0 jar instead (same bytes as spotlessApply, verified). `java`
-      -- comes from PATH (mise). If the jar is missing, conform errors
-      -- loudly on save instead of silently falling back to jdtls.
-      formatters = {
-        ['google-java-format'] = {
-          command = 'java',
-          args = {
-            '-jar',
-            vim.fn.expand('~/.local/share/google-java-format/google-java-format-1.28.0-all-deps.jar'),
-            '-',
-          },
-        },
-      },
     },
   },
   -- linting (replaces null-ls diagnostics)
@@ -167,9 +151,6 @@ return {
     -- ~/go/bin, which is on PATH (see .zshrc).
     opts = { ensure_installed = {
       'stylua', 'prettierd', 'eslint_d', 'csharpier', 'shfmt',
-      -- NOTE: no version pin here is possible (Mason only ships one
-      -- google-java-format, currently 1.36.1, and rejects 1.28.0). The pin
-      -- lives on the conform override below instead: a Maven Central jar.
       'google-java-format',
       -- debug adapters (see dap.lua keymaps under <leader>d)
       'codelldb', 'debugpy', 'js-debug-adapter', 'netcoredbg',
