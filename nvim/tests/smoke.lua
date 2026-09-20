@@ -1084,6 +1084,29 @@ local t6 = openlink.extract('[site](https://example.com)', 5, '/tmp')
 check('urls stay urls', t6 and t6.url == 'https://example.com')
 local t7 = openlink.extract('[rel](docs/notes.md)', 5, '/base')
 check('relative links resolve at the file dir', t7 and t7.file == '/base/docs/notes.md')
+check('relative links keep the as-written dest', t7 and t7.rel == 'docs/notes.md')
+local t8 = openlink.extract('[abs](/x/a.lua)', 5, '/base')
+check('absolute links carry no fallback dest', t8 and t8.rel == nil)
+local t9 = openlink.extract(' * see {@code docs/DESIGN.md} for why', 20, '/base')
+check('javadoc brace does not leak into the token', t9 and t9.file == '/base/docs/DESIGN.md')
+
+-- 18b. gx falls back to the repo root for repo-relative references.
+do
+  vim.fn.delete('/tmp/gxroot', 'rf')
+  vim.fn.mkdir('/tmp/gxroot/sub', 'p')
+  vim.fn.system('git -C /tmp/gxroot init -q')
+  local f = assert(io.open('/tmp/gxroot/docs-DESIGN.md', 'w'))
+  f:write('# design\n')
+  f:close()
+  vim.cmd('edit /tmp/gxroot/sub/probe.java')
+  vim.api.nvim_buf_set_lines(0, 0, -1, false, { ' * see {@code docs-DESIGN.md} for why' })
+  vim.api.nvim_win_set_cursor(0, { 1, 20 })
+  openlink.open()
+  check('gx resolves repo-relative path at git root',
+    vim.fn.expand('%:p') == vim.fn.resolve('/tmp/gxroot/docs-DESIGN.md'))
+  vim.cmd('bdelete!')
+  vim.fn.delete('/tmp/gxroot', 'rf')
+end
 check('gx opens link under cursor', vim.fn.maparg('gx', 'n') ~= '')
 check('tree exempts applications from ignore filter',
   editor_src:find("exclude = { 'applications' }", 1, true) ~= nil)
