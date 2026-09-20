@@ -111,10 +111,13 @@ return {
         go = { 'gofumpt', 'gofmt', stop_after_first = true },
         rust = { 'rustfmt' },
         -- Java: google-java-format to match the Ledger repo's Spotless pin
-        -- (googleJavaFormat 1.28.0). With this set, conform handles Java and
-        -- the lsp_fallback in the Shift+Alt+F map / format-on-save stays as
+        -- (googleJavaFormat 1.28.0). Name uses hyphens: that is conform's
+        -- canonical formatter name, and underscores do NOT resolve (conform
+        -- then silently runs zero formatters and lsp_fallback hands Java to
+        -- jdtls instead). With this set, conform handles Java and the
+        -- lsp_fallback in the Shift+Alt+F map / format-on-save stays as
         -- backup only. jdtls formatting is NOT used when this resolves.
-        java = { 'google_java_format' },
+        java = { 'google-java-format' },
         csharp = { 'csharpier' }, -- replaces the csharpier VS Code extension
         bash = { 'shfmt' }, -- replaces foxundermoon's shell-format
         terraform = { 'terraform_fmt' }, -- ships with terraform itself
@@ -122,6 +125,22 @@ return {
         typescript = { 'prettierd', 'prettier', stop_after_first = true },
         svelte = { 'prettierd', 'prettier', stop_after_first = true },
         markdown = { 'prettierd', 'prettier', stop_after_first = true },
+      },
+      -- The formatter NAME above resolves to this command, not Mason's
+      -- binary: Mason only ships google-java-format 1.36.1, but the Ledger
+      -- repo's Spotless pins 1.28.0, so conform runs a Maven Central
+      -- 1.28.0 jar instead (same bytes as spotlessApply, verified). `java`
+      -- comes from PATH (mise). If the jar is missing, conform errors
+      -- loudly on save instead of silently falling back to jdtls.
+      formatters = {
+        ['google-java-format'] = {
+          command = 'java',
+          args = {
+            '-jar',
+            vim.fn.expand('~/.local/share/google-java-format/google-java-format-1.28.0-all-deps.jar'),
+            '-',
+          },
+        },
       },
     },
   },
@@ -148,6 +167,9 @@ return {
     -- ~/go/bin, which is on PATH (see .zshrc).
     opts = { ensure_installed = {
       'stylua', 'prettierd', 'eslint_d', 'csharpier', 'shfmt',
+      -- NOTE: no version pin here is possible (Mason only ships one
+      -- google-java-format, currently 1.36.1, and rejects 1.28.0). The pin
+      -- lives on the conform override below instead: a Maven Central jar.
       'google-java-format',
       -- debug adapters (see dap.lua keymaps under <leader>d)
       'codelldb', 'debugpy', 'js-debug-adapter', 'netcoredbg',
