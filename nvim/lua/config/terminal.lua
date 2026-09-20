@@ -219,10 +219,10 @@ function M._next(ids)
   return (ids[#ids] or 0) + 1
 end
 
--- First open terminal with a live shell, or nil: where Option+K
--- senders (see send_at_reference in config/runner.lua) type. Scans the
--- live ids in order instead of a fixed 1..10 range, so high ids from
--- Cmd+T minting (max id + 1, unbounded) are found too.
+-- First open terminal with a live shell, or nil: fallback for Option+K
+-- senders when nothing was ever focused. Scans the live ids in order
+-- instead of a fixed 1..10 range, so high ids from Cmd+T minting
+-- (max id + 1, unbounded) are found too.
 ---@return table|nil toggleterm terminal
 function M.first_open()
   local ok, terms = pcall(require, 'toggleterm.terminal')
@@ -232,6 +232,30 @@ function M.first_open()
     if term and term:is_open() and term.job_id then return term end
   end
   return nil
+end
+
+-- Current terminal with a live shell, or nil: where Option+K senders
+-- (see send_at_reference in config/runner.lua) type. Prefers the
+-- focused terminal, then toggleterm's last-focused terminal (still
+-- correct from a code buffer, where nothing is focused), and only
+-- then the first open one — so @refs land in the terminal you were
+-- just on, not always terminal 1.
+---@return table|nil toggleterm terminal
+function M.current()
+  local ok, terms = pcall(require, 'toggleterm.terminal')
+  if not ok then return nil end
+  if terms.get_focused_id then
+    local focused = terms.get_focused_id()
+    if focused then
+      local term = terms.get(focused, true)
+      if term and term:is_open() and term.job_id then return term end
+    end
+  end
+  if terms.get_last_focused then
+    local ok_last, last = pcall(terms.get_last_focused)
+    if ok_last and last and last.is_open and last:is_open() and last.job_id then return last end
+  end
+  return M.first_open()
 end
 
 -- Pure positional pick for goto_slot: the slot-th live id, or nil past

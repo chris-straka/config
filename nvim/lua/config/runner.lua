@@ -102,10 +102,11 @@ function M.ref_for_visual()
 end
 
 ---Option+K from visual mode (Claude Code's @-mention habit): types
----`@file` / `@file#l1-l2` into the visible floating terminal — a Muse
----prompt, a shell, whatever runs there. No Enter is sent; review the text
----and hit enter yourself. Visual-only on purpose: normal-mode Option+K is
----window navigation (<A-k>), which stays. Whether the agent expands the
+---`@file` / `@file#l1-l2` into the current floating terminal — a Muse
+---prompt, a shell, whatever runs there (the one you were just on, not
+---always terminal 1). No Enter is sent; review the text and hit enter
+---yourself. Visual-only on purpose: normal-mode Option+K is window
+---navigation (<A-k>), which stays. Whether the agent expands the
 ---reference is up to the agent; worst case it is visible pasted text.
 function M.send_at_reference()
   local ref = M.ref_for_visual()
@@ -114,7 +115,7 @@ function M.send_at_reference()
     return
   end
   local terms = require('toggleterm.terminal')
-  local target = require('config.terminal').first_open()
+  local target = require('config.terminal').current()
   if not target then
     vim.cmd('1ToggleTerm direction=float')
     target = terms.get(1, true)
