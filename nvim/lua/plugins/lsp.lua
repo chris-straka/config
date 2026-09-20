@@ -156,5 +156,15 @@ return {
       'codelldb', 'debugpy', 'js-debug-adapter', 'netcoredbg',
       'firefox-debug-adapter',
     } } },
-  { 'j-hui/fidget.nvim', event = 'LspAttach', opts = {} },
+  -- Quiet progress: jdtls reports short-lived reconcile tasks on every keystroke (even comment
+  -- edits), which flickers the statusline. A slow poll plus ignore_done_already hides tasks that
+  -- finish between polls, and suppress_on_insert holds popups while typing. Long operations
+  -- still show; this only removes the flicker.
+  { 'j-hui/fidget.nvim', event = 'LspAttach', opts = {
+    progress = {
+      poll_rate = 0.5,
+      suppress_on_insert = true,
+      ignore_done_already = true,
+    },
+  } },
 }

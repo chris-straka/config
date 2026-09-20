@@ -1330,6 +1330,18 @@ do
   vim.api.nvim_buf_delete(fbuf, { force = true })
 end
 
+-- Fidget progress stays quiet: short-lived reconcile tasks (jdtls reports on
+-- every keystroke) must finish between polls and never display, and nothing
+-- may pop up while typing. Long operations still show.
+do
+  local lsp_spec = read(nvim .. '/lua/plugins/lsp.lua')
+  check('fidget polls slowly', lsp_spec:find('poll_rate = 0.5', 1, true) ~= nil)
+  check('fidget ignores done-already tasks',
+    lsp_spec:find('ignore_done_already = true', 1, true) ~= nil)
+  check('fidget holds popups while typing',
+    lsp_spec:find('suppress_on_insert = true', 1, true) ~= nil)
+end
+
 if failures > 0 then
   print(failures .. ' check(s) failed')
   os.exit(1)
