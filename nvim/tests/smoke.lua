@@ -428,10 +428,62 @@ check('center toggle installed on leader-z', ui:find('shortcuts/no-neck-pain.nvi
   and ui:find('width = 120', 1, true) ~= nil)
 check('centering is on by default', ui:find("enableOnVimEnter = 'safe'", 1, true) ~= nil
   and ui:find('enableOnTabEnter = true', 1, true) ~= nil)
+-- No split enforcement: the tree sidebar coexists with the file window, so
+-- nothing collapses splits, refuses C-w maps, or flattens picker opens.
+check('no single-window wiring', init:find('single_window', 1, true) == nil
+  and editor_src:find('select_default', 1, true) == nil)
+-- No pad focus bounce: WinEnter never shuffles focus (it yanked new tabs
+-- into the tree), and pads stay plain buffers (locking them surfaced
+-- "modifiable off" instead of code).
+local autocmds_src = read(nvim .. '/lua/config/autocmds.lua')
+check('no pad focus bounce', autocmds_src:find('NoNeckPainBounce', 1, true) == nil
+  and autocmds_src:find('wincmd w', 1, true) == nil)
+check('pads stay plain buffers', ui:find('setNames', 1, true) == nil
+  and ui:find('set_names', 1, true) == nil
+  and ui:find('modifiable', 1, true) == nil)
+-- The launcher tree opens clean: dotfiles hidden until H reveals them.
+check('tree hides dotfiles until H', editor_src:find('dotfiles = true', 1, true) ~= nil)
+-- Tree width 40, Java tabs 60; the tree opens at the default so pads
+-- never follow a resize snap.
+check('tree width 40, java 60', autocmds_src:find('local width = 40', 1, true) ~= nil
+  and autocmds_src:find('width = 60', 1, true) ~= nil
+  and autocmds_src:find("filetype == 'java'", 1, true) ~= nil
+  and editor_src:find('view = { width = 40 }', 1, true) ~= nil)
+-- Settles run synchronously once teardown/setup is complete (a lone scan
+-- consumes the change signal, leaving stale pads stuck; a rebuild on a
+-- stale scan paints wrong sizes; the TreeClose event itself fires
+-- mid-teardown, too early), then put the cursor back in the file when it
+-- stranded in a pad. The rebuild is skipped unless the scan sees the
+-- expected layout, so mid-churn snapshots never paint. Center width
+-- follows the tree: full for plain editing, narrower while open so both
+-- pads survive.
+check('tree settle scans, rebuilds, restores file focus',
+  tree_src:find("scan_layout(scope)", 1, true) ~= nil
+  and tree_src:find("main.init, scope)", 1, true) ~= nil
+  and tree_src:find("get_side_id('curr')", 1, true) ~= nil
+  and tree_src:find('is_side_the_active_win', 1, true) ~= nil
+  and tree_src:find('is_side_enabled_and_valid', 1, true) == nil)
+check('center width follows the tree',
+  tree_src:find('CENTER_FULL = 120', 1, true) ~= nil
+  and tree_src:find('CENTER_TREE = 100', 1, true) ~= nil
+  and tree_src:find('function M.tree_opened()', 1, true) ~= nil)
+check('shut paths settle directly, never via TreeClose event',
+  tree_src:find('TreeClose', 1, true) ~= nil
+  and tree_src:find('mid-teardown, too early', 1, true) ~= nil
+  and tree_src:find('subscribe', 1, true) == nil)
+check('file open settles via tree_closed backstop',
+  tree_src:find('function M.file_opened()', 1, true) ~= nil
+  and tree_src:find('M.tree_closed()', 1, true) ~= nil)
 local openlink_src = read(nvim .. '/lua/config/openlink.lua')
-check('pdfs hand off to the OS viewer', openlink_src:find('vim.ui.open(target.file)', 1, true) ~= nil)
-check('tree l opens pdfs in Preview', editor_src:find('vim.ui.open(node.absolute_path)', 1, true) ~= nil
-  and editor_src:find("match('%.pdf$')", 1, true) ~= nil)
+local pdf = require('config.pdf')
+check('pdf module exposes open', type(pdf.open) == 'function')
+check('pdfs open in zathura, OS viewer is the fallback only',
+  read(nvim .. '/lua/config/pdf.lua'):find("vim.fn.jobstart({ 'zathura', path }", 1, true) ~= nil)
+check('gx sends pdfs to zathura', openlink_src:find("require('config.pdf').open(target.file)", 1, true) ~= nil
+  and openlink_src:find('vim.ui.open(target.file)', 1, true) == nil)
+check('tree sends pdfs to zathura', editor_src:find("require('config.pdf')", 1, true) ~= nil
+  and editor_src:find("match('%.pdf$')", 1, true) ~= nil
+  and editor_src:find('vim.ui.open(node.absolute_path)', 1, true) == nil)
 check('tree bg brightened, theme kept', ui:find('catppuccin-mocha', 1, true) ~= nil
   and ui:find('NvimTreeNormal', 1, true) ~= nil
   and ui:find('surface0', 1, true) ~= nil)
@@ -1009,6 +1061,12 @@ for _, p in ipairs({ home .. '/.config/ghostty/config', home .. '/.config/ghostt
 end
 check('kitty Cmd+Delete reaches nvim', kitty:find('cmd+backspace send_text all \\e[127;9u', 1, true) ~= nil)
 
+-- 17b. Cmd+Delete in a terminal float deletes the shell line (macOS
+-- parity): terminal-mode <D-BS> forwards ^U to the job. The tree's
+-- buffer-local trash map above is untouched.
+local term_keys = read(nvim .. '/lua/config/keymaps/terminal.lua')
+check('terminal Cmd+Delete sends kill-line', term_keys:find("map('t', '<D-BS>', '<C-u>'", 1, true) ~= nil)
+
 -- 18. gx opens Markdown file links in a new buffer at the line.
 local openlink = require('config.openlink')
 local md = '[resume](/Users/c/Jobs/applications/x/resume.typ:12)'
@@ -1180,14 +1238,18 @@ do
     and image_src:find('is_enabled()', 1, true) ~= nil)
 end
 
--- Tree focus vs the centerer: nothing left to hold off (see above) —
--- the only guard kept is the tab-teardown one on the plugin init.
+-- Tree focus vs the centerer: entering the tree still refreshes the
+-- padding (stale sides squash the file), but focus is put back when the
+-- rebuild lands elsewhere — skipping the refresh was the squish. The
+-- tab-teardown guard stays.
 do
   local ui_src = read(nvim .. '/lua/plugins/ui.lua')
   check('centerer init still guards torn-down tabs',
     ui_src:find('is_active_tab_registered', 1, true) ~= nil)
-  check('centerer init skips under a tree cursor',
-    ui_src:find("ft == 'NvimTree'", 1, true) ~= nil)
+  check('centerer init keeps tree focus instead of skipping',
+    ui_src:find("ft == 'NvimTree'", 1, true) ~= nil
+    and ui_src:find('nvim_set_current_win', 1, true) ~= nil
+    and ui_src:find('orig_init(scope)', 1, true) ~= nil)
 end
 
 -- Window title: folder – file – N terms. File buffers carry the tab's

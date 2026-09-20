@@ -61,6 +61,12 @@ map({ 'n', 't' }, '\\', '<cmd>ToggleTerm direction=float<cr>', { noremap = true,
 -- Ctrl+C is untouched and reaches the shell too — but in Muse it quits,
 -- so interrupt with Esc, not Ctrl+C.
 map('t', '|', '<C-\\><C-n>', { noremap = true, silent = true, desc = 'Terminal to Normal mode' })
+-- Cmd+Delete in a terminal float deletes the shell line (macOS parity):
+-- Ghostty/kitty already deliver it as <D-BS> (CSI-u, see
+-- shared-keybinds.conf), and forwarding <C-u> types ^U into the shell,
+-- which zsh kills the whole line with. The tree's buffer-local <D-BS>
+-- trash map is unaffected (different buffer, different mode table).
+map('t', '<D-BS>', '<C-u>', { noremap = true, silent = true, desc = 'Delete shell line' })
 -- Exit with `|` (above), return with `i` — both stock Vim. (Retired: a
 -- Shift+Backspace Insert<->Normal toggle lived here, but Backspace is the
 -- Mac Delete key and the toggle fired on a habit keystroke. Ghostty still
