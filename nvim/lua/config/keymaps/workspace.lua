@@ -60,8 +60,22 @@ map('n', '<leader>fw', function() require('telescope.builtin').grep_string() end
 -- Ctrl+R: recent projects picker (VSCode Ctrl+R).
 -- This takes over Vim's built-in redo on Ctrl+R; redo lives on Cmd+Shift+Z.
 map('n', '<C-r>', '<cmd>Telescope projects<cr>', { noremap = true, silent = true, desc = 'Recent projects' })
--- Cmd+Shift+R: recent files picker.
-map('n', '<D-S-r>', '<cmd>Telescope oldfiles<cr>', { noremap = true, silent = true, desc = 'Recent files' })
+-- Shift+Cmd+R: LSP rename for the symbol under the cursor (VSCode F2):
+-- semantic, cross-file via the language server. Recent files moved to
+-- <leader>fr.
+map('n', '<D-S-r>', vim.lsp.buf.rename, { noremap = true, silent = true, desc = 'Rename symbol' })
+-- <leader>ra: change all occurrences in THIS file only (VSCode Ctrl+F2):
+-- lexical, no language server. Prefills :%s with the word under the
+-- cursor; type the replacement and hit Enter.
+map('n', '<leader>ra', function()
+  local word = vim.fn.expand('<cword>')
+  if word == '' then return end
+  local pat = vim.fn.escape(word, '/\\')
+  local keys = ':%s/\\V' .. pat .. '//g' .. vim.api.nvim_replace_termcodes('<Left><Left>', true, false, true)
+  vim.api.nvim_feedkeys(keys, 'n', false)
+end, { noremap = true, silent = true, desc = 'Change all occurrences in file' })
+-- Recent files picker (was Shift+Cmd+R).
+map('n', '<leader>fr', '<cmd>Telescope oldfiles<cr>', { noremap = true, silent = true, desc = 'Recent files' })
 -- Cmd+O: fuzzy file/folder browser (VSCode Open Folder). Navigate anywhere,
 -- open any file and the project root follows automatically. Press Cmd+O
 -- again (or Ctrl+Y) once inside the folder you want to land this tab and
