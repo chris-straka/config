@@ -58,7 +58,14 @@ autocmd('TextYankPost', {
 autocmd('VimEnter', {
   group = vim.api.nvim_create_augroup('TreeOnStartup', { clear = true }),
   callback = function()
-    if vim.fn.argc() == 0 then require('config.tree').peek(false) end
+    if vim.fn.argc() == 0 then
+      -- Deferred past startup: the tree opens on the next main-loop tick,
+      -- so a slow git backend (or any tree error) can never abort VimEnter.
+      vim.schedule(function()
+        local ok, err = pcall(function() require('config.tree').peek(false) end)
+        if not ok then vim.notify('tree on startup: ' .. tostring(err), vim.log.levels.WARN) end
+      end)
+    end
   end,
 })
 
@@ -192,18 +199,18 @@ autocmd({ 'TermOpen', 'TermClose', 'BufDelete', 'BufWipeout' }, {
 })
 
 -- Tree width follows the tab: Java packages nest deep, so a tab showing Java
--- gets a 40-column tree, everything else keeps 30. Scans the tab's windows
+-- gets a 60-column tree, everything else keeps 40. Scans the tab's windows
 -- (one tab = one project), so entering the tree itself keeps the width too.
 autocmd('BufEnter', {
   group = vim.api.nvim_create_augroup('TreeWidthByFiletype', { clear = true }),
   callback = function()
     local ok, api = pcall(require, 'nvim-tree.api')
     if not ok or not api.tree.is_visible() then return end
-    local width = 30
+    local width = 40
     for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
       local buf = vim.api.nvim_win_get_buf(win)
       if vim.bo[buf].filetype == 'java' then
-        width = 40
+        width = 60
         break
       end
     end

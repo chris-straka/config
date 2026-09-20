@@ -60,6 +60,8 @@ map('n', '<leader>fw', function() require('telescope.builtin').grep_string() end
 -- Ctrl+R: recent projects picker (VSCode Ctrl+R).
 -- This takes over Vim's built-in redo on Ctrl+R; redo lives on Cmd+Shift+Z.
 map('n', '<C-r>', '<cmd>Telescope projects<cr>', { noremap = true, silent = true, desc = 'Recent projects' })
+-- Cmd+Shift+R: recent files picker.
+map('n', '<D-S-r>', '<cmd>Telescope oldfiles<cr>', { noremap = true, silent = true, desc = 'Recent files' })
 -- Cmd+O: fuzzy file/folder browser (VSCode Open Folder). Navigate anywhere,
 -- open any file and the project root follows automatically. Press Cmd+O
 -- again (or Ctrl+Y) once inside the folder you want to land this tab and

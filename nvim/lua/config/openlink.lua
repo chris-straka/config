@@ -81,10 +81,9 @@ function M.open()
     vim.notify('Not found: ' .. target.file, vim.log.levels.WARN)
     return
   end
-  -- Neovim cannot render PDFs: hand them to the OS viewer (Preview)
-  -- instead of opening binary in a buffer.
+  -- PDFs open in Zathura (see config/pdf.lua), not as binary in a buffer.
   if target.file:lower():match('%.pdf$') then
-    vim.ui.open(target.file)
+    require('config.pdf').open(target.file)
     return
   end
   vim.cmd('edit ' .. vim.fn.fnameescape(target.file))

@@ -18,9 +18,9 @@ return {
       require('image').setup({
         backend = 'kitty',
         processor = 'magick_cli',
-        -- PDF renders via ghostscript (brew install ghostscript): the
-        -- tree still sends PDFs to Preview.app (full reader with
-        -- search), this covers :edit / Telescope / harpoon opens.
+        -- PDF renders via ghostscript (brew install ghostscript): covers
+        -- :edit / Telescope / harpoon opens (single static page). The
+        -- tree and gx send PDFs to Zathura instead (see config/pdf.lua).
         hijack_file_patterns = { '*.png', '*.jpg', '*.jpeg', '*.gif', '*.webp', '*.avif', '*.bmp', '*.ico', '*.pdf' },
       })
       vim.api.nvim_create_autocmd('FileType', {

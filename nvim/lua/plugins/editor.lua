@@ -182,11 +182,16 @@ return {
       -- Tree follows the working directory, so it always shows the
       -- current tab's project (one Ghostty tab = one project).
       sync_root_with_cwd = true,
-      view = { width = 30 },
+      -- Opens at the default width (TreeWidthByFiletype takes Java tabs
+      -- to 50 on BufEnter); opening wider first snaps narrower a beat
+      -- later as the pads follow.
+      view = { width = 40 },
       -- nvim-tree hides gitignored nodes by default, and the Jobs repo
       -- gitignores its applications/ folder (privacy): exempt it so the
       -- folder is always visible. Everything else ignored stays hidden.
-      filters = { exclude = { 'applications' } },
+      -- Dotfiles start hidden so the launcher view opens clean; press H
+      -- in the tree to reveal them (stock toggle, see default_on_attach).
+      filters = { dotfiles = true, exclude = { 'applications' } },
       -- VSCode behavior: Enter on a file opens it and closes the tree.
       actions = { open_file = { quit_on_open = true } },
       -- VSCode-explorer keys: h collapses the directory (or jumps to the
@@ -200,15 +205,6 @@ return {
           return { desc = 'nvim-tree: ' .. desc, buffer = bufnr, noremap = true, silent = true, nowait = true }
         end
         vim.keymap.set('n', 'h', api.node.navigate.parent_close, opts('Collapse'))
-        -- PDFs can't render in a buffer: open them in Preview (macOS)
-        -- instead of showing binary. Shared by l and Enter below.
-        local function preview_pdf(node)
-          if node and node.type == 'file' and node.absolute_path:lower():match('%.pdf$') then
-            vim.ui.open(node.absolute_path)
-            return true
-          end
-          return false
-        end
         -- File opens recenter synchronously (see file_opened in
         -- config/tree.lua): on screens where the sides stood beside the
         -- tree, the open lands final and this no-ops; where they had
@@ -217,10 +213,39 @@ return {
           api.node.open.edit()
           require('config.tree').file_opened()
         end
-        vim.keymap.set('n', 'l', function()
-          if not preview_pdf(api.tree.get_node_under_cursor()) then open_file_centered() end
-        end, opts('Expand'))
-        vim.keymap.set('n', 'o', open_file_centered, opts('Open'))
+        -- PDFs open in Zathura (vim keys, TOC, search): image.nvim
+        -- rasterizes a single static page, which breaks multi-page docs.
+        -- Images open in the OS viewer and return at once, so the cursor
+        -- stays in the tree. 3D models open in f3d (.blend in Blender):
+        -- buffers cannot render meshes.
+        local function open_file_or_external(node)
+          if node and node.type == 'file' and node.absolute_path then
+            local path = node.absolute_path
+            if path:lower():match('%.pdf$') then
+              require('config.pdf').open(path)
+              return
+            end
+            if require('config.image').handles(path) then
+              require('config.image').open(path)
+              return
+            end
+            if require('config.model3d').handles(path) then
+              require('config.model3d').open(path)
+              return
+            end
+          end
+          open_file_centered()
+        end
+        -- Space on a folder expands it (never re-roots); on a file it
+        -- opens it and jumps in, except images/PDFs/models which open
+        -- externally while the cursor stays in the tree. Same as l,
+        -- unlike Enter which re-roots folders.
+        local function expand_or_open()
+          open_file_or_external(api.tree.get_node_under_cursor())
+        end
+        vim.keymap.set('n', 'l', expand_or_open, opts('Expand'))
+        vim.keymap.set('n', '<Space>', expand_or_open, opts('Expand'))
+        vim.keymap.set('n', 'o', expand_or_open, opts('Open'))
         -- Cmd+Delete (Backspace) trashes the node under the cursor,
         -- mirroring Finder (needs the `trash` CLI; prompts to confirm).
         -- Transport: Ghostty/kitty send CSI-u super (see shared-keybinds).
@@ -247,14 +272,17 @@ return {
             api.tree.reload()
           end)
         end, opts('Create folder'))
-        vim.keymap.set('n', '<CR>', function()
+        local function open_or_root()
           local node = api.tree.get_node_under_cursor()
           if node and node.type == 'directory' then
             api.tree.change_root_to_node()
-          elseif not preview_pdf(node) then
-            open_file_centered()
+          else
+            open_file_or_external(node)
           end
-        end, opts('Open / change directory'))
+        end
+        vim.keymap.set('n', '<CR>', open_or_root, opts('Open / change directory'))
+        -- (Space shadows the global leader here, but it is buffer-local +
+        -- nowait, so no leader delay inside the tree or anywhere else.)
       end,
     },
   },

@@ -16,6 +16,7 @@ local function with_api()
     vim.notify('nvim-tree not loaded', vim.log.levels.WARN)
     return nil
   end
+  pcall(require, 'config.tree_git_guard')
   return api
 end
 
@@ -70,7 +71,65 @@ function M.peek(find)
   local api = with_api()
   if not api then return end
   -- Open or shut, cursor never leaves the code: toggle does both.
-  api.tree.toggle({ find_file = find, focus = false })
+  -- pcall: a slow git backend must not surface as a startup error.
+  pcall(api.tree.toggle, { find_file = find, focus = false })
+  -- Settle whichever way the toggle went (the TreeClose event fires
+  -- mid-teardown, too early to compute from — verified by trace).
+  if api.tree.is_visible() then M.tree_opened() else M.tree_closed() end
+end
+
+-- Center width follows the tree: full width for plain editing, narrower
+-- while the tree is open so both pads survive on a 250-column screen
+-- (at full width the plugin's own math closes the right pad). Applied on
+-- every transition, enabled or not, so a later <leader>z re-enable picks
+-- up the width that matches the visible layout.
+local CENTER_FULL = 120
+local CENTER_TREE = 100
+
+local function set_center_width(w)
+  pcall(function()
+    if _G.NoNeckPain ~= nil and _G.NoNeckPain.config ~= nil then
+      _G.NoNeckPain.config.width = w
+    end
+  end)
+end
+
+-- Shared settle: refresh the scan (a rebuild on a stale scan paints wrong
+-- sizes, and a lone scan consumes the change signal so the async pass
+-- never fixes it), rebuild, then put the cursor back in the file when it
+-- stranded in a pad. Skips the rebuild unless the scan sees the layout
+-- the transition just produced (tree registered on open, gone on close)
+-- so a mid-churn snapshot never paints. Skips the focus move when
+-- starting in the tree (the init wrapper in plugins/ui.lua owns that
+-- case). Only ever leaves a side — never the tree, a float, or a
+-- terminal — and only lands on a real file window. No-op when the
+-- centerer is off. Everything guarded.
+---@param scope string 'tree:open' | 'tree:close'
+local function settle(scope)
+  set_center_width(scope == 'tree:open' and CENTER_TREE or CENTER_FULL)
+  local ok_state, state = pcall(require, 'no-neck-pain.state')
+  if not ok_state or not state.enabled then return end
+  pcall(function()
+    local ok_ft, ft = pcall(function() return vim.bo[vim.api.nvim_get_current_buf()].filetype end)
+    local in_tree = ok_ft and ft == 'NvimTree'
+    state:scan_layout(scope)
+    local ok_int, integrations = pcall(function() return state:get_integrations() end)
+    local tree = ok_int and integrations ~= nil and integrations.NvimTree or nil
+    local tree_id = tree ~= nil and tree.id or nil
+    local tree_seen = tree_id ~= nil and vim.api.nvim_win_is_valid(tree_id)
+    -- Open expects the tree registered, close expects it gone; anything
+    -- else is mid-churn — leave it to the async scans.
+    if (scope == 'tree:open') ~= tree_seen then return end
+    local ok_main, main = pcall(require, 'no-neck-pain.main')
+    if ok_main and type(main.init) == 'function' then pcall(main.init, scope) end
+    if in_tree then return end
+    if not (state:is_side_the_active_win('left') or state:is_side_the_active_win('right')) then return end
+    local curr = state:get_side_id('curr')
+    if curr == nil or not vim.api.nvim_win_is_valid(curr) then return end
+    local cbuf = vim.api.nvim_win_get_buf(curr)
+    if vim.bo[cbuf].buftype ~= '' or vim.bo[cbuf].filetype == 'NvimTree' then return end
+    vim.api.nvim_set_current_win(curr)
+  end)
 end
 
 ---@param find boolean reveal the current file in the tree
@@ -80,6 +139,9 @@ function M.focus(find)
   if api.tree.is_visible() then
     if api.tree.is_tree_buf() then
       api.tree.toggle() -- already inside: second press closes
+      -- Teardown is complete here (unlike the TreeClose event, which
+      -- fires mid-teardown): settle synchronously.
+      M.tree_closed()
     else
       if find then
         -- find_file only reveals by default; focus:true moves the cursor
@@ -92,22 +154,26 @@ function M.focus(find)
   else
     api.tree.toggle({ find_file = find, focus = true })
   end
+  if api.tree.is_visible() then M.tree_opened() end
 end
 
--- Post file-open centering (l, Enter, o — see on_attach in
--- plugins/editor.lua): call after api.node.open.edit returns, when the
--- tree is closed and the layout is final. Beside the tree the centerer
--- may have closed its sides for space; without this they pop back a
--- beat later through the async scans — the recenter flash. Re-init
--- synchronously instead, in the same call stack, so no redraw slips
--- between. No-op when the centerer is off or the sides already stand
--- (the wide-screen case needs nothing).
+-- Settle the centerer after the tree opens, once the window stands.
+function M.tree_opened()
+  settle('tree:open')
+end
+
+-- Settle the centerer after the tree closes, while the layout is final.
+-- Called directly after teardown completes (toggle-shut, peek-shut, post
+-- file-open).
+function M.tree_closed()
+  settle('tree:close')
+end
+
+-- Post file-open (l, Enter, Space, o — see on_attach in
+-- plugins/editor.lua): the tree closes inside api.node.open.edit, so
+-- settle once it returns and the layout is final.
 function M.file_opened()
-  local ok_state, state = pcall(require, 'no-neck-pain.state')
-  if not ok_state or not state.enabled then return end
-  if state:is_side_enabled_and_valid('left') and state:is_side_enabled_and_valid('right') then return end
-  local ok_main, main = pcall(require, 'no-neck-pain.main')
-  if ok_main and type(main.init) == 'function' then pcall(main.init, 'tree:open') end
+  M.tree_closed()
 end
 
 return M
