@@ -46,7 +46,10 @@ return {
         -- see config.terminal.label); lone terminals stay `term N`.
         local n = s:match('#toggleterm#(%d+)')
         if n then return require('config.terminal').label(n) end
-        return s
+        -- Deep paths (Java packages) eat the whole bar, and the project
+        -- is already shown in the preceding component, so keep parent +
+        -- file only (`domain/InvalidIdempotencyKeyException.java`).
+        return s:match('[^/]+/[^/]+$') or s
       end } },
       -- `fmt` shortens the filetype label only (`toggleterm` -> `term`);
       -- icon and everything else stay as the stock component renders them.
@@ -92,17 +95,19 @@ return {
       local orig_init = main.init
       main.init = function(scope)
         if not state:is_active_tab_registered() then return end
-        -- Never re-init under a tree cursor: recreating the sides drags
-        -- focus through the new splits back into `curr` (the code
-        -- window), so entering the tree always ends kicked out. Leaving
-        -- the tree fires WinEnter elsewhere, which re-runs init with the
-        -- final layout — nothing starves. An enable issued from inside
-        -- the tree likewise applies on leave.
-        if state.enabled then
-          local ok, ft = pcall(function() return vim.bo[vim.api.nvim_get_current_buf()].filetype end)
-          if ok and ft == 'NvimTree' then return end
+        -- Entering the tree must still refresh the padding (the tree
+        -- consumes columns, so stale sides squash the file beside it),
+        -- but the rebuild must not drag focus out of the tree: snapshot
+        -- the window and put it back when init lands elsewhere. Any
+        -- other window keeps upstream behavior untouched.
+        local ok, ft = pcall(function() return vim.bo[vim.api.nvim_get_current_buf()].filetype end)
+        if not (ok and ft == 'NvimTree') then return orig_init(scope) end
+        local win = vim.api.nvim_get_current_win()
+        local r = orig_init(scope)
+        if vim.api.nvim_get_current_win() ~= win and vim.api.nvim_win_is_valid(win) then
+          pcall(vim.api.nvim_set_current_win, win)
         end
-        return orig_init(scope)
+        return r
       end
     end },
   { 'folke/trouble.nvim', cmd = { 'Trouble' }, opts = {} },
