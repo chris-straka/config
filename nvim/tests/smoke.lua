@@ -384,6 +384,13 @@ check('diff toggle closes the view', gitdiff_src:find('DiffviewClose', 1, true) 
 check('diff toggle hides the file panel', gitdiff_src:find('DiffviewToggleFiles', 1, true) ~= nil)
 check('diff toggle scopes to the file', gitdiff_src:find('DiffviewOpen --', 1, true) ~= nil)
 check('diff toggle bound at startup', keymaps_src:find("gd', function() require('config.gitdiff').toggle_diff()", 1, true) ~= nil)
+-- Flash: anywhere-jump on s (normal/visual only — operator-pending stays
+-- stock so surround's ys/ds/cs keep working), treesitter jump on normal S.
+local editor_src = read(nvim .. '/lua/plugins/editor.lua')
+check('flash jump avoids operator-pending', editor_src:find(
+  "{ 's', function() require('flash').jump() end, mode = { 'n', 'x' }", 1, true) ~= nil)
+check('flash treesitter stays off visual S', editor_src:find(
+  "{ 'S', function() require('flash').treesitter() end, mode = 'n'", 1, true) ~= nil)
 check('neogit bound at startup', keymaps_src:find("gg', '<cmd>Neogit<cr>'", 1, true) ~= nil)
 check('blame bound at startup', keymaps_src:find("gb', '<cmd>GitBlameToggle<cr>'", 1, true) ~= nil)
 -- No duplicate real bindings: the terminal map lives in keymaps (label

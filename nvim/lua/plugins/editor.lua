@@ -101,7 +101,22 @@ return {
       end,
     },
   },
-  { 'folke/flash.nvim', event = 'VeryLazy', opts = {} }, -- replaces ggandor/lightspeed
+  {
+    -- replaces ggandor/lightspeed. f/t already label their matches with
+    -- zero config (char mode); these two add the anywhere-jump and the
+    -- syntax-node jump. Modes are n/x only on purpose: operator-pending
+    -- is left alone so ys/ds/cs (surround) keep working — flash's
+    -- remote-yank style `d<label>` is the price, and it is not worth it.
+    -- Costs: normal/visual s (use cl/c instead), normal S (use cc).
+    -- Visual S (surround-add) is untouched.
+    'folke/flash.nvim',
+    event = 'VeryLazy',
+    keys = {
+      { 's', function() require('flash').jump() end, mode = { 'n', 'x' }, desc = 'Flash jump' },
+      { 'S', function() require('flash').treesitter() end, mode = 'n', desc = 'Flash treesitter' },
+    },
+    opts = {},
+  },
   { 'windwp/nvim-ts-autotag', event = 'InsertEnter', opts = {} },
 
   { 'catgoose/nvim-colorizer.lua', event = 'VeryLazy', config = function() require('colorizer').setup() end },
