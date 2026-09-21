@@ -96,8 +96,14 @@ end, { noremap = true, silent = true, desc = 'Copy full file path' })
 -- Cmd+Shift+Z: redo (VSCode redo). u undoes, this re-applies.
 map('n', '<D-S-z>', '<cmd>redo<cr>', { noremap = true, silent = true, desc = 'Redo' })
 
+-- Ctrl+Z: disabled. Vim's default suspends Neovim (SIGTSTP), but the
+-- Spotlight/Ghostty launcher runs `exec nvim` with no shell underneath,
+-- so suspend strands the window with nothing to `fg` back to. Terminal
+-- mode is left alone on purpose so Ctrl+Z still reaches shell jobs
+-- inside :terminal floats.
+map({ 'n', 'v', 'i' }, '<C-z>', '<Nop>', { noremap = true, silent = true, desc = 'Disable suspend' })
 -- Cmd+Z: undo (VSCode undo). Kept out of terminal mode on purpose so it
--- still reaches the shell job (suspend). Visual uses <Esc>u because bare
+-- still reaches the shell job. Visual uses <Esc>u because bare
 -- u there means lowercase, not undo.
 map('n', '<D-z>', 'u', { noremap = true, silent = true, desc = 'Undo' })
 map('i', '<D-z>', '<C-o>u', { noremap = true, silent = true, desc = 'Undo' })

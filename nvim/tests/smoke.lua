@@ -132,6 +132,13 @@ local term_src = read(nvim .. '/lua/config/terminal.lua')
 check('exit sends exit+enter to the job', term_src:find("chansend(term.job_id, 'exit\\n')", 1, true) ~= nil)
 check('Cmd+Opt+[ folds', vim.fn.maparg('<D-M-[>', 'n') == 'zc')
 check('Cmd+Opt+] unfolds', vim.fn.maparg('<D-M-]>', 'n') == 'zo')
+-- Ctrl+Z must never suspend: the launcher runs `exec nvim` with no shell
+-- underneath, so suspend strands the window. Terminal mode stays unbound
+-- so shell jobs inside :terminal floats keep job control.
+check('Ctrl+Z disabled in normal', vim.fn.maparg('<C-z>', 'n') == '<Nop>')
+check('Ctrl+Z disabled in visual', vim.fn.maparg('<C-z>', 'v') == '<Nop>')
+check('Ctrl+Z disabled in insert', vim.fn.maparg('<C-z>', 'i') == '<Nop>')
+check('Ctrl+Z still reaches terminal jobs', vim.fn.maparg('<C-z>', 't') == '')
 
 -- 8. Manual format: Shift+Alt+F formats the buffer, or just the visual
 -- selection (conform reads the range itself). Cmd+Shift+F stays search.
