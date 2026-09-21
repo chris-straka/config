@@ -141,6 +141,15 @@ keybind = super+z=text:\x1b[122;9u
 # Cmd+E (search selection).
 keybind = super+e=text:\x1b[101;9u
 keybind = super+shift+e=text:\x1b[101;10u
+# Cmd+/ toggles comments in nvim (VSCode habit, nvim <D-/> replays
+# mini.comment's gcc/gc). No Ghostty default on this key, so nothing to
+# override — this just makes the combo reach nvim (/ is 47, super is
+# modifier 9, like the letters above).
+keybind = super+/=text:\x1b[47;9u
+# Shift+Cmd+P is nvim's command palette (VSCode habit, nvim <D-S-p> ->
+# Telescope commands). Overrides Ghostty's default toggle_command_palette
+# (P is 80, super+shift is modifier 10, like F/Z above).
+keybind = super+shift+p=text:\x1b[80;10u
 # Cmd+[/] steps this tab's numbered terminal floats, previous/next
 # (nvim <D-[>/<D-]> with wraparound). CSI-u super = modifier 9, like the
 # letters above ([ is 91, ] is 93). Swap these two lines to rebind later.

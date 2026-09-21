@@ -51,7 +51,7 @@ a Lua function RHS, so it runs in every mode with no drop-to-Normal).
 functions too, so they run in every mode — including inside a float —
 with no drop-to-Normal.
 Still missing: `<D-p>`,
-`<D-o>`, `<D-S-f>`, `<D-z>`-family from floats (undo's bare-`u` RHS needs
+`<D-o>`, `<D-S-f>`, `<D-S-p>`, `<D-z>`-family from floats (undo's bare-`u` RHS needs
 care — in terminal mode it would be typed into the shell).
 
 ## File inventory (2026-09-14: slots retired, Ghostty tabs own projects)
@@ -64,6 +64,8 @@ care — in terminal mode it would be typed into the shell).
   window (Cmd+N stays default too);
   Cmd+letters go to nvim as CSI-u (Cmd+W closes nvim's buffer, or the
   tab when the buffer is empty — tabclose only, never a window close);
+  Cmd+/ toggles comments (`<D-/>`), Shift+Cmd+P opens nvim's palette
+  (`<D-S-p>`, overriding Ghostty's toggle_command_palette);
   Shift+Cmd+H/L switch Ghostty tabs natively;
   escalating close (Cmd+W buffer, Shift+Cmd+W tab, Ctrl+Shift+Cmd+W
   window; Cmd+Opt+W still closes tabs, Ghostty default). Zero legacy sequences. The launcher duplicates

@@ -67,6 +67,10 @@ map('n', '<D-p>', '<cmd>Telescope find_files<cr>', { noremap = true, silent = tr
 -- Cmd+Shift+F: search text inside files (VSCode find-in-files).
 -- find_files matches file NAMES; live_grep matches file CONTENTS.
 map('n', '<D-S-f>', '<cmd>Telescope live_grep<cr>', { noremap = true, silent = true, desc = 'Search in files' })
+-- Shift+Cmd+P: command palette (VSCode habit). Fuzzy-filters every
+-- command, plugin and native alike. Ghostty's own palette on this key
+-- is overridden in shared-keybinds.conf so the combo reaches nvim.
+map('n', '<D-S-p>', '<cmd>Telescope commands<cr>', { noremap = true, silent = true, desc = 'Command palette' })
 -- <leader>fw: search the project for the word under the cursor (VSCode
 -- "find all references" habit). From Markdown or any file without a
 -- language server, this is the poor man's gd: pick a match to jump.

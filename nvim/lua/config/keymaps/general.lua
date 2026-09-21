@@ -125,3 +125,10 @@ end, { noremap = true, silent = true, desc = 'Inlay hints on/off' })
 -- tries to change a buffer Neovim marked read-only. Needs the matching
 -- Ghostty bind (super+c -> <D-c>); without it the emulator eats Cmd+C.
 map('v', '<D-c>', '"+y', { noremap = true, silent = true, desc = 'Copy selection' })
+
+-- Cmd+/ toggles comments (VSCode habit). Normal mode replays gcc,
+-- visual replays gc — both are mini.comment's own maps, so remap stays
+-- on for these two. Needs the matching Ghostty bind (super+/ -> <D-/>);
+-- without it the key never reaches nvim.
+map('n', '<D-/>', 'gcc', { remap = true, silent = true, desc = 'Toggle comment line' })
+map('v', '<D-/>', 'gc', { remap = true, silent = true, desc = 'Toggle comment selection' })
