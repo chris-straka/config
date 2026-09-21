@@ -35,6 +35,7 @@ function M.new()
     if other and other:is_open() then other:close() end
   end
   vim.cmd(target .. 'ToggleTerm direction=float')
+  M.note(target)
   return 'opened'
 end
 
@@ -65,6 +66,7 @@ function M.cycle(dir)
   end
   if not term:is_open() then term:open() end
   term:focus()
+  M.note(target)
   return 'focused'
 end
 
@@ -101,6 +103,7 @@ function M.goto_slot(slot)
   end
   if not term:is_open() then term:open() end
   term:focus()
+  M.note(target)
   return 'focused'
 end
 
@@ -219,6 +222,30 @@ function M._next(ids)
   return (ids[#ids] or 0) + 1
 end
 
+-- Last-visited terminal id for Option+K senders: toggleterm's own
+-- get_last_focused only remembers closed saved views (its ui.lua
+-- saves focus_term_id when toggling all terminals shut), so it is
+-- empty in the normal flow — float open, hop to code, send. This id
+-- is noted on BufEnter/TermEnter instead (see autocmds.lua), plus
+-- after cycle/goto/new below, so it always names the float you were
+-- just on. Validated (open + live shell) at use; stale ids fall
+-- through to the older fallbacks.
+M._last = nil
+
+---@param id integer|string|nil toggleterm id to remember
+function M.note(id)
+  local n = tonumber(id)
+  if n then M._last = n end
+end
+
+-- Remember the terminal from a buffer name, if it names one
+-- (toggleterm's #toggleterm#N convention); anything else is ignored.
+---@param bufname string|nil
+function M.note_buf(bufname)
+  local n = (bufname or ''):match('#toggleterm#(%d+)')
+  if n then M._last = tonumber(n) end
+end
+
 -- First open terminal with a live shell, or nil: fallback for Option+K
 -- senders when nothing was ever focused. Scans the live ids in order
 -- instead of a fixed 1..10 range, so high ids from Cmd+T minting
@@ -236,10 +263,11 @@ end
 
 -- Current terminal with a live shell, or nil: where Option+K senders
 -- (see send_at_reference in config/runner.lua) type. Prefers the
--- focused terminal, then toggleterm's last-focused terminal (still
--- correct from a code buffer, where nothing is focused), and only
--- then the first open one — so @refs land in the terminal you were
--- just on, not always terminal 1.
+-- focused terminal, then the last-visited float noted above (still
+-- correct from a code buffer, where nothing is focused), then
+-- toggleterm's last-focused terminal, and only then the first open
+-- one — so @refs land in the terminal you were just on, not always
+-- terminal 1.
 ---@return table|nil toggleterm terminal
 function M.current()
   local ok, terms = pcall(require, 'toggleterm.terminal')
@@ -250,6 +278,10 @@ function M.current()
       local term = terms.get(focused, true)
       if term and term:is_open() and term.job_id then return term end
     end
+  end
+  if M._last then
+    local remembered = terms.get(M._last, true)
+    if remembered and remembered:is_open() and remembered.job_id then return remembered end
   end
   if terms.get_last_focused then
     local ok_last, last = pcall(terms.get_last_focused)

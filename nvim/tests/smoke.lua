@@ -883,6 +883,51 @@ do
   check('first open with no plugin is safe', terminal.first_open() == nil)
 end
 do
+  -- Last-visited routing for Option+K: the noted terminal wins over
+  -- the first open one; a stale (closed) note falls back to first
+  -- open; buf names parse; garbage never clears the note.
+  local t7_open = { is_open = function() return true end, job_id = 7 }
+  local t12_open = { is_open = function() return true end, job_id = 9 }
+  local t12_closed = { is_open = function() return false end, job_id = 9 }
+  package.loaded['toggleterm.terminal'] = {
+    get_all = function() return { { id = 7 }, { id = 12 } } end,
+    get = function(id)
+      if id == 7 then return t7_open end
+      if id == 12 then return t12_open end
+      return nil
+    end,
+  }
+  terminal._last = nil
+  terminal.note(12)
+  local cur = terminal.current()
+  check('current prefers the last-visited terminal', cur ~= nil and cur.job_id == 9)
+  terminal.note_buf('term://~//1234:/bin/zsh#toggleterm#7')
+  cur = terminal.current()
+  check('note_buf parses the toggleterm id', cur ~= nil and cur.job_id == 7)
+  terminal.note_buf('term://~/plain-buffer')
+  cur = terminal.current()
+  check('note_buf ignores non-terminal buffers', cur ~= nil and cur.job_id == 7)
+  terminal.note('junk')
+  cur = terminal.current()
+  check('note ignores garbage', cur ~= nil and cur.job_id == 7)
+  package.loaded['toggleterm.terminal'] = {
+    get_all = function() return { { id = 7 }, { id = 12 } } end,
+    get = function(id)
+      if id == 7 then return t7_open end
+      if id == 12 then return t12_closed end
+      return nil
+    end,
+  }
+  terminal.note(12)
+  cur = terminal.current()
+  check('stale last-visited falls back to first open', cur ~= nil and cur.job_id == 7)
+  terminal._last = nil
+  package.loaded['toggleterm.terminal'] = nil
+end
+check('autocmds note the last-visited terminal',
+  read(nvim .. '/lua/config/autocmds.lua'):find('TerminalLastVisited', 1, true) ~= nil
+  and read(nvim .. '/lua/config/autocmds.lua'):find('note_buf', 1, true) ~= nil)
+do
   local actions = {}
   local seen_cmd = nil
   local live = { { id = 1 }, { id = 3 } }

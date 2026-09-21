@@ -232,6 +232,17 @@ autocmd({ 'TermOpen', 'TermClose', 'BufDelete', 'BufWipeout' }, {
   end,
 })
 
+-- Last-visited floating terminal for Option+K @ref sends (see current()
+-- in config/terminal.lua): note the toggleterm id on every terminal
+-- enter, so sends land in the float you were just on — not always
+-- terminal 1. Pure buffer-name parse, no plugin API needed.
+autocmd({ 'BufEnter', 'TermEnter' }, {
+  group = vim.api.nvim_create_augroup('TerminalLastVisited', { clear = true }),
+  callback = function(args)
+    require('config.terminal').note_buf(vim.api.nvim_buf_get_name(args.buf))
+  end,
+})
+
 -- Tree width follows the tab: Java packages nest deep, so a tab showing Java
 -- gets a 60-column tree, everything else keeps 40. Scans the tab's windows
 -- (one tab = one project), so entering the tree itself keeps the width too.
