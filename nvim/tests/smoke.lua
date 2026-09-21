@@ -205,6 +205,14 @@ check('ref lines 3-4', runner.at_reference('personal/README.md', 3, 4, 100) == '
 check('ref whole file collapses', runner.at_reference('personal/README.md', 1, 100, 100) == '@personal/README.md')
 check('ref single line', runner.at_reference('a.ts', 5, 5, 100) == '@a.ts#5')
 check('ref no file is nil', runner.at_reference('', 1, 1, 10) == nil)
+check('ref single line quotes word pick',
+  runner.at_reference('a.java', 27, 27, 100, 'machine') == '@a.java#27 "machine"')
+check('ref range ignores quote',
+  runner.at_reference('a.java', 27, 28, 100, 'machine') == '@a.java#27-28')
+check('ref whole file ignores quote',
+  runner.at_reference('a.java', 1, 100, 100, 'machine') == '@a.java')
+check('ref quote escapes double quotes',
+  runner.at_reference('a.java', 27, 27, 100, 'say "hi"') == '@a.java#27 "say \'hi\'"')
 check('visual Option+K sends ref', vim.fn.maparg('<A-k>', 'v') ~= '')
 -- Option+K reads the LIVE selection: '< / '> still hold the previous
 -- selection while visual is active (the one-step-behind bug), so the

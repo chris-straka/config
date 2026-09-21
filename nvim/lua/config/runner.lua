@@ -66,12 +66,35 @@ end
 ---@param s integer first selected line (1-based, '< is always first)
 ---@param e integer last selected line
 ---@param total integer buffer line count
+---@param quote string|nil selected text, appended for single-line picks only
 ---@return string|nil brief reference, nil when there is no file
-function M.at_reference(file, s, e, total)
+function M.at_reference(file, s, e, total, quote)
   if file == '' then return nil end
   if s == 1 and e == total then return '@' .. file end
-  if s == e then return '@' .. file .. '#' .. s end
-  return '@' .. file .. '#' .. s .. '-' .. e
+  local ref
+  if s == e then
+    ref = '@' .. file .. '#' .. s
+  else
+    return '@' .. file .. '#' .. s .. '-' .. e
+  end
+  if quote and quote ~= '' then ref = ref .. ' "' .. quote:gsub('"', "'") .. '"' end
+  return ref
+end
+
+---Selected text for a charwise single-line visual selection, else nil.
+---Linewise, blockwise, multi-line, and long (>80 chars) selections stay
+---unquoted: the line anchor already says where to look, and echoing a
+---whole line back at the agent adds noise, not signal.
+---@param s integer first selected line (1-based)
+---@param e integer last selected line
+---@return string|nil trimmed selected text, nil when unquotable
+function M.visual_quote(s, e)
+  if s ~= e or vim.fn.mode() ~= 'v' then return nil end
+  local c1, c2 = vim.fn.getpos('v')[3], vim.fn.getpos('.')[3]
+  if c1 > c2 then c1, c2 = c2, c1 end
+  local text = vim.trim(string.sub(vim.api.nvim_get_current_line(), c1, c2))
+  if text == '' or vim.fn.strchars(text) > 80 then return nil end
+  return text
 end
 
 ---Line range of the visual selection (1-based, first <= last). While a
@@ -98,7 +121,7 @@ end
 function M.ref_for_visual()
   local file = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(0), ':.')
   local s, e = M.visual_range()
-  return M.at_reference(file, s, e, vim.api.nvim_buf_line_count(0))
+  return M.at_reference(file, s, e, vim.api.nvim_buf_line_count(0), M.visual_quote(s, e))
 end
 
 ---Option+K from visual mode (Claude Code's @-mention habit): types
