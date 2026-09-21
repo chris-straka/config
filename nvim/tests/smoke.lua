@@ -372,6 +372,18 @@ check('Alt+E focuses like Cmd+E', keymaps_src:find("<A-e>', function() require('
 check('no pre-0.12 fallback maps', keymaps_src:find("'<Esc>['", 1, true) == nil)
 check('<leader>h steps left, tree at left edge', keymaps_src:find("h', function() require('config.window_nav').left()", 1, true) ~= nil)
 check('<leader>l steps right', keymaps_src:find("l', function() require('config.window_nav').right()", 1, true) ~= nil)
+-- Git keys: gy copies permalinks, gp/gr/gs preview/reset/stage hunks,
+-- gd toggles a two-pane diff of the current file (panel hidden on open).
+local git_src = read(nvim .. '/lua/plugins/git.lua')
+check('Space+g+y copies GitHub link', git_src:find("<leader>gy', '<cmd>GitLink<cr>'", 1, true) ~= nil)
+check('hunk preview key wired', git_src:find("<leader>gp', gs.preview_hunk", 1, true) ~= nil)
+check('hunk reset key wired', git_src:find("<leader>gr'", 1, true) ~= nil)
+check('hunk stage key wired', git_src:find("<leader>gs'", 1, true) ~= nil)
+local gitdiff_src = read(nvim .. '/lua/config/gitdiff.lua')
+check('diff toggle closes the view', gitdiff_src:find('DiffviewClose', 1, true) ~= nil)
+check('diff toggle hides the file panel', gitdiff_src:find('DiffviewToggleFiles', 1, true) ~= nil)
+check('diff toggle scopes to the file', gitdiff_src:find('DiffviewOpen --', 1, true) ~= nil)
+check('diff toggle bound at startup', keymaps_src:find("gd', function() require('config.gitdiff').toggle_diff()", 1, true) ~= nil)
 -- The centerer stays on while the tree is up (no-neck-pain treats
 -- NvimTree as an integration and centers around it): tree.lua holds
 -- nothing off, arms nothing, repairs nothing — no off/on cycle, no

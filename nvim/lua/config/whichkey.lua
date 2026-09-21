@@ -40,7 +40,11 @@ wk.add {
   { '<leader>l', desc = 'Window right' },
   { '<leader>g', group = 'Git' },
   { '<leader>gg', '<cmd>Neogit<cr>', desc = 'Neogit' },
-  { '<leader>gd', '<cmd>DiffviewOpen<cr>', desc = 'Diffview' },
+  { '<leader>gd', desc = 'Diff (toggle)' },
+  { '<leader>gp', desc = 'Preview hunk' },
+  { '<leader>gr', desc = 'Reset hunk' },
+  { '<leader>gs', desc = 'Stage hunk' },
+  { '<leader>gy', desc = 'Copy GitHub link' },
   { '<leader>gb', '<cmd>GitBlameToggle<cr>', desc = 'Blame' },
   -- LSP lives on gd/gr/gi/K/<leader>rn/<leader>ca (see lsp.lua) — the old
   -- 'm'-prefix duplicates were removed; one family only.

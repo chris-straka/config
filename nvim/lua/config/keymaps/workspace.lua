@@ -50,6 +50,12 @@ end, { noremap = true, silent = true, desc = 'Focus tree from empty buffer' })
 -- The tab cwd follows, so terminals land there too.
 map('n', '<leader>cr', function() require('config.tree').change_root_prompt() end,
   { noremap = true, silent = true, desc = 'Change tree root…' })
+-- Space+g+d toggles a two-pane diff of the current file (see
+-- config/gitdiff.lua). Bound here — not in whichkey.lua — so it exists
+-- from startup instead of arriving with which-key's deferred load
+-- (same split as <leader>uh: real map here, label there).
+map('n', '<leader>gd', function() require('config.gitdiff').toggle_diff() end,
+  { noremap = true, silent = true, desc = 'Diff (toggle)' })
 
 map('n', '<C-p>', '<cmd>Telescope find_files<cr>', { noremap = true, silent = true, desc = 'Find files' })
 map('n', '<D-p>', '<cmd>Telescope find_files<cr>', { noremap = true, silent = true, desc = 'Find files' })
