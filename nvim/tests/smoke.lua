@@ -384,6 +384,16 @@ check('diff toggle closes the view', gitdiff_src:find('DiffviewClose', 1, true) 
 check('diff toggle hides the file panel', gitdiff_src:find('DiffviewToggleFiles', 1, true) ~= nil)
 check('diff toggle scopes to the file', gitdiff_src:find('DiffviewOpen --', 1, true) ~= nil)
 check('diff toggle bound at startup', keymaps_src:find("gd', function() require('config.gitdiff').toggle_diff()", 1, true) ~= nil)
+check('neogit bound at startup', keymaps_src:find("gg', '<cmd>Neogit<cr>'", 1, true) ~= nil)
+check('blame bound at startup', keymaps_src:find("gb', '<cmd>GitBlameToggle<cr>'", 1, true) ~= nil)
+-- No duplicate real bindings: the terminal map lives in keymaps (label
+-- only in whichkey), and the reload covers whichkey too.
+local wk_src = read(nvim .. '/lua/config/whichkey.lua')
+check('one ToggleTerm binding', wk_src:find('<cmd>ToggleTerm', 1, true) == nil)
+check('session group labeled', wk_src:find("<leader>S', group = 'Session'", 1, true) ~= nil)
+check('harpoon pin labeled', wk_src:find("<leader>a', desc = 'Pin file (harpoon)'", 1, true) ~= nil)
+local kir_src = read(nvim .. '/lua/config/keymaps/init.lua')
+check('reload covers whichkey', kir_src:find('lua/config/whichkey.lua', 1, true) ~= nil)
 -- The centerer stays on while the tree is up (no-neck-pain treats
 -- NvimTree as an integration and centers around it): tree.lua holds
 -- nothing off, arms nothing, repairs nothing — no off/on cycle, no

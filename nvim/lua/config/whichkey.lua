@@ -19,7 +19,7 @@ wk.add {
   { '<leader>x', group = 'Trouble' },
   { '<leader>xx', '<cmd>Trouble diagnostics toggle<cr>', desc = 'Diagnostics' },
   { '<leader>xs', '<cmd>Trouble symbols toggle<cr>', desc = 'Symbols' },
-  { '<leader>t', '<cmd>ToggleTerm direction=float<cr>', desc = 'Terminal' },
+  { '<leader>t', desc = 'Terminal' },
   { '<leader>u', group = 'UI' },
   { '<leader>uh', desc = 'Inlay hints on/off' },
   { '<leader>cr', desc = 'Change tree root…' },
@@ -38,14 +38,16 @@ wk.add {
   { '<leader>ra', desc = 'Change all occurrences in file' },
   { '<leader>h', desc = 'Window left / file tree' },
   { '<leader>l', desc = 'Window right' },
+  { '<leader>a', desc = 'Pin file (harpoon)' },
+  { '<leader>S', group = 'Session' },
   { '<leader>g', group = 'Git' },
-  { '<leader>gg', '<cmd>Neogit<cr>', desc = 'Neogit' },
+  { '<leader>gg', desc = 'Neogit' },
   { '<leader>gd', desc = 'Diff (toggle)' },
   { '<leader>gp', desc = 'Preview hunk' },
   { '<leader>gr', desc = 'Reset hunk' },
   { '<leader>gs', desc = 'Stage hunk' },
   { '<leader>gy', desc = 'Copy GitHub link' },
-  { '<leader>gb', '<cmd>GitBlameToggle<cr>', desc = 'Blame' },
+  { '<leader>gb', desc = 'Blame' },
   -- LSP lives on gd/gr/gi/K/<leader>rn/<leader>ca (see lsp.lua) — the old
   -- 'm'-prefix duplicates were removed; one family only.
 }

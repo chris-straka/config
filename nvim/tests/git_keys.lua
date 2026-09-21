@@ -21,8 +21,11 @@ check('stage hunk key present', vim.fn.maparg(' gs', 'n') ~= '')
 check('copy-link key present (normal)', vim.fn.maparg(' gy', 'n') ~= '')
 check('copy-link key present (visual)', vim.fn.maparg(' gy', 'v') ~= '')
 -- The diff toggle is bound at startup (keymaps/workspace.lua), so unlike
--- which-key's deferred labels it is visible immediately.
+-- which-key's deferred labels it is visible immediately. Same for the
+-- Neogit and blame launchers.
 check('diff toggle key present', vim.fn.maparg(' gd', 'n') ~= '')
+check('neogit key present', vim.fn.maparg(' gg', 'n') ~= '')
+check('blame key present', vim.fn.maparg(' gb', 'n') ~= '')
 if failures > 0 then
   print(failures .. ' check(s) failed')
   os.exit(1)
