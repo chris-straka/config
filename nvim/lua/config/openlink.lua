@@ -6,12 +6,19 @@
 -- inside a nested source file). URLs keep their old gx behavior (browser).
 local M = {}
 
--- Split a trailing :line off a link destination. Returns path, lnum.
+-- Split a trailing :line (gx convention) or @file#line / @file#l1-l2
+-- (Option+K refs) off a link destination. Ranges land on the first
+-- line. Returns path, lnum.
 ---@param dest string
 ---@return string, integer?
 local function split_line(dest)
   local path, lnum = dest:match('^(.-):(%d+)$')
   if path then return path, tonumber(lnum) end
+  if dest:sub(1, 1) == '@' then
+    local ref, first = dest:match('^@([^#]+)#(%d+)')
+    if ref then return ref, tonumber(first) end
+    return dest:sub(2), nil
+  end
   return dest, nil
 end
 

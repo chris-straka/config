@@ -1090,6 +1090,13 @@ local t8 = openlink.extract('[abs](/x/a.lua)', 5, '/base')
 check('absolute links carry no fallback dest', t8 and t8.rel == nil)
 local t9 = openlink.extract(' * see {@code docs/DESIGN.md} for why', 20, '/base')
 check('javadoc brace does not leak into the token', t9 and t9.file == '/base/docs/DESIGN.md')
+local t10 = openlink.extract('@src/main/java/dev/straka/ledger/posting/application/PostingService.java#43', 10, '/base')
+check('at-ref extracts file+line',
+  t10 and t10.file == '/base/src/main/java/dev/straka/ledger/posting/application/PostingService.java' and t10.lnum == 43)
+local t11 = openlink.extract('see @docs/notes.md#3-4 for why', 8, '/base')
+check('at-ref range lands on first line', t11 and t11.file == '/base/docs/notes.md' and t11.lnum == 3)
+local t12 = openlink.extract('see @docs/notes.md for why', 8, '/base')
+check('bare at-ref extracts file', t12 and t12.file == '/base/docs/notes.md' and t12.lnum == nil)
 
 -- 18b. gx falls back to the repo root for repo-relative references.
 do
