@@ -36,6 +36,8 @@ wk.add {
   { '<leader>fr', '<cmd>Telescope oldfiles<cr>', desc = 'Recent files' },
   { '<leader>rn', vim.lsp.buf.rename, desc = 'Rename symbol' },
   { '<leader>ra', desc = 'Change all occurrences in file' },
+  { '<leader>h', desc = 'Window left / file tree' },
+  { '<leader>l', desc = 'Window right' },
   { '<leader>g', group = 'Git' },
   { '<leader>gg', '<cmd>Neogit<cr>', desc = 'Neogit' },
   { '<leader>gd', '<cmd>DiffviewOpen<cr>', desc = 'Diffview' },

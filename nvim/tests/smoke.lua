@@ -335,8 +335,10 @@ for _, p in ipairs({ home .. '/.config/ghostty/config', home .. '/.config/ghostt
   check(tag .. ' Cmd+C reaches nvim', c:find('super+c=text', 1, true) ~= nil)
 end
 
--- 11. Tree ergonomics: <leader>h focuses (cursor moves in).
-check('<leader>h focuses tree', vim.fn.maparg(' h', 'n') ~= '')
+-- 11. Tree ergonomics: <leader>h steps left, falling back to tree focus
+-- at the left edge (cursor moves in); <leader>l steps right.
+check('<leader>h is bound', vim.fn.maparg(' h', 'n') ~= '')
+check('<leader>l is bound', vim.fn.maparg(' l', 'n') ~= '')
 -- <leader>j focuses the tree, but only from an empty buffer (the Cmd+W
 -- definition in buffer_close.lua, covered further below).
 check('<leader>j is bound', vim.fn.maparg(' j', 'n') ~= '')
@@ -368,7 +370,8 @@ check('middle-click opens tree', vim.fn.maparg('<MiddleMouse>', 'n') ~= ''
 check('Alt+E focuses like Cmd+E', keymaps_src:find("<A-e>', function() require('config.tree').focus(true)", 1, true) ~= nil
   and keymaps_src:find('NvimTreeFindFileToggle', 1, true) == nil)
 check('no pre-0.12 fallback maps', keymaps_src:find("'<Esc>['", 1, true) == nil)
-check('<leader>h jumps in unrevealed', keymaps_src:find("h', function() require('config.tree').focus(false)", 1, true) ~= nil)
+check('<leader>h steps left, tree at left edge', keymaps_src:find("h', function() require('config.window_nav').left()", 1, true) ~= nil)
+check('<leader>l steps right', keymaps_src:find("l', function() require('config.window_nav').right()", 1, true) ~= nil)
 -- The centerer stays on while the tree is up (no-neck-pain treats
 -- NvimTree as an integration and centers around it): tree.lua holds
 -- nothing off, arms nothing, repairs nothing — no off/on cycle, no

@@ -28,11 +28,15 @@ map('t', '<D-S-e>', '<C-\\><C-n><cmd>lua require("config.tree").peek(true)<cr>',
 -- pasting. Needs `mouse = 'a'` above, or the emulator eats the click.
 map({ 'n', 'v', 'i', 't' }, '<MiddleMouse>', function() require('config.tree').focus(true) end,
   { noremap = true, silent = true, desc = 'Open file tree' })
--- Space+h jumps INTO the tree (no reveal, so it lands wherever the tree
--- already is); Shift+Cmd+E peeks with the current file revealed,
--- Cmd+E focuses it revealed. See config/tree.lua for the mechanism.
-map('n', '<leader>h', function() require('config.tree').focus(false) end,
-  { noremap = true, silent = true, desc = 'Focus file tree' })
+-- Space+h / Space+l step to the window on that side (Diffview panes
+-- included). At the left edge with nowhere to go, Space+h focuses the
+-- file tree instead (no reveal; Shift+Cmd+E peeks revealed, Cmd+E
+-- focuses revealed — see config/tree.lua). At the right edge Space+l
+-- is a no-op. See config/window_nav.lua.
+map('n', '<leader>h', function() require('config.window_nav').left() end,
+  { noremap = true, silent = true, desc = 'Window left / file tree' })
+map('n', '<leader>l', function() require('config.window_nav').right() end,
+  { noremap = true, silent = true, desc = 'Window right' })
 -- Space+j jumps INTO the tree, but only from an empty buffer (fresh nvim
 -- with the tree peeked): in a one-line empty buffer `j` has nowhere to go,
 -- so it becomes the down-and-out gesture. Elsewhere the key does nothing
