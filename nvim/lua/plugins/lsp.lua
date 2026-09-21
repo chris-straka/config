@@ -151,7 +151,9 @@ return {
     -- ~/go/bin, which is on PATH (see .zshrc).
     opts = { ensure_installed = {
       'stylua', 'prettierd', 'eslint_d', 'csharpier', 'shfmt',
-      'google-java-format',
+      -- Pinned to the Spotless version (build.gradle.kts): mason's latest
+      -- reflows Javadoc differently, so saves disagree with spotlessCheck.
+      { 'google-java-format', version = 'v1.28.0' },
       -- debug adapters (see dap.lua keymaps under <leader>d)
       'codelldb', 'debugpy', 'js-debug-adapter', 'netcoredbg',
       'firefox-debug-adapter',
