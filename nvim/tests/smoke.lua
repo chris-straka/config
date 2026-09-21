@@ -223,6 +223,50 @@ do
   check('exited selection still reads from marks', s3 == 4 and e3 == 6)
   vim.api.nvim_buf_delete(0, { force = true })
 end
+do
+  -- All floats shut: the sender reopens the last-visited id (hidden
+  -- window, live shell) instead of terminal 1; with no memory or a
+  -- dead id it still mints terminal 1.
+  local closed1 = { is_open = function() return false end, job_id = 3 }
+  local hidden12 = { is_open = function() return false end, job_id = 9 }
+  local real_ref = runner.ref_for_visual
+  runner.ref_for_visual = function() return '@x#1' end
+  local real_cmd, real_send = vim.cmd, vim.api.nvim_chan_send
+  local seen_cmd, sent = nil, {}
+  vim.cmd = function(c) seen_cmd = c end
+  vim.api.nvim_chan_send = function(job, text) sent = { job = job, text = text } end
+  package.loaded['toggleterm.terminal'] = {
+    get_all = function() return { { id = 1 }, { id = 12 } } end,
+    get = function(id)
+      if id == 1 then return closed1 end
+      if id == 12 then return hidden12 end
+      return nil
+    end,
+  }
+  terminal._last = 12
+  runner.send_at_reference()
+  check('shut floats reopen the last-visited terminal',
+    seen_cmd == '12ToggleTerm direction=float' and sent.job == 9 and sent.text == '@x#1 ')
+  terminal._last = nil
+  runner.send_at_reference()
+  check('no memory still mints terminal 1',
+    seen_cmd == '1ToggleTerm direction=float' and sent.job == 3)
+  package.loaded['toggleterm.terminal'] = {
+    get_all = function() return { { id = 1 } } end,
+    get = function(id)
+      if id == 1 then return closed1 end
+      return nil
+    end,
+  }
+  terminal._last = 12
+  runner.send_at_reference()
+  check('dead remembered id falls back to terminal 1',
+    seen_cmd == '1ToggleTerm direction=float' and sent.job == 3)
+  terminal._last = nil
+  runner.ref_for_visual = real_ref
+  vim.cmd, vim.api.nvim_chan_send = real_cmd, real_send
+  package.loaded['toggleterm.terminal'] = nil
+end
 check('visual Cmd+C copies', vim.fn.maparg('<D-c>', 'v') == '"+y')
 check('leader-yp copies full path', vim.fn.maparg(' yp', 'n') ~= '')
 do

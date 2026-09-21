@@ -104,10 +104,12 @@ end
 ---Option+K from visual mode (Claude Code's @-mention habit): types
 ---`@file` / `@file#l1-l2` into the current floating terminal — a Muse
 ---prompt, a shell, whatever runs there (the one you were just on, not
----always terminal 1). No Enter is sent; review the text and hit enter
----yourself. Visual-only on purpose: normal-mode Option+K is window
----navigation (<A-k>), which stays. Whether the agent expands the
----reference is up to the agent; worst case it is visible pasted text.
+---always terminal 1). With no float open it reopens the last-visited
+---one instead of minting terminal 1. No Enter is sent; review the
+---text and hit enter yourself. Visual-only on purpose: normal-mode
+---Option+K is window navigation (<A-k>), which stays. Whether the
+---agent expands the reference is up to the agent; worst case it is
+---visible pasted text.
 function M.send_at_reference()
   local ref = M.ref_for_visual()
   if not ref then
@@ -115,10 +117,19 @@ function M.send_at_reference()
     return
   end
   local terms = require('toggleterm.terminal')
-  local target = require('config.terminal').current()
+  local T = require('config.terminal')
+  local target = T.current()
   if not target then
-    vim.cmd('1ToggleTerm direction=float')
-    target = terms.get(1, true)
+    -- All floats toggled shut: reopen the last-visited one — but only
+    -- while it still owns a live shell; a dead or forgotten id falls
+    -- back to terminal 1.
+    local id = 1
+    if T._last then
+      local remembered = terms.get(T._last, true)
+      if remembered and remembered.job_id then id = T._last end
+    end
+    vim.cmd(id .. 'ToggleTerm direction=float')
+    target = terms.get(id, true)
   end
   if not target or not target.job_id then
     vim.notify('no live terminal to send to', vim.log.levels.WARN)
