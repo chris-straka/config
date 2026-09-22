@@ -84,15 +84,18 @@ return {
     },
     config = function(_, opts)
       require('no-neck-pain').setup(opts)
-      -- Guard the WinEnter/WinClosed -> debounce -> init chain: the
+      -- Guard the WinEnter/WinClosed -> debounce -> init chain two ways. The
       -- debounced init can land after the tab is torn down (e.g. a tree
       -- toggle from <D-e>), where upstream hard-errors
       -- ("called the internal `init` method on a `nil` tab",
-      -- main.lua in the debounce frame). A stale callback should no-op.
+      -- main.lua in the debounce frame). And a settle can race teardown so
+      -- a recorded side window is dead by init time (`Invalid window id`
+      -- in `move_sides`). Both stale callbacks no-op via config/nnp_guard.
       -- Revisit on plugin updates past 0df6659.
       local main = require('no-neck-pain.main')
       local state = require('no-neck-pain.state')
       local orig_init = main.init
+      local guard = require('config.nnp_guard')
       main.init = function(scope)
         if not state:is_active_tab_registered() then return end
         -- Entering the tree must still refresh the padding (the tree
@@ -101,9 +104,9 @@ return {
         -- the window and put it back when init lands elsewhere. Any
         -- other window keeps upstream behavior untouched.
         local ok, ft = pcall(function() return vim.bo[vim.api.nvim_get_current_buf()].filetype end)
-        if not (ok and ft == 'NvimTree') then return orig_init(scope) end
+        if not (ok and ft == 'NvimTree') then return guard.init(scope, orig_init) end
         local win = vim.api.nvim_get_current_win()
-        local r = orig_init(scope)
+        local r = guard.init(scope, orig_init)
         if vim.api.nvim_get_current_win() ~= win and vim.api.nvim_win_is_valid(win) then
           pcall(vim.api.nvim_set_current_win, win)
         end
