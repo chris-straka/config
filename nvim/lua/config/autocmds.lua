@@ -110,9 +110,13 @@ autocmd('TermOpen', {
 -- then jump back every press), so inside the tail the window-local
 -- scrolloff goes to 0 — motions stop auto-scrolling entirely — and every
 -- move recenter once with the native fold-aware `zz`. Typing keeps
--- native follow instead: entering insert restores the scrolloff so new
--- lines scroll into view, leaving insert hands the tail back over (a
--- `:normal` recenter would yank insert mode out from under typing).
+-- native follow instead: entering insert restores the scrolloff outside
+-- the tail so new lines scroll into view, but inside the tail the local
+-- 0 stays so the blank space below EOF survives typing (restoring 999
+-- there would dock the last lines at the window bottom and recenter per
+-- keystroke, then Esc would zz back — two jumps per edit). Leaving
+-- insert hands the tail back over (a `:normal` recenter would yank
+-- insert mode out from under typing).
 -- Outside the tail the local value follows the global again. Plain file
 -- buffers only: terminals (scrollback above), floats, the tree, and
 -- image renders keep their own views. `zz` never moves the cursor, so
@@ -170,8 +174,15 @@ autocmd({ 'InsertEnter', 'InsertLeave' }, {
     if args.event == 'InsertLeave' then
       center_tail_update()
     else
-      local global = vim.api.nvim_get_option_value('scrolloff', { scope = 'global' })
-      if vim.opt_local.scrolloff:get() ~= global then vim.cmd('setlocal scrolloff<') end
+      -- In the tail the local 0 stays (see above); outside it, restore the
+      -- global so new lines keep scrolling into view while typing.
+      local win = vim.api.nvim_get_current_win()
+      local half = math.floor(vim.api.nvim_win_get_height(win) / 2)
+      local cur = vim.api.nvim_win_get_cursor(win)[1]
+      if vim.api.nvim_buf_line_count(0) - cur >= half then
+        local global = vim.api.nvim_get_option_value('scrolloff', { scope = 'global' })
+        if vim.opt_local.scrolloff:get() ~= global then vim.cmd('setlocal scrolloff<') end
+      end
     end
   end,
 })

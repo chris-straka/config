@@ -134,9 +134,9 @@ keybind = super+e=text:\x1b[101;9u
 keybind = super+shift+e=text:\x1b[101;10u
 # Cmd+/ toggles comments in nvim (VSCode habit, nvim <D-/> replays
 # mini.comment's gcc/gc). No Ghostty default on this key, so nothing to
-# override — this just makes the combo reach nvim (/ is 47, super is
-# modifier 9, like the letters above).
-keybind = super+/=text:\x1b[47;9u
+# override — this just makes the combo reach nvim (key name `slash`,
+# CSI-u 47, super is modifier 9, like the letters above).
+keybind = super+slash=text:\x1b[47;9u
 # Shift+Cmd+P is nvim's command palette (VSCode habit, nvim <D-S-p> ->
 # Telescope commands). Overrides Ghostty's default toggle_command_palette
 # (P is 80, super+shift is modifier 10, like F/Z above).
