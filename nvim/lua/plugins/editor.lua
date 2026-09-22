@@ -148,10 +148,13 @@ return {
     -- toggleterm restoring the last mode, start_in_insert states the intent,
     -- and on_open startinsert! is the belt-and-suspenders guarantee (the
     -- plugin's own documented pattern) so Alt/Cmd+N always lands ready
-    -- to type, never in Terminal-Normal.
+    -- to type, never in Terminal-Normal — unless the float was left
+    -- scrolled up, in which case scroll memory (see on_open/on_close in
+    -- config/terminal.lua) restores the view in Terminal-Normal instead.
     start_in_insert = true,
     persist_mode = false,
-    on_open = function() vim.cmd('startinsert!') end,
+    on_open = function(term) require('config.terminal').on_open(term) end,
+    on_close = function(term) require('config.terminal').on_close(term) end,
     auto_scroll = false,
     scrollback = 20000,
     direction = 'float',

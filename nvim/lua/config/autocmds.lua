@@ -231,6 +231,13 @@ autocmd({ 'TermOpen', 'TermClose', 'BufDelete', 'BufWipeout' }, {
       local ok, bt = pcall(function() return vim.bo[args.buf].buftype end)
       if not ok or bt ~= 'terminal' then return end
     end
+    if args.event == 'TermClose' then
+      -- The shell exited: its scroll snapshot (see config/terminal.lua)
+      -- dies with it, so a reused id never reopens a fresh shell pinned
+      -- to dead history.
+      local ok, name = pcall(vim.api.nvim_buf_get_name, args.buf)
+      if ok then require('config.terminal').forget_buf(name) end
+    end
     -- Re-evaluate the titlestring (folder – file – N terms) even when
     -- focus never leaves the file buffer. Self-assignment forces the
     -- update without toggling 'title' (no titlebar flicker).

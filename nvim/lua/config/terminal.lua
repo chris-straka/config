@@ -317,4 +317,114 @@ function M._pick(ids, current, dir)
   return ids[(at - 2) % #ids + 1]
 end
 
+-- Floating-terminal scroll memory: toggling a float away destroys its
+-- window, and the window's view (topline) dies with it — so reopening
+-- always landed at the bottom in Terminal-Insert and a scrolled-up
+-- position was lost. on_close snapshots the view per terminal id (only
+-- when the float was left scrolled up); on_open restores it and stays in
+-- Terminal-Normal so the restored view sticks (startinsert would jump to
+-- the end). A float left at the bottom reopens exactly as before: Insert
+-- at the prompt. Wired in plugins/editor.lua's toggleterm opts, so every
+-- toggle path (`\`, Cmd+digits, cycle, hop-to-code auto-close) runs it.
+M._views = {}
+
+-- Pure: is the last line off-screen? topline/linecount/height are
+-- 1-based buffer lines and window rows, so equality means the last line
+-- is still visible (at the bottom, nothing to remember).
+---@param topline integer
+---@param linecount integer
+---@param height integer
+---@return boolean
+function M._scrolled_up(topline, linecount, height)
+  return topline + height - 1 < linecount
+end
+
+-- Remember id's snapshot (a winsaveview() table) unless it was left at
+-- the bottom — at_bottom snapshots are dropped so the id carries no
+-- stale view into a reopen that should just follow new output.
+---@param id integer|string
+---@param view table
+---@param at_bottom boolean
+function M.remember(id, view, at_bottom)
+  local n = tonumber(id)
+  if not n then return end
+  if at_bottom then
+    M._views[n] = nil
+  else
+    M._views[n] = view
+  end
+end
+
+-- Recall id's snapshot for a buffer now holding linecount lines, or nil
+-- when there is nothing worth restoring: never remembered, or stale past
+-- the new end (shell exited and the id got reused — restoring would pin a
+-- fresh shell to dead history).
+---@param id integer|string
+---@param linecount integer
+---@return table|nil
+function M.recall(id, linecount)
+  local n = tonumber(id)
+  local view = n and M._views[n] or nil
+  if type(view) ~= 'table' or type(view.topline) ~= 'number' then return nil end
+  if view.topline > linecount then
+    M._views[n] = nil
+    return nil
+  end
+  return view
+end
+
+-- Drop id's snapshot when its shell exits, parsed from the same
+-- #toggleterm#N buffer name as note_buf; anything else is ignored.
+---@param bufname string|nil
+function M.forget_buf(bufname)
+  local n = (bufname or ''):match('#toggleterm#(%d+)')
+  if n then M._views[tonumber(n)] = nil end
+end
+
+-- Toggleterm on_close: snapshot the closing float's view. Runs before the
+-- window is torn down (see Terminal:close), so term.window is still live;
+-- every lookup is guarded because close also fires from hop-away paths
+-- where focus already left.
+---@param term table|nil toggleterm terminal
+function M.on_close(term)
+  local id = term and term.id
+  local win = term and term.window
+  if id == nil or type(win) ~= 'number' then return end
+  if not vim.api.nvim_win_is_valid(win) then return end
+  local ok, view = pcall(vim.api.nvim_win_call, win, vim.fn.winsaveview)
+  if not ok or type(view) ~= 'table' then return end
+  local okb, buf = pcall(vim.api.nvim_win_get_buf, win)
+  if not okb or not vim.api.nvim_buf_is_valid(buf) then return end
+  local okh, height = pcall(vim.api.nvim_win_get_height, win)
+  if not okh then return end
+  local linecount = vim.api.nvim_buf_line_count(buf)
+  M.remember(id, view, not M._scrolled_up(view.topline or linecount, linecount, height))
+end
+
+-- Toggleterm on_open: restore a scrolled-up snapshot, else land in
+-- Terminal-Insert ready to type (the previous always-insert behavior).
+-- The plugin's own startinsert (start_in_insert, via TermEnter) is
+-- already queued before this runs, so the restore goes through
+-- vim.schedule to land after it: drop back to Terminal-Normal first,
+-- then put the saved view back.
+---@param term table|nil toggleterm terminal
+function M.on_open(term)
+  local id = term and term.id
+  local buf = term and term.bufnr
+  local linecount = (buf and vim.api.nvim_buf_is_valid(buf)) and vim.api.nvim_buf_line_count(buf) or 1
+  local view = (id ~= nil) and M.recall(id, linecount) or nil
+  local win = term and term.window
+  if view ~= nil and type(win) == 'number' then
+    vim.schedule(function()
+      if not vim.api.nvim_win_is_valid(win) then return end
+      vim.api.nvim_win_call(win, function()
+        pcall(vim.cmd, 'stopinsert')
+        pcall(vim.fn.winrestview, view)
+      end)
+    end)
+    return
+  end
+  vim.cmd('startinsert!')
+end
+
 return M
