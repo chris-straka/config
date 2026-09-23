@@ -233,9 +233,10 @@ return {
         end
         -- PDFs open in Zathura (vim keys, TOC, search): image.nvim
         -- rasterizes a single static page, which breaks multi-page docs.
-        -- Images open in the OS viewer and return at once, so the cursor
-        -- stays in the tree. 3D models open in f3d (.blend in Blender):
-        -- buffers cannot render meshes.
+        -- Images image.nvim hijacks (png/jpg/gif/webp/…) open in a
+        -- buffer and render there; svg/tif/tiff still go to the OS
+        -- viewer since no buffer can render them. 3D models open in
+        -- f3d (.blend in Blender): buffers cannot render meshes.
         local function open_file_or_external(node)
           if node and node.type == 'file' and node.absolute_path then
             local path = node.absolute_path
@@ -243,8 +244,9 @@ return {
               require('config.pdf').open(path)
               return
             end
-            if require('config.image').handles(path) then
-              require('config.image').open(path)
+            local image = require('config.image')
+            if image.handles(path) and not image.in_buffer(path) then
+              image.open(path)
               return
             end
             if require('config.model3d').handles(path) then
@@ -255,9 +257,9 @@ return {
           open_file_centered()
         end
         -- Space on a folder expands it (never re-roots); on a file it
-        -- opens it and jumps in, except images/PDFs/models which open
-        -- externally while the cursor stays in the tree. Same as l,
-        -- unlike Enter which re-roots folders.
+        -- opens it and jumps in, except PDFs/models/unrenderable images
+        -- which open externally while the cursor stays in the tree.
+        -- Same as l, unlike Enter which re-roots folders.
         local function expand_or_open()
           open_file_or_external(api.tree.get_node_under_cursor())
         end

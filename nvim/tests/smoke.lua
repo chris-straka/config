@@ -576,6 +576,9 @@ check('gx sends pdfs to zathura', openlink_src:find("require('config.pdf').open(
 check('tree sends pdfs to zathura', editor_src:find("require('config.pdf')", 1, true) ~= nil
   and editor_src:find("match('%.pdf$')", 1, true) ~= nil
   and editor_src:find('vim.ui.open(node.absolute_path)', 1, true) == nil)
+check('tree opens renderable images in a buffer, externals only the rest',
+  editor_src:find('image.in_buffer(path)', 1, true) ~= nil
+  and editor_src:find('image.handles(path) and not image.in_buffer(path)', 1, true) ~= nil)
 check('tree bg brightened, theme kept', ui:find('catppuccin-mocha', 1, true) ~= nil
   and ui:find('NvimTreeNormal', 1, true) ~= nil
   and ui:find('surface0', 1, true) ~= nil)
