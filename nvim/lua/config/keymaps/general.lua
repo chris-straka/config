@@ -41,6 +41,12 @@ map({ 'n', 't', 'i' }, '<A-l>', '<C-w>l', opts)
 -- (mirrors the free Esc+b word-back on Alt+Left).
 map('n', '<A-f>', 'w', { noremap = true, silent = true, desc = 'Word forward' })
 
+-- Option+Delete in insert mode deletes the previous word (macOS parity,
+-- rename prompts included). Arrives as CSI-u <M-BS> via the alt+backspace
+-- bind in shared-keybinds.conf; without it Ghostty's Esc+Backspace default
+-- drops to Normal mode first.
+map('i', '<M-BS>', '<C-w>', { noremap = true, silent = true, desc = 'Delete word backward' })
+
 -- Mouse hover docs (VSCode tooltip): rest the mouse on a word in normal
 -- mode and its LSP docs pop up anchored at the mouse. Needs mousemoveevent
 -- (see options.lua). K is the keyboard equivalent.

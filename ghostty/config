@@ -143,9 +143,9 @@ keybind = super+e=text:\x1b[101;9u
 keybind = super+shift+e=text:\x1b[101;10u
 # Cmd+/ toggles comments in nvim (VSCode habit, nvim <D-/> replays
 # mini.comment's gcc/gc). No Ghostty default on this key, so nothing to
-# override — this just makes the combo reach nvim (key name `slash`,
-# CSI-u 47, super is modifier 9, like the letters above).
-keybind = super+slash=text:\x1b[47;9u
+# override — this just makes the combo reach nvim (/ is 47, super is
+# modifier 9, like the letters above).
+keybind = super+/=text:\x1b[47;9u
 # Shift+Cmd+P is nvim's command palette (VSCode habit, nvim <D-S-p> ->
 # Telescope commands). Overrides Ghostty's default toggle_command_palette
 # (P is 80, super+shift is modifier 10, like F/Z above).
@@ -169,6 +169,11 @@ keybind = super+backspace=text:\x1b[127;9u
 # keymaps/terminal.lua). CSI-u shift = modifier 2. Plain Backspace is
 # untouched so the shell keeps erase.
 keybind = shift+backspace=text:\x1b[127;2u
+# Option+Delete erases the previous word (macOS parity). Without this,
+# Ghostty sends Esc+Backspace, whose Esc half drops insert mode first —
+# which is why it cancelled nvim-tree rename instead of editing the name.
+# CSI-u alt = modifier 3, decoded by nvim as <M-BS> (see keymaps/general.lua).
+keybind = alt+backspace=text:\x1b[127;3u
 # <<SHARED-KEYBINDS-END>>
 # (Retired: Cmd+Ctrl+digits used to select project slots. Slots are gone —
 # one Ghostty tab per project now — so this family is intentionally left
