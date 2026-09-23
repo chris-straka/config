@@ -102,6 +102,20 @@ autocmd('TermOpen', {
   callback = function() vim.opt_local.scrolloff = 0 end,
 })
 
+-- Terminal floats stay on their shell: <C-o>/<C-i> in Terminal-Normal
+-- follow the global jumplist and swap the float to a file buffer, which
+-- reads as the terminal "jumping to code". Buffer-local <Nop> keeps the
+-- float put; file buffers keep the jumplist. Terminal-Insert ('t' mode)
+-- is untouched so the shell keeps its own Ctrl-O.
+autocmd('TermOpen', {
+  group = vim.api.nvim_create_augroup('TerminalJumpGuard', { clear = true }),
+  callback = function(args)
+    local b = { buffer = args.buf, noremap = true, silent = true, desc = 'Terminal keeps its shell (no jumplist)' }
+    vim.keymap.set('n', '<C-o>', '<Nop>', b)
+    vim.keymap.set('n', '<C-i>', '<Nop>', b)
+  end,
+})
+
 -- The cursor stays centered through the end-of-file tail too. scrolloff
 -- centers everywhere it can, but the docs are explicit that it gives up
 -- at the start/end of the file (`:h scrolloff`), docking the last lines
