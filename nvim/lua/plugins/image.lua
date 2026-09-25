@@ -22,6 +22,31 @@ return {
         -- :edit / Telescope / harpoon opens (single static page). The
         -- tree and gx send PDFs to Zathura instead (see config/pdf.lua).
         hijack_file_patterns = { '*.png', '*.jpg', '*.jpeg', '*.gif', '*.webp', '*.avif', '*.bmp', '*.ico', '*.pdf' },
+        -- Kitty graphics ignore window z-order, so an image in the main
+        -- window bleeds through any float on top of it — including every
+        -- toggleterm float. Overlap clearing hides images behind floats
+        -- (toggleterm floats mask; never add them to the ignore list).
+        window_overlap_clear_enabled = true,
+      })
+      -- Terminal-Insert gap: the overlap pass above only runs from the
+      -- decoration provider, which bails outside Normal mode — and every
+      -- toggleterm float lands in Terminal-Insert. So entering any
+      -- terminal shallow-clears every image (the render goes away but the
+      -- state stays, so they come back when the float closes). Not
+      -- api.clear(): with no id that drops every image from state
+      -- (non-shallow) and nothing would re-render afterwards.
+      vim.api.nvim_create_autocmd({ 'TermEnter', 'BufEnter', 'WinEnter' }, {
+        group = vim.api.nvim_create_augroup('ImageHideOnTerminal', { clear = true }),
+        callback = function(ev)
+          local buf = ev.buf
+          if not vim.api.nvim_buf_is_valid(buf) then return end
+          if vim.bo[buf].buftype ~= 'terminal' and vim.bo[buf].filetype ~= 'toggleterm' then return end
+          local ok, api = pcall(require, 'image')
+          if not ok then return end
+          for _, img in ipairs(api.get_images()) do
+            pcall(function() img:clear(true) end)
+          end
+        end,
       })
       vim.api.nvim_create_autocmd('FileType', {
         group = vim.api.nvim_create_augroup('ImageRawView', { clear = true }),

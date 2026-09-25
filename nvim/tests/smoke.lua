@@ -1406,6 +1406,13 @@ do
     image_src:find('ImageRawView', 1, true) ~= nil
     and image_src:find("'<leader>ir'", 1, true) ~= nil
     and image_src:find('is_enabled()', 1, true) ~= nil)
+  check('images hide behind overlapping floats (terminal bleed-through)',
+    image_src:find('window_overlap_clear_enabled = true', 1, true) ~= nil)
+  check('images shallow-clear on terminal enter (Terminal-Insert gap)',
+    image_src:find('ImageHideOnTerminal', 1, true) ~= nil
+    and image_src:find("'TermEnter'", 1, true) ~= nil
+    and image_src:find("buftype ~= 'terminal'", 1, true) ~= nil
+    and image_src:find('img:clear(true)', 1, true) ~= nil)
 end
 
 -- Tree focus vs the centerer: entering the tree still refreshes the
