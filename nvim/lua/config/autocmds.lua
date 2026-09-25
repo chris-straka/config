@@ -294,3 +294,32 @@ autocmd('BufEnter', {
     vim.cmd('NvimTreeResize ' .. width)
   end,
 })
+
+-- Audio files open in the sfx_player popup, never as a binary buffer:
+-- :edit / Telescope / harpoon opens funnel through the same
+-- config.audio.open() the tree uses (see on_attach in
+-- plugins/editor.lua), then the just-read buffer is wiped so no dead
+-- binary buffer lingers behind the popup. Everything guarded: with no
+-- mpv (or no plugin) the file just opens as bytes, as before.
+autocmd('BufReadPost', {
+  group = vim.api.nvim_create_augroup('AudioAutoOpen', { clear = true }),
+  callback = function(args)
+    local buf = args.buf
+    if not vim.api.nvim_buf_is_valid(buf) then return end
+    local path = vim.api.nvim_buf_get_name(buf)
+    if path == '' then return end
+    local ok_audio, audio = pcall(require, 'config.audio')
+    if not ok_audio or not audio.handles(path) then return end
+    if vim.bo[buf].modified or vim.bo[buf].buftype ~= '' then return end
+    local function play()
+      if not vim.api.nvim_buf_is_valid(buf) then return end
+      if vim.api.nvim_buf_get_name(buf) ~= path then return end
+      if vim.bo[buf].modified then return end
+      audio.open(path)
+      pcall(vim.api.nvim_buf_delete, buf, { force = true })
+    end
+    -- `nvim song.mp3` reads the file mid-startup: defer past VimEnter
+    -- (see TreeOnStartup above) so the popup never opens half-built.
+    if vim.v.vim_did_enter == 0 then vim.schedule(play) else play() end
+  end,
+})

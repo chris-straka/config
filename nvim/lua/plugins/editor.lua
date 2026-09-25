@@ -237,6 +237,9 @@ return {
         -- buffer and render there; svg/tif/tiff still go to the OS
         -- viewer since no buffer can render them. 3D models open in
         -- f3d (.blend in Blender): buffers cannot render meshes.
+        -- Audio opens in the sfx_player popup (mpv backend) instead of
+        -- a binary buffer; like the other external opens, the cursor
+        -- stays in the tree (buffer opens quit_on_open instead).
         local function open_file_or_external(node)
           if node and node.type == 'file' and node.absolute_path then
             local path = node.absolute_path
@@ -253,12 +256,16 @@ return {
               require('config.model3d').open(path)
               return
             end
+            if require('config.audio').handles(path) then
+              require('config.audio').open(path)
+              return
+            end
           end
           open_file_centered()
         end
         -- Space on a folder expands it (never re-roots); on a file it
-        -- opens it and jumps in, except PDFs/models/unrenderable images
-        -- which open externally while the cursor stays in the tree.
+        -- opens it and jumps in, except PDFs/models/audio/unrenderable
+        -- images which open externally while the cursor stays in the tree.
         -- Same as l, unlike Enter which re-roots folders.
         local function expand_or_open()
           open_file_or_external(api.tree.get_node_under_cursor())

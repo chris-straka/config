@@ -50,6 +50,13 @@ end, { noremap = true, silent = true, desc = 'Focus tree from empty buffer' })
 -- The tab cwd follows, so terminals land there too.
 map('n', '<leader>cr', function() require('config.tree').change_root_prompt() end,
   { noremap = true, silent = true, desc = 'Change tree root…' })
+-- <leader>p plays the file in the current buffer when it is audio
+-- (mp3/wav/flac/...): the sfx popup opens instead of a binary buffer
+-- (Space pauses, arrows seek/volume, q closes). Tree Enter on an audio
+-- file does the same (see on_attach in plugins/editor.lua), and
+-- :SfxPlayerOpen plays any path with completion.
+map('n', '<leader>p', function() require('config.audio').open_current() end,
+  { noremap = true, silent = true, desc = 'Play audio file' })
 -- Git launchers (global, always available): gd toggles a two-pane diff
 -- of the current file (see config/gitdiff.lua), gg opens Neogit, gb
 -- toggles blame. Hunk keys (gp/gr/gs) attach per buffer from gitsigns
