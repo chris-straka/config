@@ -22,12 +22,15 @@ font-size = 20
 # font-size above (reloads still re-read font-size).
 window-inherit-font-size = true
 theme = "Catppuccin Mocha"
-# One Ghostty tab = one project (its own nvim). The tab bar must stay
-# visible: `hidden` removes the titlebar chrome tabs live in, so a new tab
-# opened invisibly. `transparent` keeps the minimal look with tabs intact.
-macos-titlebar-style = transparent
-# `never`: no top tab bar — lualine already names the current tab's
-# project at the bottom, and Shift+Cmd+H/L still steps between tabs.
+# One Ghostty tab = one project (its own nvim). `tabs` blends the tab bar
+# into the terminal background instead of the protruding native bar.
+# (`hidden` removes the chrome tabs live in, so a new tab opens
+# invisibly — only usable with windows-per-project. `transparent` is the
+# fallback if `tabs` renders badly on this macOS version.)
+macos-titlebar-style = tabs
+# NOTE: GTK-only — no-op on macOS. The tab bar always shows with 2+ tabs;
+# lualine names the current tab's project at the bottom, and Shift+Cmd+H/L
+# still steps between tabs.
 window-show-tab-bar = never
 # New tabs open at the far right end of the tab list (default `current`
 # inserts after the focused tab).
