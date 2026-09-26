@@ -263,15 +263,28 @@ return {
           end
           open_file_centered()
         end
-        -- Space on a folder expands it (never re-roots); on a file it
-        -- opens it and jumps in, except PDFs/models/audio/unrenderable
-        -- images which open externally while the cursor stays in the tree.
-        -- Same as l, unlike Enter which re-roots folders.
+        -- l and o: folders expand (never re-root); files open and jump
+        -- in, except PDFs/models/audio/unrenderable images which open
+        -- externally while the cursor stays in the tree.
         local function expand_or_open()
           open_file_or_external(api.tree.get_node_under_cursor())
         end
+        -- Space matches l/o, except renderable images preview instead:
+        -- api.node.open.preview shows the image in the last window and
+        -- refocuses the tree, so j/k + Space browses a folder of images
+        -- without reopening the tree each time (Enter still fully opens).
+        local function expand_preview_or_open()
+          local node = api.tree.get_node_under_cursor()
+          if node and node.type == 'file' and node.absolute_path then
+            if require('config.image').in_buffer(node.absolute_path) then
+              api.node.open.preview()
+              return
+            end
+          end
+          open_file_or_external(node)
+        end
         vim.keymap.set('n', 'l', expand_or_open, opts('Expand'))
-        vim.keymap.set('n', '<Space>', expand_or_open, opts('Expand'))
+        vim.keymap.set('n', '<Space>', expand_preview_or_open, opts('Expand'))
         vim.keymap.set('n', 'o', expand_or_open, opts('Open'))
         -- Cmd+Delete (Backspace) trashes the node under the cursor,
         -- mirroring Finder (needs the `trash` CLI; prompts to confirm).

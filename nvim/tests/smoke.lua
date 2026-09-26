@@ -579,6 +579,13 @@ check('tree sends pdfs to zathura', editor_src:find("require('config.pdf')", 1, 
 check('tree opens renderable images in a buffer, externals only the rest',
   editor_src:find('image.in_buffer(path)', 1, true) ~= nil
   and editor_src:find('image.handles(path) and not image.in_buffer(path)', 1, true) ~= nil)
+check('Space previews in-buffer images, tree stays open',
+  editor_src:find("vim.keymap.set('n', '<Space>', expand_preview_or_open", 1, true) ~= nil
+    and editor_src:find('api.node.open.preview()', 1, true) ~= nil
+    and editor_src:find("require('config.image').in_buffer(node.absolute_path)", 1, true) ~= nil)
+check('l/o still fully open (Space-only preview)',
+  editor_src:find("vim.keymap.set('n', 'l', expand_or_open", 1, true) ~= nil
+    and editor_src:find("vim.keymap.set('n', 'o', expand_or_open", 1, true) ~= nil)
 check('tree bg brightened, theme kept', ui:find('catppuccin-mocha', 1, true) ~= nil
   and ui:find('NvimTreeNormal', 1, true) ~= nil
   and ui:find('surface0', 1, true) ~= nil)

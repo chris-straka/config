@@ -169,9 +169,11 @@ function M.tree_closed()
   settle('tree:close')
 end
 
--- Post file-open (l, Enter, Space, o — see on_attach in
--- plugins/editor.lua): the tree closes inside api.node.open.edit, so
--- settle once it returns and the layout is final.
+-- Post file-open (l, Enter, o, and Space on non-images — see
+-- on_attach in plugins/editor.lua): the tree closes inside
+-- api.node.open.edit, so settle once it returns and the layout is
+-- final. Space on an image previews instead (tree stays open, no
+-- settle needed).
 function M.file_opened()
   M.tree_closed()
 end
