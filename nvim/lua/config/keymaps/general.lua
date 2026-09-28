@@ -31,7 +31,9 @@ map('v', ']e', ":m '>+1<CR>gv=gv", { noremap = true, silent = true, desc = 'Move
 map('n', ',', '<C-w>', opts)
 map({ 'n', 't', 'i' }, '<A-h>', '<C-w>h', opts)
 map({ 'n', 't', 'i' }, '<A-j>', '<C-w>j', opts)
-map({ 'n', 't', 'i' }, '<A-k>', '<C-w>k', opts)
+-- <A-k> skips normal mode: splits go unused, so normal Alt+K sends a
+-- whole-file @ref instead (workspace.lua); terminal/insert keep nav.
+map({ 't', 'i' }, '<A-k>', '<C-w>k', opts)
 map({ 'n', 't', 'i' }, '<A-l>', '<C-w>l', opts)
 
 -- Alt+Right intentionally left unmapped in terminal modes: Ghostty sends it
@@ -50,15 +52,41 @@ map('i', '<M-BS>', '<C-w>', { noremap = true, silent = true, desc = 'Delete word
 -- Mouse hover docs (VSCode tooltip): rest the mouse on a word in normal
 -- mode and its LSP docs pop up anchored at the mouse. Needs mousemoveevent
 -- (see options.lua). K is the keyboard equivalent.
-map('n', '<MouseMove>', function() require('config.mouse_hover').on_mouse_move() end,
-  { noremap = true, silent = true, desc = 'Hover docs under mouse' })
+map(
+  'n',
+  '<MouseMove>',
+  function() require('config.mouse_hover').on_mouse_move() end,
+  { noremap = true, silent = true, desc = 'Hover docs under mouse' }
+)
 
 -- gx opens the thing under the cursor: a Markdown file link like
 -- [label](/abs/path:12) (or a bare path) opens in a new buffer at that
--- line; a URL opens in the browser. Replaces netrw's gx, which only
--- handled URLs.
-map('n', 'gx', function() require('config.openlink').open() end,
-  { noremap = true, silent = true, desc = 'Open link under cursor' })
+-- line; a URL opens in the browser (cursor need only share its line).
+-- Replaces netrw's gx, which only handled URLs.
+map(
+  'n',
+  'gx',
+  function() require('config.openlink').open() end,
+  { noremap = true, silent = true, desc = 'Open link under cursor' }
+)
+
+-- Right-click menu without the hover fight: parking on the popup
+-- would otherwise schedule hover docs, whose float lands on the menu
+-- and dismisses it. Hold hover briefly, keep click-to-position, then
+-- show the stock menu. <leader>I below is the keyboard way in.
+map({ 'n', 'v' }, '<RightMouse>', function()
+  require('config.mouse_hover').hold(3000)
+  local mouse = vim.fn.getmousepos()
+  if mouse.winid ~= 0 and mouse.line > 0 then
+    pcall(vim.api.nvim_set_current_win, mouse.winid)
+    pcall(vim.api.nvim_win_set_cursor, mouse.winid, { mouse.line, math.max(0, mouse.column - 1) })
+  end
+  vim.cmd('popup PopUp')
+end, { noremap = true, silent = true, desc = 'Right-click menu (hover-safe)' })
+
+-- Inspect symbol under cursor (the popup menu's Inspect entry
+-- without the mouse).
+map('n', '<leader>I', '<cmd>Inspect<CR>', { noremap = true, silent = true, desc = 'Inspect symbol' })
 
 -- VSCode-style folding: Cmd+Opt+[ folds, Cmd+Opt+] unfolds (folds come from
 -- the treesitter grammar, see options.lua). `za` still toggles, `zM`/`zR`
@@ -69,11 +97,17 @@ map({ 'n', 'v' }, '<D-M-]>', 'zo', { noremap = true, silent = true, desc = 'Unfo
 -- Shift+Alt+F: format the buffer (VSCode format-document). From a visual
 -- selection it formats just that — conform reads the range itself. Same
 -- engine as format-on-save (conform table, LSP fallback, 1s timeout).
-map({ 'n', 'v' }, '<A-S-f>', function()
+-- Insert mode included: formatting prose mid-sentence is the common case
+-- and conform keeps you in insert. <leader>cf is the same action for
+-- terminals where Alt+Shift combos never arrive.
+local function format_buffer()
   local ok_lazy, lazy = pcall(require, 'lazy')
   if ok_lazy then pcall(lazy.load, { plugins = { 'conform.nvim' } }) end
-  require('conform').format { lsp_fallback = true, timeout_ms = 1000 }
-end, { noremap = true, silent = true, desc = 'Format code' })
+  require('conform').format({ lsp_fallback = true, timeout_ms = 1000 })
+end
+map({ 'n', 'v' }, '<A-S-f>', format_buffer, { noremap = true, silent = true, desc = 'Format code' })
+map('i', '<A-S-f>', format_buffer, { noremap = true, silent = true, desc = 'Format code' })
+map({ 'n', 'v' }, '<leader>cf', format_buffer, { noremap = true, silent = true, desc = 'Format code' })
 
 -- <leader>ym: copy the last message (warning, error, LSP notice) to the
 -- system clipboard. The :messages history can't be yanked with visual
@@ -98,6 +132,20 @@ map('n', '<leader>yp', function()
   vim.fn.setreg('+', path)
   vim.notify('Copied: ' .. path)
 end, { noremap = true, silent = true, desc = 'Copy full file path' })
+
+-- <leader>yd: copy the cursor line's first diagnostic (lint warning,
+-- type error) to the system clipboard. Hover floats can't be yanked,
+-- and <leader>ym only sees :messages — this reads vim.diagnostic.
+map('n', '<leader>yd', function()
+  local d = vim.diagnostic.get(0, { lnum = vim.fn.line('.') - 1 })[1]
+  if not d then
+    vim.notify('no diagnostic on this line', vim.log.levels.WARN)
+    return
+  end
+  local text = string.format('%s:%d: %s [%s]', vim.fn.expand('%:t'), d.lnum + 1, d.message, d.code or d.source or '?')
+  vim.fn.setreg('+', text)
+  vim.notify('Copied: ' .. text)
+end, { noremap = true, silent = true, desc = 'Copy diagnostic' })
 
 -- Cmd+Shift+Z: redo (VSCode redo). u undoes, this re-applies.
 map('n', '<D-S-z>', '<cmd>redo<cr>', { noremap = true, silent = true, desc = 'Redo' })

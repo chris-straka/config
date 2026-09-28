@@ -9,9 +9,7 @@ return {
       -- it; visual mode acts on the selection instead of the whole hunk.
       on_attach = function(bufnr)
         local gs = package.loaded.gitsigns
-        local function map(mode, lhs, rhs, desc)
-          vim.keymap.set(mode, lhs, rhs, { buffer = bufnr, desc = desc })
-        end
+        local function map(mode, lhs, rhs, desc) vim.keymap.set(mode, lhs, rhs, { buffer = bufnr, desc = desc }) end
         map('n', '<leader>gp', gs.preview_hunk, 'Preview hunk')
         map({ 'n', 'v' }, '<leader>gr', function()
           if vim.fn.mode():find('^[vV]') ~= nil then

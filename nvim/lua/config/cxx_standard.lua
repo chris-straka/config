@@ -17,12 +17,8 @@ local cmake_found = {}
 ---@param ver string|nil
 ---@return string|nil ver when it names a known standard
 local function valid_std(ver)
-  if ver == '98' or ver == '03' or ver == '11' or ver == '14' then
-    return ver
-  end
-  if ver == '17' or ver == '20' or ver == '23' or ver == '26' then
-    return ver
-  end
+  if ver == '98' or ver == '03' or ver == '11' or ver == '14' then return ver end
+  if ver == '17' or ver == '20' or ver == '23' or ver == '26' then return ver end
   return nil
 end
 
@@ -62,13 +58,9 @@ end
 ---@param entry table one compile_commands.json entry
 ---@return string|nil normalized path of the entry's file
 local function entry_file(entry)
-  if type(entry.file) ~= 'string' or entry.file == '' then
-    return nil
-  end
+  if type(entry.file) ~= 'string' or entry.file == '' then return nil end
   if entry.file:sub(1, 1) == '/' then return entry.file end
-  if type(entry.directory) ~= 'string' or entry.directory == '' then
-    return nil
-  end
+  if type(entry.directory) ~= 'string' or entry.directory == '' then return nil end
   return vim.fn.simplify(entry.directory .. '/' .. entry.file)
 end
 
@@ -159,8 +151,7 @@ local function find_cmake_std(dirs)
       if f then
         local text = f:read('*a')
         f:close()
-        local ver = text:match('CMAKE_CXX_STANDARD%s+(%d%d)')
-          or text:match('cxx_std_(%d%d)')
+        local ver = text:match('CMAKE_CXX_STANDARD%s+(%d%d)') or text:match('cxx_std_(%d%d)')
         if valid_std(ver) then hit = ver end
       end
       -- Hits only, same as find_cc above: a later edit declaring the

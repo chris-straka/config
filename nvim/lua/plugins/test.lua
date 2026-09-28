@@ -54,9 +54,9 @@ return {
     branch = 'master',
     build = 'sh install.sh',
     keys = {
-      { '<leader>sr', '<Plug>SnipRun', mode = 'v', desc = 'Run selection' },
-      { '<leader>sr', '<Plug>SnipRunOperator', mode = 'n', desc = 'Run operator' },
-      { '<leader>sc', '<Plug>SnipClose', mode = 'n', desc = 'Clear sniprun' },
+      { '<leader>os', '<Plug>SnipRun', mode = 'v', desc = 'Run selection' },
+      { '<leader>os', '<Plug>SnipRunOperator', mode = 'n', desc = 'Run operator' },
+      { '<leader>oc', '<Plug>SnipClose', mode = 'n', desc = 'Clear sniprun' },
     },
     opts = {
       display = { 'VirtualTextOk', 'VirtualTextErr', 'TempFloatingWindow' },

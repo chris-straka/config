@@ -6,10 +6,25 @@
 -- ensure_installed, so both sites below take these strings): add a server
 -- here once instead of in two places.
 local servers = {
-  'lua_ls', 'ts_ls', 'jsonls', 'cssls', 'tailwindcss',
-  'gopls', 'pyright', 'rust_analyzer', 'bashls', 'jdtls', 'omnisharp',
-  'clangd', 'terraformls', 'helm_ls', 'yamlls',
-  'dockerls', 'docker_compose_language_service', 'taplo', 'tinymist',
+  'lua_ls',
+  'ts_ls',
+  'jsonls',
+  'cssls',
+  'tailwindcss',
+  'gopls',
+  'pyright',
+  'rust_analyzer',
+  'bashls',
+  'jdtls',
+  'omnisharp',
+  'clangd',
+  'terraformls',
+  'helm_ls',
+  'yamlls',
+  'dockerls',
+  'docker_compose_language_service',
+  'taplo',
+  'tinymist',
 }
 return {
   { 'williamboman/mason.nvim', cmd = 'Mason', opts = {} },
@@ -49,12 +64,18 @@ return {
           -- so docs span the whole screen on a wide monitor). The cap
           -- lives on M.max_width in lua/config/mouse_hover.lua — same
           -- tooltip via mouse, one value for both.
-          vim.keymap.set('n', 'K', function()
-            vim.lsp.buf.hover({ max_width = require('config.mouse_hover').max_width })
-          end, b)
-          vim.keymap.set('n', '<C-k>', function()
-            vim.lsp.buf.signature_help({ max_width = require('config.mouse_hover').max_width })
-          end, b)
+          vim.keymap.set(
+            'n',
+            'K',
+            function() vim.lsp.buf.hover({ max_width = require('config.mouse_hover').max_width }) end,
+            b
+          )
+          vim.keymap.set(
+            'n',
+            '<C-k>',
+            function() vim.lsp.buf.signature_help({ max_width = require('config.mouse_hover').max_width }) end,
+            b
+          )
           vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, b)
           vim.keymap.set('n', '<leader>ca', vim.lsp.buf.code_action, b)
 
@@ -96,9 +117,11 @@ return {
       signature = { enabled = true },
     },
   },
-  { 'L3MON4D3/LuaSnip', dependencies = { 'rafamadriz/friendly-snippets' }, config = function()
-    require('luasnip.loaders.from_vscode').lazy_load()
-  end },
+  {
+    'L3MON4D3/LuaSnip',
+    dependencies = { 'rafamadriz/friendly-snippets' },
+    config = function() require('luasnip.loaders.from_vscode').lazy_load() end,
+  },
   -- formatting (replaces null-ls). This "formatters_by_ft" table IS the
   -- conform config: filetype -> formatter list, used on save (see autocmds).
   {
@@ -134,7 +157,8 @@ return {
     event = { 'BufReadPre', 'BufNewFile' },
     config = function()
       require('lint').linters_by_ft = {
-        javascript = { 'eslint_d' }, typescript = { 'eslint_d' },
+        javascript = { 'eslint_d' },
+        typescript = { 'eslint_d' },
         python = { 'ruff' },
       }
       vim.api.nvim_create_autocmd({ 'BufWritePost', 'BufReadPost' }, {
@@ -143,33 +167,56 @@ return {
       })
     end,
   },
-  { 'WhoIsSethDaniel/mason-tool-installer.nvim', dependencies = { 'williamboman/mason.nvim' },
+  {
+    'WhoIsSethDaniel/mason-tool-installer.nvim',
+    dependencies = { 'williamboman/mason.nvim' },
     -- NOTE: no Go tools here. Mason drives `go` through mise's shim, which
     -- swallows GOBIN, so every `go install` lands in mise's Go dir instead
     -- of the package dir ("non-existent target" link errors). Go tools
     -- (gopls, gofumpt, delve) are installed with the real Go binary into
     -- ~/go/bin, which is on PATH (see .zshrc).
-    opts = { ensure_installed = {
-      'stylua', 'prettierd', 'eslint_d', 'csharpier', 'shfmt',
-      -- Pinned to the Spotless version (build.gradle.kts): mason's latest
-      -- reflows Javadoc differently, so saves disagree with spotlessCheck.
-      { 'google-java-format', version = 'v1.28.0' },
-      -- debug adapters (see dap.lua keymaps under <leader>d)
-      'codelldb', 'debugpy', 'js-debug-adapter', 'netcoredbg',
-      'firefox-debug-adapter',
-    } } },
+    opts = {
+      ensure_installed = {
+        'stylua',
+        'prettierd',
+        'eslint_d',
+        'csharpier',
+        'shfmt',
+        -- ruff via mason even though mise also provides it: nvim's PATH is
+        -- frozen at spawn, so project-scoped mise tools (ruff lives only in
+        -- Algs/mise.toml, not the global config) are missing whenever nvim
+        -- starts outside that project — silently killing both conform's
+        -- ruff_format and nvim-lint's ruff. mason/bin is always first on
+        -- nvim's PATH, so this just works.
+        'ruff',
+        -- Pinned to the Spotless version (build.gradle.kts): mason's latest
+        -- reflows Javadoc differently, so saves disagree with spotlessCheck.
+        { 'google-java-format', version = 'v1.28.0' },
+        -- debug adapters (see dap.lua keymaps under <leader>d)
+        'codelldb',
+        'debugpy',
+        'js-debug-adapter',
+        'netcoredbg',
+        'firefox-debug-adapter',
+      },
+    },
+  },
   -- Quiet progress: jdtls reports short-lived reconcile tasks on every keystroke (even comment
   -- edits), which flickers the statusline. A slow poll plus ignore_done_already hides tasks that
   -- finish between polls, and suppress_on_insert holds popups while typing. Long operations
   -- still show; this only removes the flicker.
-  { 'j-hui/fidget.nvim', event = 'LspAttach', opts = {
-    progress = {
-      poll_rate = 0.5,
-      suppress_on_insert = true,
-      ignore_done_already = true,
-      -- Done items vanish instantly instead of lingering with a checkmark: the "Validate
-      -- documents" flicker is the done state, not live progress.
-      display = { done_ttl = 0 },
+  {
+    'j-hui/fidget.nvim',
+    event = 'LspAttach',
+    opts = {
+      progress = {
+        poll_rate = 0.5,
+        suppress_on_insert = true,
+        ignore_done_already = true,
+        -- Done items vanish instantly instead of lingering with a checkmark: the "Validate
+        -- documents" flicker is the done state, not live progress.
+        display = { done_ttl = 0 },
+      },
     },
-  } },
+  },
 }

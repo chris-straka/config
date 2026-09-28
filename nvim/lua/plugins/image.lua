@@ -60,7 +60,11 @@ return {
             local image = require('image')
             -- disable() clears every render and makes the hijack bail,
             -- so :edit! reloads raw bytes; enable() re-arms it.
-            if image.is_enabled() then image.disable() else image.enable() end
+            if image.is_enabled() then
+              image.disable()
+            else
+              image.enable()
+            end
             vim.cmd('edit!')
           end, { buffer = ev.buf, desc = 'Image render <-> raw bytes' })
         end,

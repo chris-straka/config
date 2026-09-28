@@ -23,6 +23,16 @@ local last_key = nil
 local timer = nil
 local float_win = nil
 
+-- Right-click hold, epoch-ms before which moves never schedule hover
+-- (see the <RightMouse> map). Parking on the popup menu would
+-- otherwise run the 250ms timer, and the LSP float lands on top of
+-- the menu while it is up. Self-healing on expiry; nothing clears it
+-- early.
+M.hold_until = 0
+
+---@param ms integer
+function M.hold(ms) M.hold_until = vim.uv.now() + ms end
+
 -- Dismiss the float and cancel a pending request. Safe to call anytime.
 function M.close()
   if timer ~= nil then
@@ -30,9 +40,7 @@ function M.close()
     timer:close()
     timer = nil
   end
-  if float_win ~= nil and vim.api.nvim_win_is_valid(float_win) then
-    vim.api.nvim_win_close(float_win, true)
-  end
+  if float_win ~= nil and vim.api.nvim_win_is_valid(float_win) then vim.api.nvim_win_close(float_win, true) end
   float_win = nil
 end
 
@@ -41,9 +49,13 @@ local function word_at(text, col)
   local c = math.min(col, #text)
   if not text:sub(c, c):match('[%w_]') then return '' end
   local s = c
-  while s > 1 and text:sub(s - 1, s - 1):match('[%w_]') do s = s - 1 end
+  while s > 1 and text:sub(s - 1, s - 1):match('[%w_]') do
+    s = s - 1
+  end
   local e = c
-  while e <= #text and text:sub(e, e):match('[%w_]') do e = e + 1 end
+  while e <= #text and text:sub(e, e):match('[%w_]') do
+    e = e + 1
+  end
   return text:sub(s, e - 1)
 end
 
@@ -58,9 +70,7 @@ end
 -- Ask every server for hover at the mouse position. Split out so the
 -- scheduled path stays thin.
 function M.request(bufnr, params, key)
-  vim.lsp.buf_request_all(bufnr, 'textDocument/hover', params, function(results)
-    M._on_results(results, key, bufnr)
-  end)
+  vim.lsp.buf_request_all(bufnr, 'textDocument/hover', params, function(results) M._on_results(results, key, bufnr) end)
 end
 
 -- Render hover results into a mouse-anchored float. Returns a status word.
@@ -69,7 +79,10 @@ function M._on_results(results, key, bufnr)
   if not vim.api.nvim_buf_is_valid(bufnr) then return 'dead-buffer' end
   local valid = {}
   for client_id, resp in pairs(results) do
-    if resp.err == nil and resp.result ~= nil and resp.result.contents ~= nil
+    if
+      resp.err == nil
+      and resp.result ~= nil
+      and resp.result.contents ~= nil
       and not is_empty_contents(resp.result.contents)
     then
       valid[#valid + 1] = { client_id = client_id, result = resp.result }
@@ -114,6 +127,7 @@ end
 
 -- <MouseMove> entry point. Returns a status word (useful for tests).
 function M.on_mouse_move()
+  if vim.uv.now() < M.hold_until then return 'held' end
   local mouse = M._mousepos()
   if mouse.winid == 0 or mouse.line == 0 or mouse.column == 0 then
     M.close()
@@ -163,12 +177,16 @@ function M.on_mouse_move()
     },
   }
   timer = vim.uv.new_timer()
-  timer:start(M.delay, 0, vim.schedule_wrap(function()
-    timer:stop()
-    timer:close()
-    timer = nil
-    M.request(bufnr, params, key)
-  end))
+  timer:start(
+    M.delay,
+    0,
+    vim.schedule_wrap(function()
+      timer:stop()
+      timer:close()
+      timer = nil
+      M.request(bufnr, params, key)
+    end)
+  )
   return 'scheduled'
 end
 

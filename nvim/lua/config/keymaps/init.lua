@@ -12,9 +12,9 @@
 -- Ghostty and Kitty both emit CSI-u super encodings, which Neovim 0.12
 -- decodes to <D-...> — so they were unmapped dead weight. Restore from
 -- git history if a terminal without CSI-u ever shows up.)
-require 'config.keymaps.general'
-require 'config.keymaps.workspace'
-require 'config.keymaps.terminal'
+require('config.keymaps.general')
+require('config.keymaps.workspace')
+require('config.keymaps.terminal')
 
 -- <leader>ur: re-run every keymap module in place (luafile, not require:
 -- require would return the cached first load and change nothing). This is

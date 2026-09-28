@@ -1,7 +1,7 @@
 -- Code-runner-style "run this file" on top of overseer.nvim (already
 -- installed as the tasks backend). <leader>of runs the current buffer with
--- the right interpreter and shows output docked at the bottom without
--- stealing focus; stop/re-run from the task list (<leader>ot).
+-- the right interpreter and shows output in a float (q closes it);
+-- stop/re-run from the task list (<leader>ot).
 local M = {}
 
 -- filetype -> command builder. Only single-file-friendly runtimes are
@@ -26,6 +26,21 @@ local runners = {
 }
 
 ---Run the current file, VSCode code-runner style.
+---Nearest `leetcode/` ancestor containing the shared `_ds/` helpers,
+---else nil. Files under it need PYTHONPATH there for
+---`from _ds import ...`; repo runners set it, plain `python3` does not.
+---@param file string absolute file path
+---@return string|nil leetcode dir, nil when not applicable
+function M.leetcode_dir(file)
+  local dir = vim.fn.fnamemodify(file, ':h')
+  while dir ~= '' and dir ~= '/' and dir ~= '.' do
+    local base = vim.fn.fnamemodify(dir, ':t')
+    if base == 'leetcode' and vim.fn.isdirectory(dir .. '/_ds') == 1 then return dir end
+    dir = vim.fn.fnamemodify(dir, ':h')
+  end
+  return nil
+end
+
 function M.run_file()
   local ft = vim.bo.filetype
   local build = runners[ft]
@@ -51,11 +66,32 @@ function M.run_file()
     vim.notify('overseer.nvim not loaded', vim.log.levels.ERROR)
     return
   end
-  local task = overseer.new_task({
+  local task_opts = {
     cmd = build(file),
     name = 'run ' .. vim.fn.fnamemodify(file, ':t'),
-    components = { 'default', 'open_output' },
-  })
+    -- Output floats instead of the default dock: the dock splits the
+    -- bottom into task list + output and breaks the centered layout.
+    -- Entered on completion: overseer's float closes itself on WinLeave,
+    -- so focus=false dismisses it the instant focus returns to code
+    -- (the old "success and that's it"); opening on completion shows
+    -- final output instead of a flash of empty buffer. q closes it
+    -- (see OverseerOutputQuit in config/autocmds.lua).
+    components = {
+      'default',
+      {
+        'open_output',
+        direction = 'float',
+        focus = true,
+        on_start = 'never',
+        on_complete = 'always',
+      },
+    },
+  }
+  if ft == 'python' then
+    local lcdir = M.leetcode_dir(file)
+    if lcdir then task_opts.env = { PYTHONPATH = lcdir } end
+  end
+  local task = overseer.new_task(task_opts)
   task:start()
 end
 
@@ -91,7 +127,9 @@ end
 function M.visual_quote(s, e)
   if s ~= e or vim.fn.mode() ~= 'v' then return nil end
   local c1, c2 = vim.fn.getpos('v')[3], vim.fn.getpos('.')[3]
-  if c1 > c2 then c1, c2 = c2, c1 end
+  if c1 > c2 then
+    c1, c2 = c2, c1
+  end
   local text = vim.trim(string.sub(vim.api.nvim_get_current_line(), c1, c2))
   if text == '' or vim.fn.strchars(text) > 80 then return nil end
   return text
@@ -111,7 +149,9 @@ function M.visual_range()
   else
     s, e = vim.fn.line("'<"), vim.fn.line("'>")
   end
-  if s > e then s, e = e, s end
+  if s > e then
+    s, e = e, s
+  end
   return s, e
 end
 
@@ -124,17 +164,28 @@ function M.ref_for_visual()
   return M.at_reference(file, s, e, vim.api.nvim_buf_line_count(0), M.visual_quote(s, e))
 end
 
----Option+K from visual mode (Claude Code's @-mention habit): types
+---Option+K (Claude Code's @-mention habit): types
 ---`@file` / `@file#l1-l2` into the current floating terminal — a Muse
 ---prompt, a shell, whatever runs there (the one you were just on, not
 ---always terminal 1). With no float open it reopens the last-visited
 ---one instead of minting terminal 1. No Enter is sent; review the
----text and hit enter yourself. Visual-only on purpose: normal-mode
----Option+K is window navigation (<A-k>), which stays. Whether the
----agent expands the reference is up to the agent; worst case it is
----visible pasted text.
-function M.send_at_reference()
-  local ref = M.ref_for_visual()
+---text and hit enter yourself. From visual it sends the selection,
+---from normal mode the whole file. Whether the agent expands the
+---reference is up to the agent; worst case it is visible pasted text.
+---Brief @file reference for the whole current file (normal-mode
+---counterpart of ref_for_visual): always the bare @file form, nil
+---when the buffer has no file.
+---@return string|nil brief reference, nil when there is no file
+function M.ref_for_file()
+  local file = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(0), ':.')
+  local total = vim.api.nvim_buf_line_count(0)
+  return M.at_reference(file, 1, total, total, nil)
+end
+
+---Type a reference into the current floating terminal (shared tail
+---of send_at_reference and send_file_reference).
+---@param ref string|nil reference to type, nil warns
+function M.send_ref(ref)
   if not ref then
     vim.notify('save the file first — nothing to reference', vim.log.levels.WARN)
     return
@@ -160,5 +211,11 @@ function M.send_at_reference()
   end
   vim.api.nvim_chan_send(target.job_id, ref .. ' ')
 end
+
+---Visual Option+K: send the selection's reference.
+function M.send_at_reference() M.send_ref(M.ref_for_visual()) end
+
+---Normal Option+K: send the whole file's bare @file reference.
+function M.send_file_reference() M.send_ref(M.ref_for_file()) end
 
 return M

@@ -112,7 +112,9 @@ function M._order()
   local ok, terms = pcall(require, 'toggleterm.terminal')
   if not ok then return {} end
   local ids = {}
-  for _, t in ipairs(terms.get_all()) do ids[#ids + 1] = t.id end
+  for _, t in ipairs(terms.get_all()) do
+    ids[#ids + 1] = t.id
+  end
   table.sort(ids)
   return ids
 end
@@ -133,15 +135,15 @@ function M.tab_order()
     if n then seen[tonumber(n)] = true end
   end
   local ids = {}
-  for id in pairs(seen) do ids[#ids + 1] = id end
+  for id in pairs(seen) do
+    ids[#ids + 1] = id
+  end
   table.sort(ids)
   return ids
 end
 
 -- How many terminals the current tab shows; 0 with none.
-function M.count()
-  return #M.tab_order()
-end
+function M.count() return #M.tab_order() end
 
 -- Statusline label: the terminal's slot (position among the live
 -- terminals) plus how many exist (`term 2 / 3`), so the bar always
@@ -218,9 +220,7 @@ end
 -- when the top id is gone (max + 1 is always free).
 ---@param ids integer[]
 ---@return integer
-function M._next(ids)
-  return (ids[#ids] or 0) + 1
-end
+function M._next(ids) return (ids[#ids] or 0) + 1 end
 
 -- Last-visited terminal id for Option+K senders: toggleterm's own
 -- get_last_focused only remembers closed saved views (its ui.lua
@@ -335,9 +335,7 @@ M._views = {}
 ---@param linecount integer
 ---@param height integer
 ---@return boolean
-function M._scrolled_up(topline, linecount, height)
-  return topline + height - 1 < linecount
-end
+function M._scrolled_up(topline, linecount, height) return topline + height - 1 < linecount end
 
 -- Remember id's snapshot (a winsaveview() table) unless it was left at
 -- the bottom — at_bottom snapshots are dropped so the id carries no

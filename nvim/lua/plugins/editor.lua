@@ -13,11 +13,7 @@ return {
           -- prefixes; show those filename-first, leave other languages alone.
           path_display = function(_, path)
             if path:sub(-5) ~= '.java' then return path end
-            return string.format(
-              '%s  %s',
-              vim.fn.fnamemodify(path, ':t'),
-              vim.fn.fnamemodify(path, ':h')
-            )
+            return string.format('%s  %s', vim.fn.fnamemodify(path, ':t'), vim.fn.fnamemodify(path, ':h'))
           end,
         },
         extensions = {
@@ -40,18 +36,16 @@ return {
   {
     'nvim-telescope/telescope-fzf-native.nvim',
     build = 'make',
-    cond = function() return vim.fn.executable 'make' == 1 end,
-    config = function()
-      pcall(require('telescope').load_extension, 'fzf')
-    end,
+    cond = function() return vim.fn.executable('make') == 1 end,
+    config = function() pcall(require('telescope').load_extension, 'fzf') end,
   },
-  { 'nvim-telescope/telescope-file-browser.nvim', -- fuzzy file/folder browser (Cmd+O)
+  {
+    'nvim-telescope/telescope-file-browser.nvim', -- fuzzy file/folder browser (Cmd+O)
     dependencies = { 'nvim-telescope/telescope.nvim', 'nvim-lua/plenary.nvim' },
-    config = function()
-      pcall(require('telescope').load_extension, 'file_browser')
-    end,
+    config = function() pcall(require('telescope').load_extension, 'file_browser') end,
   },
-  { 'nvim-telescope/telescope-media-files.nvim', -- image thumbnails in `:Telescope media_files` (needs chafa)
+  {
+    'nvim-telescope/telescope-media-files.nvim', -- image thumbnails in `:Telescope media_files` (needs chafa)
     dependencies = { 'nvim-telescope/telescope.nvim' },
   },
   {
@@ -60,8 +54,8 @@ return {
     build = ':TSUpdate',
     event = { 'BufReadPost', 'BufNewFile' },
     config = function()
-      local ts = require 'nvim-treesitter'
-      ts.setup {}
+      local ts = require('nvim-treesitter')
+      ts.setup({})
       -- Parsers self-heal: install only languages with no compiled parser
       -- on the runtime path, so a healthy startup never shells out to git
       -- (an unconditional install errored in repos with no `origin`
@@ -69,19 +63,48 @@ return {
       -- with :TSUpdate.
       -- (markdown + markdown_inline stay installed: image.nvim finds
       -- inline images via those parsers.)
-      local langs = { 'lua', 'vim', 'vimdoc', 'javascript', 'typescript', 'tsx', 'svelte', 'python', 'go', 'rust', 'bash', 'json', 'css', 'html',
-        'c', 'cpp', 'cmake', 'java', 'c_sharp', 'terraform', 'yaml', 'dockerfile', 'graphql', 'proto', 'toml', 'solidity', 'typst', 'http',
-        'markdown', 'markdown_inline' }
-      local missing = vim.tbl_filter(function(l)
-        return #vim.api.nvim_get_runtime_file('parser/' .. l .. '.so', true) == 0
-      end, langs)
+      local langs = {
+        'lua',
+        'vim',
+        'vimdoc',
+        'javascript',
+        'typescript',
+        'tsx',
+        'svelte',
+        'python',
+        'go',
+        'rust',
+        'bash',
+        'json',
+        'css',
+        'html',
+        'c',
+        'cpp',
+        'cmake',
+        'java',
+        'c_sharp',
+        'terraform',
+        'yaml',
+        'dockerfile',
+        'graphql',
+        'proto',
+        'toml',
+        'solidity',
+        'typst',
+        'http',
+        'markdown',
+        'markdown_inline',
+        'sql',
+      }
+      local missing = vim.tbl_filter(
+        function(l) return #vim.api.nvim_get_runtime_file('parser/' .. l .. '.so', true) == 0 end,
+        langs
+      )
       if #missing > 0 then ts.install(missing) end
       -- Neovim 0.11+ starts treesitter highlight/indent per-buffer; ensure it.
       vim.api.nvim_create_autocmd('FileType', {
         group = vim.api.nvim_create_augroup('TreesitterStart', { clear = true }),
-        callback = function(ev)
-          pcall(vim.treesitter.start, ev.buf)
-        end,
+        callback = function(ev) pcall(vim.treesitter.start, ev.buf) end,
       })
     end,
   },
@@ -94,9 +117,7 @@ return {
       -- the selection almost instantly. Normal and operator-pending stay
       -- snappy; visual/select wait a beat so selecting never flashes help.
       delay = function(ctx)
-        if ctx.mode == 'n' or ctx.mode == 'o' then
-          return ctx.plugin and 0 or 200
-        end
+        if ctx.mode == 'n' or ctx.mode == 'o' then return ctx.plugin and 0 or 200 end
         return 1000
       end,
     },
@@ -120,69 +141,76 @@ return {
   { 'windwp/nvim-ts-autotag', event = 'InsertEnter', opts = {} },
 
   { 'catgoose/nvim-colorizer.lua', event = 'VeryLazy', config = function() require('colorizer').setup() end },
-  { 'echasnovski/mini.nvim', lazy = false, config = function() -- eager: ai/comment/surround ready immediately (no starter screen anymore)
-    require('mini.ai').setup()
-    require('mini.comment').setup() -- same gc/gcc keys as Comment.nvim
-    require('config.surround').setup() -- ys/ds/cs, visual add on S (see module)
-    require('mini.sessions').setup() -- manual snapshots: <leader>Sw / <leader>Sr
-    require('mini.icons').setup()
-    -- Impersonate devicons: every plugin that asks nvim-web-devicons for
-    -- a glyph (nvim-tree, lualine, Telescope…) gets mini.icons' set
-    -- instead, with zero changes on their side.
-    require('mini.icons').mock_nvim_web_devicons()
-    require('mini.pairs').setup() -- auto-closing brackets/quotes
-    require('mini.bufremove').setup() -- buffer delete that keeps windows
-  end },
+  {
+    'echasnovski/mini.nvim',
+    lazy = false,
+    config = function() -- eager: ai/comment/surround ready immediately (no starter screen anymore)
+      require('mini.ai').setup()
+      require('mini.comment').setup() -- same gc/gcc keys as Comment.nvim
+      require('config.surround').setup() -- ys/ds/cs, visual add on S (see module)
+      require('mini.sessions').setup() -- manual snapshots: <leader>Sw / <leader>Sr
+      require('mini.icons').setup()
+      -- Impersonate devicons: every plugin that asks nvim-web-devicons for
+      -- a glyph (nvim-tree, lualine, Telescope…) gets mini.icons' set
+      -- instead, with zero changes on their side.
+      require('mini.icons').mock_nvim_web_devicons()
+      require('mini.pairs').setup() -- auto-closing brackets/quotes
+      require('mini.bufremove').setup() -- buffer delete that keeps windows
+    end,
+  },
   -- NOTE: eager on purpose (no `cmd` key, so the setup's `lazy = false`
   -- default applies): the Cmd+T / Cmd+digit Lua paths run `:NToggleTerm`
   -- with a count, and lazy's command stub declares range (not count), so
   -- the first counted toggle mis-parses the count as a line range and
   -- dies with E16.
-  { 'akinsho/toggleterm.nvim', opts = {
-    open_mapping = [[<c-\>]],
-    -- Follow mode: every terminal (re)opens in the current directory, so
-    -- Ctrl+R to a project first and the numbered terms land there too.
-    -- Tradeoff: reopening a shell cds its job; nothing stays pinned.
-    autochdir = true,
-    -- Always land in Terminal-Insert on open: persist_mode=false stops
-    -- toggleterm restoring the last mode, start_in_insert states the intent,
-    -- and on_open startinsert! is the belt-and-suspenders guarantee (the
-    -- plugin's own documented pattern) so Alt/Cmd+N always lands ready
-    -- to type, never in Terminal-Normal — unless the float was left
-    -- scrolled up, in which case scroll memory (see on_open/on_close in
-    -- config/terminal.lua) restores the view in Terminal-Normal instead.
-    start_in_insert = true,
-    persist_mode = false,
-    on_open = function(term) require('config.terminal').on_open(term) end,
-    on_close = function(term) require('config.terminal').on_close(term) end,
-    auto_scroll = false,
-    scrollback = 20000,
-    direction = 'float',
-    float_opts = {
-      border = 'curved',
-      -- Default 80% of the screen minus two Alt+[ narrow steps (5 cols
-      -- each), parked high (easier to read than bottom-anchored), or the
-      -- remembered Alt-,/. zoom (see resize() in config/float.lua):
-      -- toggleterm's persist_size covers splits
-      -- only, so floats need this to keep their size.
-      width = function()
-        local s = vim.g.toggleterm_float_size
-        local w = (type(s) == 'table' and s.width) or (math.floor(vim.o.columns * 0.8) - 10)
-        return math.max(60, math.min(vim.o.columns - 4, w))
-      end,
-      height = function()
-        local s = vim.g.toggleterm_float_size
-        local h = (type(s) == 'table' and s.height) or math.floor(vim.o.lines * 0.8)
-        return math.max(10, math.min(vim.o.lines - 4, h))
-      end,
-      row = function()
-        local s = vim.g.toggleterm_float_size
-        local h = (type(s) == 'table' and s.height) or math.floor(vim.o.lines * 0.8)
-        h = math.max(10, math.min(vim.o.lines - 4, h))
-        return math.max(0, math.floor((vim.o.lines - h) * 0.28))
-      end,
+  {
+    'akinsho/toggleterm.nvim',
+    opts = {
+      open_mapping = [[<c-\>]],
+      -- Follow mode: every terminal (re)opens in the current directory, so
+      -- Ctrl+R to a project first and the numbered terms land there too.
+      -- Tradeoff: reopening a shell cds its job; nothing stays pinned.
+      autochdir = true,
+      -- Always land in Terminal-Insert on open: persist_mode=false stops
+      -- toggleterm restoring the last mode, start_in_insert states the intent,
+      -- and on_open startinsert! is the belt-and-suspenders guarantee (the
+      -- plugin's own documented pattern) so Alt/Cmd+N always lands ready
+      -- to type, never in Terminal-Normal — unless the float was left
+      -- scrolled up, in which case scroll memory (see on_open/on_close in
+      -- config/terminal.lua) restores the view in Terminal-Normal instead.
+      start_in_insert = true,
+      persist_mode = false,
+      on_open = function(term) require('config.terminal').on_open(term) end,
+      on_close = function(term) require('config.terminal').on_close(term) end,
+      auto_scroll = false,
+      scrollback = 20000,
+      direction = 'float',
+      float_opts = {
+        border = 'curved',
+        -- Default 80% of the screen minus two Alt+[ narrow steps (5 cols
+        -- each), parked high (easier to read than bottom-anchored), or the
+        -- remembered Alt-,/. zoom (see resize() in config/float.lua):
+        -- toggleterm's persist_size covers splits
+        -- only, so floats need this to keep their size.
+        width = function()
+          local s = vim.g.toggleterm_float_size
+          local w = (type(s) == 'table' and s.width) or (math.floor(vim.o.columns * 0.8) - 10)
+          return math.max(60, math.min(vim.o.columns - 4, w))
+        end,
+        height = function()
+          local s = vim.g.toggleterm_float_size
+          local h = (type(s) == 'table' and s.height) or math.floor(vim.o.lines * 0.8)
+          return math.max(10, math.min(vim.o.lines - 4, h))
+        end,
+        row = function()
+          local s = vim.g.toggleterm_float_size
+          local h = (type(s) == 'table' and s.height) or math.floor(vim.o.lines * 0.8)
+          h = math.max(10, math.min(vim.o.lines - 4, h))
+          return math.max(0, math.floor((vim.o.lines - h) * 0.28))
+        end,
+      },
     },
-  } },
+  },
   {
     'nvim-tree/nvim-tree.lua',
     cmd = { 'NvimTreeToggle', 'NvimTreeFocus', 'NvimTreeFindFileToggle' },
@@ -204,12 +232,14 @@ return {
       -- to 50 on BufEnter); opening wider first snaps narrower a beat
       -- later as the pads follow.
       view = { width = 40 },
-      -- nvim-tree hides gitignored nodes by default, and the Jobs repo
-      -- gitignores its applications/ folder (privacy): exempt it so the
-      -- folder is always visible. Everything else ignored stays hidden.
+      -- Gitignored nodes stay visible (game repos keep local-only
+      -- reference binaries next to committed art): the Jobs repo also
+      -- gitignores its applications/ folder (privacy), still exempted
+      -- below so no filter can ever hide it. Press I in the tree to
+      -- re-hide ignored nodes for the session (stock toggle).
       -- Dotfiles start hidden so the launcher view opens clean; press H
       -- in the tree to reveal them (stock toggle, see default_on_attach).
-      filters = { dotfiles = true, exclude = { 'applications' } },
+      filters = { dotfiles = true, git_ignored = false, exclude = { 'applications' } },
       -- VSCode behavior: Enter on a file opens it and closes the tree.
       actions = { open_file = { quit_on_open = true } },
       -- VSCode-explorer keys: h collapses the directory (or jumps to the
@@ -266,9 +296,7 @@ return {
         -- l and o: folders expand (never re-root); files open and jump
         -- in, except PDFs/models/audio/unrenderable images which open
         -- externally while the cursor stays in the tree.
-        local function expand_or_open()
-          open_file_or_external(api.tree.get_node_under_cursor())
-        end
+        local function expand_or_open() open_file_or_external(api.tree.get_node_under_cursor()) end
         -- Space matches l/o, except renderable images preview instead:
         -- api.node.open.preview shows the image in the last window and
         -- refocuses the tree, so j/k + Space browses a folder of images
@@ -338,13 +366,30 @@ return {
     -- the full list is repeated here with JS/TS extras appended.
     opts = {
       patterns = {
-        '.git', '.github', '_darcs', '.hg', '.bzr', '.svn',
-        'Pipfile', 'pyproject.toml', '.pre-commit-config.yaml',
-        '.pre-commit-config.yml', '.csproj', '.sln',
-        '.nvim.lua', '.neoconf.json', 'neoconf.json',
-        '.stylua.toml', 'stylua.toml',
-        'package.json', 'tsconfig.json', 'bun.lock', 'bunfig.toml',
-        'go.mod', 'Cargo.toml', 'Makefile',
+        '.git',
+        '.github',
+        '_darcs',
+        '.hg',
+        '.bzr',
+        '.svn',
+        'Pipfile',
+        'pyproject.toml',
+        '.pre-commit-config.yaml',
+        '.pre-commit-config.yml',
+        '.csproj',
+        '.sln',
+        '.nvim.lua',
+        '.neoconf.json',
+        'neoconf.json',
+        '.stylua.toml',
+        'stylua.toml',
+        'package.json',
+        'tsconfig.json',
+        'bun.lock',
+        'bunfig.toml',
+        'go.mod',
+        'Cargo.toml',
+        'Makefile',
       },
       -- Per-tab cwd: each tab follows what you open in it, global cwd
       -- stays out of the way (toggleterm reads the tab cwd).
@@ -357,17 +402,25 @@ return {
   },
   { 'folke/todo-comments.nvim', event = 'VeryLazy', dependencies = { 'nvim-lua/plenary.nvim' }, opts = {} },
   -- VS Code extension equivalents, loaded only when needed:
-  { 'RaafatTurki/hex.nvim', cmd = { 'HexToggle', 'HexDump', 'HexAssemble' }, -- ms-vscode.hexeditor
-    config = function() require('hex').setup() end },
+  {
+    'RaafatTurki/hex.nvim',
+    cmd = { 'HexToggle', 'HexDump', 'HexAssemble' }, -- ms-vscode.hexeditor
+    config = function() require('hex').setup() end,
+  },
   { 'mechatroner/rainbow_csv', ft = 'csv' }, -- mechatroner.rainbow-csv
   -- humao.rest-client. API is Lua + <leader>R keys (no :Kulala command exists).
   { 'mistweaverco/kulala.nvim', ft = { 'http', 'rest' }, opts = { global_keymaps = true } },
-  { 'stevearc/overseer.nvim', cmd = { 'OverseerRun', 'OverseerToggle' }, -- formulahendry.code-runner + tasks
+  {
+    'stevearc/overseer.nvim',
+    cmd = { 'OverseerRun', 'OverseerToggle' }, -- formulahendry.code-runner + tasks
     keys = {
       { '<leader>or', '<cmd>OverseerRun<cr>', desc = 'Run task' },
-      { '<leader>ot', '<cmd>OverseerToggle<cr>', desc = 'Task list' },
+      -- Bang: the sidebar opens without stealing focus, so code stays
+      -- scrollable while the list is up (it cannot float upstream).
+      { '<leader>ot', '<cmd>OverseerToggle!<cr>', desc = 'Task list' },
     },
-    config = function() require('overseer').setup() end },
+    config = function() require('overseer').setup() end,
+  },
   { 'habamax/vim-godot', ft = { 'gd', 'gdshader', 'tscn', 'tres' } }, -- Godot scenes/scripts (hll uses C#, covered by omnisharp)
   -- fluxhouse notebooks: edit .ipynb as Markdown, syncs back on save.
   -- Backend is the `jupytext` CLI (uv tool); keep both or neither works.

@@ -60,8 +60,8 @@ end
 
 ---@param prompt_bufnr number telescope prompt buffer
 function M.land_here(prompt_bufnr)
-  local action_state = require 'telescope.actions.state'
-  local actions = require 'telescope.actions'
+  local action_state = require('telescope.actions.state')
+  local actions = require('telescope.actions')
   local picker = action_state.get_current_picker(prompt_bufnr)
   local finder = picker.finder or {}
   local browsed = finder.path or picker.cwd or vim.fn.getcwd()
@@ -81,8 +81,8 @@ end
 -- re-root — land with Cmd+O / Ctrl+Y once you're where you want).
 ---@param prompt_bufnr number telescope prompt buffer
 function M.select_and_land(prompt_bufnr)
-  local action_state = require 'telescope.actions.state'
-  local actions = require 'telescope.actions'
+  local action_state = require('telescope.actions.state')
+  local actions = require('telescope.actions')
   local path, is_dir = entry_info(action_state.get_selected_entry())
   local dir = nil
   if path ~= nil and not is_dir then dir = vim.fn.fnamemodify(path, ':h') end

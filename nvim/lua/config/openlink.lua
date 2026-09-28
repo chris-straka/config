@@ -41,8 +41,21 @@ local function relative_dest(dest)
   return dest
 end
 
+-- Line fallback: the first bare URL anywhere on the line. URL-only —
+-- file jumps stay cursor-precise so gx on prose never opens a stray
+-- path. Pure.
+---@param line string
+---@return table?
+function M.line_url(line)
+  local url = line:match('https?://%S+')
+  if url == nil then return nil end
+  url = url:gsub('[%.,;:!?%)}]+$', '')
+  return { url = url }
+end
+
 -- Pure: pull the link target out of a line, preferring the Markdown link
--- whose span holds the cursor, else a bare path token under it.
+-- whose span holds the cursor, else a bare path token under it, else
+-- the line's first URL (gx need not sit pixel-perfect on the link).
 -- Returns { file = ..., rel = ..., lnum = ... } or { url = ... } or nil.
 ---@param line string
 ---@param col integer 1-based cursor column
@@ -70,12 +83,16 @@ function M.extract(line, col, base)
   end
   -- Bare path token under the cursor (no spaces, brackets, or quotes).
   local s, e = col, col
-  while s > 1 and line:sub(s - 1, s - 1):match('[^%s%[%]()\'"<>]') do s = s - 1 end
-  while e < #line and line:sub(e + 1, e + 1):match('[^%s%[%]()\'"<>]') do e = e + 1 end
+  while s > 1 and line:sub(s - 1, s - 1):match('[^%s%[%]()\'"<>]') do
+    s = s - 1
+  end
+  while e < #line and line:sub(e + 1, e + 1):match('[^%s%[%]()\'"<>]') do
+    e = e + 1
+  end
   local tok = line:sub(s, e):gsub('[%.,;:!?%)}]+$', '')
-  if tok == '' then return nil end
+  if tok == '' then return M.line_url(line) end
   if tok:match('^https?://') then return { url = tok } end
-  if not (tok:find('/', 1, true) or tok:match('%.[%w]+')) then return nil end
+  if not (tok:find('/', 1, true) or tok:match('%.[%w]+')) then return M.line_url(line) end
   local path, lnum = split_line(tok)
   return { file = expand_path(path, base), rel = relative_dest(path), lnum = lnum }
 end
@@ -101,6 +118,10 @@ function M.open()
     return
   end
   if target.url then
+    -- Confirm the handoff: a URL leaves nvim silently, so a dead
+    -- browser/open association would otherwise read as "gx does
+    -- nothing".
+    vim.notify('Opening ' .. target.url, vim.log.levels.INFO)
     vim.ui.open(target.url)
     return
   end
@@ -111,9 +132,7 @@ function M.open()
       local root = M.git_root(base)
       if root ~= nil then
         local alt = root .. '/' .. target.rel
-        if vim.fn.filereadable(alt) == 1 or vim.fn.isdirectory(alt) == 1 then
-          target.file = alt
-        end
+        if vim.fn.filereadable(alt) == 1 or vim.fn.isdirectory(alt) == 1 then target.file = alt end
       end
     end
   end

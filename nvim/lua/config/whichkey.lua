@@ -3,7 +3,7 @@
 local ok, wk = pcall(require, 'which-key')
 if not ok then return end
 
-wk.add {
+wk.add({
   { '<leader><Tab>', '<cmd>e#<cr>', desc = 'Prev buffer' },
   { '<leader>=', '<c-w>=', desc = 'Equal sizes' },
   -- Same peek as Shift+Cmd+E (open + reveal, cursor stays in code);
@@ -23,8 +23,8 @@ wk.add {
   { '<leader>u', group = 'UI' },
   { '<leader>uh', desc = 'Inlay hints on/off' },
   { '<leader>cr', desc = 'Change tree root…' },
+  { '<leader>cf', desc = 'Format code' },
   { '<leader>T', group = 'Test' },
-  { '<leader>s', group = 'Snip' },
   { '<leader>o', group = 'Tasks' },
   { '<leader>R', group = 'REST' },
   { '<leader>m', group = 'Markdown' },
@@ -34,7 +34,7 @@ wk.add {
   { '<leader>fg', '<cmd>Telescope live_grep<cr>', desc = 'Grep' },
   { '<leader>fp', '<cmd>Telescope projects<cr>', desc = 'Projects' },
   { '<leader>fr', '<cmd>Telescope oldfiles<cr>', desc = 'Recent files' },
-  { '<leader>rn', vim.lsp.buf.rename, desc = 'Rename symbol' },
+  { '<leader>rn', desc = 'Rename symbol' },
   { '<leader>ra', desc = 'Change all occurrences in file' },
   { '<leader>h', desc = 'Window left / file tree' },
   { '<leader>l', desc = 'Window right' },
@@ -50,4 +50,4 @@ wk.add {
   { '<leader>gb', desc = 'Blame' },
   -- LSP lives on gd/gr/gi/K/<leader>rn/<leader>ca (see lsp.lua) — the old
   -- 'm'-prefix duplicates were removed; one family only.
-}
+})

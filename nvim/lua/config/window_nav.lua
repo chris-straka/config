@@ -34,9 +34,7 @@ local function step(dir)
     vim.cmd('wincmd ' .. dir)
     if vim.api.nvim_get_current_win() == start then break end
   end
-  if vim.api.nvim_get_current_win() ~= start then
-    vim.api.nvim_set_current_win(start)
-  end
+  if vim.api.nvim_get_current_win() ~= start then vim.api.nvim_set_current_win(start) end
   return false
 end
 
@@ -47,8 +45,6 @@ function M.left()
 end
 
 -- Right: prefer the window on the right; at the right edge do nothing.
-function M.right()
-  step('l')
-end
+function M.right() step('l') end
 
 return M

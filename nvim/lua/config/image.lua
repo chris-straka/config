@@ -46,8 +46,6 @@ function M.in_buffer(path)
 end
 
 ---@param path string absolute file path
-function M.open(path)
-  vim.ui.open(path)
-end
+function M.open(path) vim.ui.open(path) end
 
 return M

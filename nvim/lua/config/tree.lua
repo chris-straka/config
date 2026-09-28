@@ -27,9 +27,7 @@ end
 local function refresh_statusline()
   if package.loaded['lualine'] == nil then return end
   local ok, lualine = pcall(require, 'lualine')
-  if ok and type(lualine) == 'table' and type(lualine.refresh) == 'function' then
-    pcall(lualine.refresh)
-  end
+  if ok and type(lualine) == 'table' and type(lualine.refresh) == 'function' then pcall(lualine.refresh) end
 end
 
 -- Root the tree (and the tab cwd, so terminals follow) at dir.
@@ -75,7 +73,11 @@ function M.peek(find)
   pcall(api.tree.toggle, { find_file = find, focus = false })
   -- Settle whichever way the toggle went (the TreeClose event fires
   -- mid-teardown, too early to compute from — verified by trace).
-  if api.tree.is_visible() then M.tree_opened() else M.tree_closed() end
+  if api.tree.is_visible() then
+    M.tree_opened()
+  else
+    M.tree_closed()
+  end
 end
 
 -- Center width follows the tree: full width for plain editing, narrower
@@ -88,9 +90,7 @@ local CENTER_TREE = 100
 
 local function set_center_width(w)
   pcall(function()
-    if _G.NoNeckPain ~= nil and _G.NoNeckPain.config ~= nil then
-      _G.NoNeckPain.config.width = w
-    end
+    if _G.NoNeckPain ~= nil and _G.NoNeckPain.config ~= nil then _G.NoNeckPain.config.width = w end
   end)
 end
 
@@ -158,24 +158,18 @@ function M.focus(find)
 end
 
 -- Settle the centerer after the tree opens, once the window stands.
-function M.tree_opened()
-  settle('tree:open')
-end
+function M.tree_opened() settle('tree:open') end
 
 -- Settle the centerer after the tree closes, while the layout is final.
 -- Called directly after teardown completes (toggle-shut, peek-shut, post
 -- file-open).
-function M.tree_closed()
-  settle('tree:close')
-end
+function M.tree_closed() settle('tree:close') end
 
 -- Post file-open (l, Enter, o, and Space on non-images — see
 -- on_attach in plugins/editor.lua): the tree closes inside
 -- api.node.open.edit, so settle once it returns and the layout is
 -- final. Space on an image previews instead (tree stays open, no
 -- settle needed).
-function M.file_opened()
-  M.tree_closed()
-end
+function M.file_opened() M.tree_closed() end
 
 return M

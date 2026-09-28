@@ -18,8 +18,12 @@ local opts = { noremap = true, silent = true }
 -- on_open startinsert lands the jumped-to float in Terminal-Insert.
 for _i = 1, 10 do
   local _slot, _digit = _i, (_i == 10 and '0' or tostring(_i))
-  map({ 'n', 'v', 'i', 't' }, '<D-' .. _digit .. '>', function() require('config.terminal').goto_slot(_slot) end,
-    { noremap = true, silent = true, desc = 'Go to terminal ' .. _slot })
+  map(
+    { 'n', 'v', 'i', 't' },
+    '<D-' .. _digit .. '>',
+    function() require('config.terminal').goto_slot(_slot) end,
+    { noremap = true, silent = true, desc = 'Go to terminal ' .. _slot }
+  )
 end
 -- New floating terminal, one Ghostty tab = one project: Cmd+T mints a
 -- fresh float in THIS tab's nvim (see new() in config/terminal.lua —
@@ -31,16 +35,28 @@ end
 -- mode — including inside a float — with no drop-to-Normal, and
 -- toggleterm's on_open startinsert lands the new float in
 -- Terminal-Insert no matter which mode we created it from.
-map({ 'n', 'v', 'i', 't' }, '<D-t>', function() require('config.terminal').new() end,
-  { noremap = true, silent = true, desc = 'New terminal' })
+map(
+  { 'n', 'v', 'i', 't' },
+  '<D-t>',
+  function() require('config.terminal').new() end,
+  { noremap = true, silent = true, desc = 'New terminal' }
+)
 -- Terminal cycling (Cmd+[ previous, Cmd+] next, with wraparound):
 -- from code or from inside a float. Ghostty transport lives in
 -- shared-keybinds.conf (super+[/]); to rebind later, change those two
 -- lines plus these two maps and nothing else.
-map({ 'n', 'v', 'i' }, '<D-[>', function() require('config.terminal').cycle(-1) end,
-  { noremap = true, silent = true, desc = 'Previous terminal' })
-map({ 'n', 'v', 'i' }, '<D-]>', function() require('config.terminal').cycle(1) end,
-  { noremap = true, silent = true, desc = 'Next terminal' })
+map(
+  { 'n', 'v', 'i' },
+  '<D-[>',
+  function() require('config.terminal').cycle(-1) end,
+  { noremap = true, silent = true, desc = 'Previous terminal' }
+)
+map(
+  { 'n', 'v', 'i' },
+  '<D-]>',
+  function() require('config.terminal').cycle(1) end,
+  { noremap = true, silent = true, desc = 'Next terminal' }
+)
 -- Same from inside a toggleterm float: drop to Terminal-Normal first, like
 -- the <D-e> float maps (a bare command RHS would be typed into the shell).
 map('t', '<D-[>', '<C-\\><C-n><cmd>lua require("config.terminal").cycle(-1)<cr>', opts)
@@ -49,8 +65,18 @@ map('t', '<D-]>', '<C-\\><C-n><cmd>lua require("config.terminal").cycle(1)<cr>',
 -- floating terminal: '\' plus <leader>t plus toggleterm's <C-\>.
 -- Backslash works from normal and terminal mode, so it toggles both ways.
 -- Tradeoff: inside a termbuff, typing a literal backslash becomes Ctrl-V then backslash.
-map('n', '<leader>t', '<cmd>ToggleTerm direction=float<cr>', { noremap = true, silent = true, desc = 'Floating terminal' })
-map({ 'n', 't' }, '\\', '<cmd>ToggleTerm direction=float<cr>', { noremap = true, silent = true, desc = 'Floating terminal' })
+map(
+  'n',
+  '<leader>t',
+  '<cmd>ToggleTerm direction=float<cr>',
+  { noremap = true, silent = true, desc = 'Floating terminal' }
+)
+map(
+  { 'n', 't' },
+  '\\',
+  '<cmd>ToggleTerm direction=float<cr>',
+  { noremap = true, silent = true, desc = 'Floating terminal' }
+)
 -- Terminal-mode exit ramp: `|` drops to Terminal-Normal (navigate/copy
 -- mode). A single Esc passes straight to the shell job, so TUIs keep
 -- their own Esc — Muse's interrupt, fzf/lazygit cancel — and double-Esc
@@ -81,8 +107,12 @@ map('t', '<D-BS>', '<C-u>', { noremap = true, silent = true, desc = 'Delete shel
 -- (Retired 2026-09-14: <leader>tR did the same thing from normal mode,
 -- but sat one Shift away from <leader>Tr "run nearest test" — a shell
 -- up for the killing with a single typo. Alt+X covers every mode.)
-map({ 'n', 't', 'i' }, '<A-x>', function() require('config.terminal').exit_focused() end,
-  { noremap = true, silent = true, desc = 'Exit focused terminal' })
+map(
+  { 'n', 't', 'i' },
+  '<A-x>',
+  function() require('config.terminal').exit_focused() end,
+  { noremap = true, silent = true, desc = 'Exit focused terminal' }
+)
 
 -- Float zoom (see config/float.lua): Alt-,/. and Alt+[/ width,
 -- Alt--/-= height. No-op on non-floats.

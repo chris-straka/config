@@ -6,9 +6,9 @@
 local M = {}
 
 function M.setup()
-  require('mini.surround').setup {
+  require('mini.surround').setup({
     mappings = { add = 'ys', delete = 'ds', replace = 'cs' },
-  }
+  })
   vim.keymap.del('x', 'ys')
   vim.keymap.set(
     'x',

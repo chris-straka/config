@@ -21,7 +21,9 @@ vim.wait(1200, no) -- startup settles
 vim.cmd('edit /tmp/center_tail_target.txt')
 vim.cmd('silent! 1,$d')
 local lines = {}
-for i = 1, 200 do lines[#lines + 1] = 'line ' .. i end
+for i = 1, 200 do
+  lines[#lines + 1] = 'line ' .. i
+end
 vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
 vim.cmd('set foldmethod=manual foldlevel=99')
 for _, r in ipairs({ { 150, 160 }, { 172, 185 } }) do
@@ -34,9 +36,7 @@ end
 
 local height = vim.fn.winheight(0)
 local half = math.floor(height / 2)
-local function centered()
-  return math.abs(vim.fn.winline() - (half + 1)) <= 2
-end
+local function centered() return math.abs(vim.fn.winline() - (half + 1)) <= 2 end
 
 local function step(keys)
   vim.cmd('normal! ' .. keys)
@@ -59,8 +59,10 @@ end
 check('every walk step stays centered', bad == 0)
 
 -- Above the tail the local scrolloff follows the global again.
-check('leaving tail restores scrolloff',
-  vim.opt_local.scrolloff:get() == vim.api.nvim_get_option_value('scrolloff', { scope = 'global' }))
+check(
+  'leaving tail restores scrolloff',
+  vim.opt_local.scrolloff:get() == vim.api.nvim_get_option_value('scrolloff', { scope = 'global' })
+)
 
 if failures > 0 then
   print(failures .. ' check(s) failed')

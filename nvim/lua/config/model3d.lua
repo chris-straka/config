@@ -20,9 +20,7 @@ local VIEWER_EXTS = {
 ---@return boolean true when the path is a 3D model this module handles
 function M.handles(path)
   local ext = path:lower():match('%.([%w%d]+)$')
-  if ext == 'blend' then
-    return true
-  end
+  if ext == 'blend' then return true end
   return ext ~= nil and VIEWER_EXTS[ext] or false
 end
 

@@ -47,8 +47,10 @@ check('foldtext is the compact label', vim.opt.foldtext:get():find("require('con
 do
   local fold = require('config.fold')
   check('fold module exposes foldtext', type(fold.foldtext) == 'function')
-  check('fold label shows the first line only',
-    fold.text(22, 27, 'function blankSettings() {', 80) == 'function blankSettings() {')
+  check(
+    'fold label shows the first line only',
+    fold.text(22, 27, 'function blankSettings() {', 80) == 'function blankSettings() {'
+  )
   check('fold label has no dot run', fold.text(1, 6, 'local x = 1', 80):find('...', 1, true) == nil)
   check('fold label trims indent', fold.text(1, 3, '    const s = 1;', 80) == 'const s = 1;')
   check('fold label ignores fold size', fold.text(5, 5, 'x', 80) == 'x')
@@ -63,11 +65,13 @@ check('scrolloff centers the cursor', vim.opt.scrolloff:get() == 999)
 check('closed folds pad with blank, not dots', vim.opt.fillchars:get().fold == ' ')
 do
   local ac_src = read(nvim .. '/lua/config/autocmds.lua')
-  check('EOF tail recenters the cursor',
+  check(
+    'EOF tail recenters the cursor',
     ac_src:find('CenterCursorTail', 1, true) ~= nil
-    and ac_src:find('normal! zz', 1, true) ~= nil
-    and ac_src:find('setlocal scrolloff<', 1, true) ~= nil
-    and ac_src:find('InsertLeave', 1, true) ~= nil)
+      and ac_src:find('normal! zz', 1, true) ~= nil
+      and ac_src:find('setlocal scrolloff<', 1, true) ~= nil
+      and ac_src:find('InsertLeave', 1, true) ~= nil
+  )
 end
 check('mouse captured in every mode', vim.o.mouse == 'a')
 
@@ -76,17 +80,17 @@ check('mouse captured in every mode', vim.o.mouse == 'a')
 -- centered 999.
 do
   local ac_src = read(nvim .. '/lua/config/autocmds.lua')
-  check('terminals scope scrolloff to zero',
+  check(
+    'terminals scope scrolloff to zero',
     ac_src:find('TerminalScrolloff', 1, true) ~= nil
-    and ac_src:find('TermOpen', 1, true) ~= nil
-    and ac_src:find('scrolloff = 0', 1, true) ~= nil)
+      and ac_src:find('TermOpen', 1, true) ~= nil
+      and ac_src:find('scrolloff = 0', 1, true) ~= nil
+  )
   require('config.autocmds')
   vim.cmd('enew')
   local job = vim.fn.termopen({ 'echo', 'scrollback probe' })
-  check('terminal window drops scrolloff', job > 0
-    and vim.api.nvim_get_option_value('scrolloff', { win = 0 }) == 0)
-  check('global scrolloff still centers files',
-    vim.api.nvim_get_option_value('scrolloff', { scope = 'global' }) == 999)
+  check('terminal window drops scrolloff', job > 0 and vim.api.nvim_get_option_value('scrolloff', { win = 0 }) == 0)
+  check('global scrolloff still centers files', vim.api.nvim_get_option_value('scrolloff', { scope = 'global' }) == 999)
   vim.api.nvim_buf_delete(vim.api.nvim_get_current_buf(), { force = true })
 end
 
@@ -103,15 +107,22 @@ check('Cmd+T works while typing', vim.fn.maparg('<D-t>', 'i') ~= '')
 check('Cmd+T works from visual', vim.fn.maparg('<D-t>', 'v') ~= '')
 check('Cmd+1 jumps from normal', vim.fn.maparg('<D-1>', 'n') ~= '')
 check('Cmd+0 jumps to slot 10', vim.fn.maparg('<D-0>', 'n') ~= '')
-check('Cmd+digits jump from every mode', vim.fn.maparg('<D-2>', 'i') ~= ''
-  and vim.fn.maparg('<D-2>', 'v') ~= '' and vim.fn.maparg('<D-4>', 't') ~= '')
-check('no Alt+digit terminal jumps', vim.fn.maparg('<A-2>', 'n') == ''
-  and vim.fn.maparg('<A-2>', 't') == '' and vim.fn.maparg('<A-2>', 'i') == '')
+check(
+  'Cmd+digits jump from every mode',
+  vim.fn.maparg('<D-2>', 'i') ~= '' and vim.fn.maparg('<D-2>', 'v') ~= '' and vim.fn.maparg('<D-4>', 't') ~= ''
+)
+check(
+  'no Alt+digit terminal jumps',
+  vim.fn.maparg('<A-2>', 'n') == '' and vim.fn.maparg('<A-2>', 't') == '' and vim.fn.maparg('<A-2>', 'i') == ''
+)
 -- Alt+digit floats open ready to type: triple insert guarantee.
 local editor_src = read(nvim .. '/lua/plugins/editor.lua')
-check('terms open in Terminal-Insert', editor_src:find('start_in_insert = true', 1, true) ~= nil
-  and editor_src:find('persist_mode = false', 1, true) ~= nil
-  and editor_src:find('startinsert!', 1, true) ~= nil)
+check(
+  'terms open in Terminal-Insert',
+  editor_src:find('start_in_insert = true', 1, true) ~= nil
+    and editor_src:find('persist_mode = false', 1, true) ~= nil
+    and editor_src:find('startinsert!', 1, true) ~= nil
+)
 -- Alt+X exits the focused terminal (types `exit`) from normal, terminal,
 -- and insert modes.
 local terminal = require('config.terminal')
@@ -144,32 +155,53 @@ check('Ctrl+Z still reaches terminal jobs', vim.fn.maparg('<C-z>', 't') == '')
 -- selection (conform reads the range itself). Cmd+Shift+F stays search.
 check('Shift+Alt+F formats from normal', vim.fn.maparg('<A-S-f>', 'n') ~= '')
 check('Shift+Alt+F formats a visual selection', vim.fn.maparg('<A-S-f>', 'v') ~= '')
+check('Shift+Alt+F formats from insert', vim.fn.maparg('<A-S-f>', 'i') ~= '')
+check('<leader>cf formats from normal', vim.fn.maparg('<leader>cf', 'n') ~= '')
+check('<leader>cf formats a visual selection', vim.fn.maparg('<leader>cf', 'v') ~= '')
+check('<leader>yd yanks the line diagnostic', vim.fn.maparg('<leader>yd', 'n') ~= '')
 check('Cmd+Shift+F still searches files', vim.fn.maparg('<D-S-f>', 'n'):find('live_grep', 1, true) ~= nil)
 do
   local keymaps_src = read_keymaps()
-  check('format uses the conform table with LSP fallback',
-    keymaps_src:find("require('conform').format", 1, true) ~= nil
-    and keymaps_src:find('lsp_fallback', 1, true) ~= nil)
+  check(
+    'format uses the conform table with LSP fallback',
+    keymaps_src:find("require('conform').format", 1, true) ~= nil and keymaps_src:find('lsp_fallback', 1, true) ~= nil
+  )
+end
+do
+  -- ruff must come from mason: project-scoped mise tools are missing from
+  -- nvim's spawn-frozen PATH whenever nvim starts outside that project.
+  local lsp_src = read(nvim .. '/lua/plugins/lsp.lua')
+  check('ruff pinned via mason tool-installer', lsp_src:find("'ruff',", 1, true) ~= nil)
 end
 for _, p in ipairs({ home .. '/.config/ghostty/config', home .. '/.config/ghostty/nvim-launcher' }) do
   local tag, c = p:match('[^/]+$'), read(p)
   check(tag .. ' Shift+Alt+F formats', c:find('alt+shift+f=text', 1, true) ~= nil)
   check(tag .. ' Cmd+Shift+F still searches', c:find('super+shift+f=text', 1, true) ~= nil)
 end
-check('kitty Shift+Alt+F formats',
-  read(home .. '/.config/kitty/kitty.conf'):find('alt+shift+f send_text', 1, true) ~= nil)
+check(
+  'kitty Shift+Alt+F formats',
+  read(home .. '/.config/kitty/kitty.conf'):find('alt+shift+f send_text', 1, true) ~= nil
+)
 
 -- Autosave: settled edits hit disk without :w, unnamed buffers are left
 -- alone, and no swap files exist to warn about.
 check('no swap files, ever', vim.opt.swapfile:get() == false)
 do
   local ac_src = read(nvim .. '/lua/config/autocmds.lua')
-  check('autosave covers settle/leave/focus',
-    ac_src:find('InsertLeave', 1, true) ~= nil and ac_src:find('TextChanged', 1, true) ~= nil
-      and ac_src:find('BufLeave', 1, true) ~= nil and ac_src:find('FocusLost', 1, true) ~= nil)
-  check('autosave only touches plain modified files',
-    ac_src:find('modifiable', 1, true) ~= nil and ac_src:find('readonly', 1, true) ~= nil
-      and ac_src:find("buftype ~= ''", 1, true) ~= nil and ac_src:find('silent! update', 1, true) ~= nil)
+  check(
+    'autosave covers settle/leave/focus',
+    ac_src:find('InsertLeave', 1, true) ~= nil
+      and ac_src:find('TextChanged', 1, true) ~= nil
+      and ac_src:find('BufLeave', 1, true) ~= nil
+      and ac_src:find('FocusLost', 1, true) ~= nil
+  )
+  check(
+    'autosave only touches plain modified files',
+    ac_src:find('modifiable', 1, true) ~= nil
+      and ac_src:find('readonly', 1, true) ~= nil
+      and ac_src:find("buftype ~= ''", 1, true) ~= nil
+      and ac_src:find('silent! update', 1, true) ~= nil
+  )
 end
 do
   -- ConformFormat would try to load the real plugin headless: require
@@ -183,8 +215,7 @@ do
   local buf = vim.api.nvim_get_current_buf()
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, { 'autosaved' })
   vim.cmd('doautocmd InsertLeave')
-  check('autosave writes settled edits',
-    vim.fn.readfile(f)[1] == 'autosaved' and not vim.bo[buf].modified)
+  check('autosave writes settled edits', vim.fn.readfile(f)[1] == 'autosaved' and not vim.bo[buf].modified)
   vim.api.nvim_buf_delete(buf, { force = true })
   local scratch = vim.api.nvim_create_buf(true, false)
   vim.api.nvim_set_current_buf(scratch)
@@ -199,29 +230,110 @@ end
 local runner = require('config.runner')
 check('runner module exposes run_file', type(runner.run_file) == 'function')
 check('<leader>of runs current file', vim.fn.maparg(' of', 'n') ~= '')
+-- <leader>ot is a lazy key (no mapping until overseer loads), so assert
+-- the source: bang keeps focus in code so it stays scrollable.
+check('task list keeps code focus', editor_src:find('OverseerToggle!', 1, true) ~= nil)
+-- Selection runner (the Quokka-style inline answer): visual <leader>os
+-- with virtual-text display, clear on <leader>oc.
+local test_src = read(nvim .. '/lua/plugins/test.lua')
+check(
+  'selection runner bound with inline display',
+  test_src:find('<leader>os', 1, true) ~= nil and test_src:find('VirtualTextOk', 1, true) ~= nil
+)
+check('selection runner clear bound', test_src:find('<leader>oc', 1, true) ~= nil)
+check(
+  '<leader>s runner retired (moved to o)',
+  test_src:find('<leader>sr', 1, true) == nil and test_src:find('<leader>sc', 1, true) == nil
+)
+-- Overseer sidebar registered as an NNP integration (both halves: the
+-- classification template and the width-math config entry).
+local guard_src = read(nvim .. '/lua/config/nnp_guard.lua')
+check(
+  'overseer registered as NNP sidebar',
+  guard_src:find('INTEGRATIONS.overseer', 1, true) ~= nil and guard_src:find("position = 'none'", 1, true) ~= nil
+)
+do
+  -- leetcode ancestor detection over a fixture tree (cleaned up).
+  vim.fn.mkdir('/tmp/lc_env/leetcode/_ds', 'p')
+  vim.fn.mkdir('/tmp/lc_env/leetcode/00001', 'p')
+  vim.fn.mkdir('/tmp/lc_env/other', 'p')
+  check(
+    'leetcode ancestor found for Algs file',
+    runner.leetcode_dir('/tmp/lc_env/leetcode/00001/1.py') == '/tmp/lc_env/leetcode'
+  )
+  check('no leetcode ancestor outside one', runner.leetcode_dir('/tmp/lc_env/other/x.py') == nil)
+  check('relative path cannot loop forever', runner.leetcode_dir('1.py') == nil)
+  vim.fn.delete('/tmp/lc_env', 'rf')
+end
+do
+  -- run_file passes float output + PYTHONPATH (mocked overseer).
+  local real_overseer = package.loaded['overseer']
+  local seen = nil
+  package.loaded['overseer'] = {
+    new_task = function(opts)
+      seen = opts
+      return { start = function() end }
+    end,
+  }
+  vim.fn.mkdir('/tmp/lc_run/leetcode/00001', 'p')
+  vim.fn.mkdir('/tmp/lc_run/leetcode/_ds', 'p')
+  vim.fn.mkdir('/tmp/lc_run/plain', 'p')
+  -- set_name resolves symlinks on existing paths (/tmp -> /private/tmp
+  -- on macOS), so compare against resolved paths, not literals.
+  local root = vim.fn.resolve('/tmp/lc_run')
+  local pyfile = root .. '/leetcode/00001/1.py'
+  vim.cmd('enew')
+  vim.api.nvim_buf_set_lines(0, 0, -1, false, { 'print(1)' })
+  vim.api.nvim_buf_set_name(0, pyfile)
+  vim.bo.filetype = 'python'
+  runner.run_file()
+  local has_float, stays_open = false, false
+  for _, c in ipairs(seen and seen.components or {}) do
+    if type(c) == 'table' and c[1] == 'open_output' and c.direction == 'float' then
+      has_float = true
+      -- entered on completion: overseer's float closes on WinLeave, so
+      -- focus=false dismisses it the instant focus returns to code.
+      stays_open = c.focus == true and c.on_start == 'never' and c.on_complete == 'always'
+    end
+  end
+  check('run output floats instead of docking', has_float)
+  check('run output stays open (entered on complete)', stays_open)
+  check('leetcode python gets PYTHONPATH', seen and seen.env and seen.env.PYTHONPATH == root .. '/leetcode')
+  check('run cmd is python3 on the file', seen and seen.cmd[1] == 'python3' and seen.cmd[2] == pyfile)
+  vim.api.nvim_buf_set_name(0, root .. '/plain/x.py')
+  runner.run_file()
+  check('plain python gets no extra env', seen and seen.env == nil)
+  vim.api.nvim_buf_delete(0, { force = true })
+  vim.fn.delete('/tmp/lc_run', 'rf')
+  package.loaded['overseer'] = real_overseer
+end
 
 -- 9. Option+K sender: reference builder + visual binding + bun TS runner.
 check('ref lines 3-4', runner.at_reference('personal/README.md', 3, 4, 100) == '@personal/README.md#3-4')
 check('ref whole file collapses', runner.at_reference('personal/README.md', 1, 100, 100) == '@personal/README.md')
 check('ref single line', runner.at_reference('a.ts', 5, 5, 100) == '@a.ts#5')
 check('ref no file is nil', runner.at_reference('', 1, 1, 10) == nil)
-check('ref single line quotes word pick',
-  runner.at_reference('a.java', 27, 27, 100, 'machine') == '@a.java#27 "machine"')
-check('ref range ignores quote',
-  runner.at_reference('a.java', 27, 28, 100, 'machine') == '@a.java#27-28')
-check('ref whole file ignores quote',
-  runner.at_reference('a.java', 1, 100, 100, 'machine') == '@a.java')
-check('ref quote escapes double quotes',
-  runner.at_reference('a.java', 27, 27, 100, 'say "hi"') == '@a.java#27 "say \'hi\'"')
+check(
+  'ref single line quotes word pick',
+  runner.at_reference('a.java', 27, 27, 100, 'machine') == '@a.java#27 "machine"'
+)
+check('ref range ignores quote', runner.at_reference('a.java', 27, 28, 100, 'machine') == '@a.java#27-28')
+check('ref whole file ignores quote', runner.at_reference('a.java', 1, 100, 100, 'machine') == '@a.java')
+check(
+  'ref quote escapes double quotes',
+  runner.at_reference('a.java', 27, 27, 100, 'say "hi"') == '@a.java#27 "say \'hi\'"'
+)
 check('visual Option+K sends ref', vim.fn.maparg('<A-k>', 'v') ~= '')
+check('normal Option+K sends whole-file ref', vim.fn.maparg('<A-k>', 'n') ~= '')
 -- Option+K reads the LIVE selection: '< / '> still hold the previous
 -- selection while visual is active (the one-step-behind bug), so the
 -- sender reads the anchor/cursor instead, falling back to marks after.
 do
   local runner_src = read(nvim .. '/lua/config/runner.lua')
-  check('sender uses the live visual range',
-    runner_src:find('M.ref_for_visual', 1, true) ~= nil
-    and runner_src:find("getpos('v')", 1, true) ~= nil)
+  check(
+    'sender uses the live visual range',
+    runner_src:find('M.ref_for_visual', 1, true) ~= nil and runner_src:find("getpos('v')", 1, true) ~= nil
+  )
   local esc = vim.api.nvim_replace_termcodes('<Esc>', true, false, true)
   local function keys(s) vim.api.nvim_feedkeys(s, 'x!', false) end
   vim.cmd('enew')
@@ -260,12 +372,13 @@ do
   }
   terminal._last = 12
   runner.send_at_reference()
-  check('shut floats reopen the last-visited terminal',
-    seen_cmd == '12ToggleTerm direction=float' and sent.job == 9 and sent.text == '@x#1 ')
+  check(
+    'shut floats reopen the last-visited terminal',
+    seen_cmd == '12ToggleTerm direction=float' and sent.job == 9 and sent.text == '@x#1 '
+  )
   terminal._last = nil
   runner.send_at_reference()
-  check('no memory still mints terminal 1',
-    seen_cmd == '1ToggleTerm direction=float' and sent.job == 3)
+  check('no memory still mints terminal 1', seen_cmd == '1ToggleTerm direction=float' and sent.job == 3)
   package.loaded['toggleterm.terminal'] = {
     get_all = function() return { { id = 1 } } end,
     get = function(id)
@@ -275,11 +388,34 @@ do
   }
   terminal._last = 12
   runner.send_at_reference()
-  check('dead remembered id falls back to terminal 1',
-    seen_cmd == '1ToggleTerm direction=float' and sent.job == 3)
+  check('dead remembered id falls back to terminal 1', seen_cmd == '1ToggleTerm direction=float' and sent.job == 3)
   terminal._last = nil
   runner.ref_for_visual = real_ref
   vim.cmd, vim.api.nvim_chan_send = real_cmd, real_send
+  package.loaded['toggleterm.terminal'] = nil
+end
+do
+  vim.cmd('enew')
+  vim.api.nvim_buf_set_lines(0, 0, -1, false, { 'a', 'b', 'c' })
+  vim.api.nvim_buf_set_name(0, vim.fn.getcwd() .. '/whole_ref_probe.md')
+  local ref = runner.ref_for_file()
+  check('whole-file ref has no line anchor', ref == '@whole_ref_probe.md')
+  vim.api.nvim_buf_delete(0, { force = true })
+end
+do
+  local real_file = runner.ref_for_file
+  local real_current = terminal.current
+  local real_send = vim.api.nvim_chan_send
+  local sent = nil
+  runner.ref_for_file = function() return '@wf' end
+  terminal.current = function() return { job_id = 7 } end
+  package.loaded['toggleterm.terminal'] = {}
+  vim.api.nvim_chan_send = function(job, text) sent = { job = job, text = text } end
+  runner.send_file_reference()
+  check('normal sender types whole-file ref plus space', sent and sent.job == 7 and sent.text == '@wf ')
+  runner.ref_for_file = real_file
+  terminal.current = real_current
+  vim.api.nvim_chan_send = real_send
   package.loaded['toggleterm.terminal'] = nil
 end
 check('visual Cmd+C copies', vim.fn.maparg('<D-c>', 'v') == '"+y')
@@ -305,9 +441,12 @@ local wk = read(nvim .. '/lua/config/whichkey.lua')
 check('no m-prefix LSP group', wk:find("'m', group", 1, true) == nil)
 check('no ma duplicate', wk:find("'ma'", 1, true) == nil)
 check('leader-e peeks like Shift+Cmd+E', wk:find("require('config.tree').peek(true)", 1, true) ~= nil)
-check('trouble lives under x, misc Q gone', wk:find("'<leader>xx'", 1, true) ~= nil
-  and wk:find("'<leader>xs'", 1, true) ~= nil
-  and wk:find("'<leader>Q'", 1, true) == nil)
+check(
+  'trouble lives under x, misc Q gone',
+  wk:find("'<leader>xx'", 1, true) ~= nil
+    and wk:find("'<leader>xs'", 1, true) ~= nil
+    and wk:find("'<leader>Q'", 1, true) == nil
+)
 do
   -- Bare `v` must not flash the visual help instantly: which-key waits
   -- in visual/select but stays snappy in normal/operator-pending.
@@ -326,14 +465,11 @@ do
   local delay = wk_spec and wk_spec.opts and wk_spec.opts.delay
   check('which-key delay is a function', type(delay) == 'function')
   if type(delay) == 'function' then
-    check('normal stays snappy', delay { mode = 'n', keys = '' } == 200)
-    check(
-      'operator-pending stays snappy',
-      delay { mode = 'o', keys = '' } == 200
-    )
-    check('charwise visual waits', delay { mode = 'v', keys = '' } == 1000)
-    check('visual waits', delay { mode = 'x', keys = '' } == 1000)
-    check('select waits', delay { mode = 's', keys = '' } == 1000)
+    check('normal stays snappy', delay({ mode = 'n', keys = '' }) == 200)
+    check('operator-pending stays snappy', delay({ mode = 'o', keys = '' }) == 200)
+    check('charwise visual waits', delay({ mode = 'v', keys = '' }) == 1000)
+    check('visual waits', delay({ mode = 'x', keys = '' }) == 1000)
+    check('select waits', delay({ mode = 's', keys = '' }) == 1000)
   end
 end
 
@@ -354,32 +490,56 @@ do
   -- keymaps_src for the later sections is defined further below; read our
   -- own copy here so this block stays position-independent.
   local keymaps_src = read_keymaps()
-  check('<leader>j jumps in from empty buffers only', keymaps_src:find(
-    "if require('config.buffer_close').is_empty_buffer() then require('config.tree').focus(false) end",
-    1, true) ~= nil)
+  check(
+    '<leader>j jumps in from empty buffers only',
+    keymaps_src:find(
+      "if require('config.buffer_close').is_empty_buffer() then require('config.tree').focus(false) end",
+      1,
+      true
+    ) ~= nil
+  )
 end
 local tree_src = read(nvim .. '/lua/config/tree.lua')
 check('peek never focuses', tree_src:find('focus = false', 1, true) ~= nil)
-check('focus helper exists', tree_src:find('function M.focus', 1, true) ~= nil
-  and tree_src:find('focus = true', 1, true) ~= nil)
-check('focus never toggles a visible tree shut', tree_src:find('is_visible()', 1, true) ~= nil
-  and tree_src:find('api.tree.focus()', 1, true) ~= nil
-  and tree_src:find('api.tree.find_file({ focus = true })', 1, true) ~= nil)
+check(
+  'focus helper exists',
+  tree_src:find('function M.focus', 1, true) ~= nil and tree_src:find('focus = true', 1, true) ~= nil
+)
+check(
+  'focus never toggles a visible tree shut',
+  tree_src:find('is_visible()', 1, true) ~= nil
+    and tree_src:find('api.tree.focus()', 1, true) ~= nil
+    and tree_src:find('api.tree.find_file({ focus = true })', 1, true) ~= nil
+)
 -- Cmd+E focuses, Shift+Cmd+E peeks (normal + terminal modes).
 local keymaps_src = read_keymaps()
 check('Cmd+E focuses tree', keymaps_src:find("<D-e>', function() require('config.tree').focus(true)", 1, true) ~= nil)
-check('Shift+Cmd+E peeks tree', keymaps_src:find("<D-S-e>', function() require('config.tree').peek(true)", 1, true) ~= nil)
-check('Cmd+E focuses from float', keymaps_src:find("require(\"config.tree\").focus(true)", 1, true) ~= nil)
-check('Shift+Cmd+E peeks from float', keymaps_src:find("require(\"config.tree\").peek(true)", 1, true) ~= nil)
-check('middle-click opens tree', vim.fn.maparg('<MiddleMouse>', 'n') ~= ''
-  and vim.fn.maparg('<MiddleMouse>', 't') ~= '')
+check(
+  'Shift+Cmd+E peeks tree',
+  keymaps_src:find("<D-S-e>', function() require('config.tree').peek(true)", 1, true) ~= nil
+)
+check('Cmd+E focuses from float', keymaps_src:find('require("config.tree").focus(true)', 1, true) ~= nil)
+check('Shift+Cmd+E peeks from float', keymaps_src:find('require("config.tree").peek(true)', 1, true) ~= nil)
+check(
+  'middle-click opens tree',
+  vim.fn.maparg('<MiddleMouse>', 'n') ~= '' and vim.fn.maparg('<MiddleMouse>', 't') ~= ''
+)
 -- Alt+E rides the same focus() path as Cmd+E now, and the pre-0.12
 -- <Esc>[9xx;1~ maps are retired (both terminals speak CSI-u).
-check('Alt+E focuses like Cmd+E', keymaps_src:find("<A-e>', function() require('config.tree').focus(true)", 1, true) ~= nil
-  and keymaps_src:find('NvimTreeFindFileToggle', 1, true) == nil)
+check(
+  'Alt+E focuses like Cmd+E',
+  keymaps_src:find("<A-e>', function() require('config.tree').focus(true)", 1, true) ~= nil
+    and keymaps_src:find('NvimTreeFindFileToggle', 1, true) == nil
+)
 check('no pre-0.12 fallback maps', keymaps_src:find("'<Esc>['", 1, true) == nil)
-check('<leader>h steps left, tree at left edge', keymaps_src:find("h', function() require('config.window_nav').left()", 1, true) ~= nil)
-check('<leader>l steps right', keymaps_src:find("l', function() require('config.window_nav').right()", 1, true) ~= nil)
+check(
+  '<leader>h steps left, tree at left edge',
+  keymaps_src:find("'<leader>h',\n  function() require('config.window_nav').left() end", 1, true) ~= nil
+)
+check(
+  '<leader>l steps right',
+  keymaps_src:find("'<leader>l',\n  function() require('config.window_nav').right() end", 1, true) ~= nil
+)
 -- Git keys: gy copies permalinks, gp/gr/gs preview/reset/stage hunks,
 -- gd toggles a two-pane diff of the current file (panel hidden on open).
 local git_src = read(nvim .. '/lua/plugins/git.lua')
@@ -391,14 +551,21 @@ local gitdiff_src = read(nvim .. '/lua/config/gitdiff.lua')
 check('diff toggle closes the view', gitdiff_src:find('DiffviewClose', 1, true) ~= nil)
 check('diff toggle hides the file panel', gitdiff_src:find('DiffviewToggleFiles', 1, true) ~= nil)
 check('diff toggle scopes to the file', gitdiff_src:find('DiffviewOpen --', 1, true) ~= nil)
-check('diff toggle bound at startup', keymaps_src:find("gd', function() require('config.gitdiff').toggle_diff()", 1, true) ~= nil)
+check(
+  'diff toggle bound at startup',
+  keymaps_src:find("'<leader>gd',\n  function() require('config.gitdiff').toggle_diff() end", 1, true) ~= nil
+)
 -- Flash: anywhere-jump on s (normal/visual only — operator-pending stays
 -- stock so surround's ys/ds/cs keep working), treesitter jump on normal S.
 local editor_src = read(nvim .. '/lua/plugins/editor.lua')
-check('flash jump avoids operator-pending', editor_src:find(
-  "{ 's', function() require('flash').jump() end, mode = { 'n', 'x' }", 1, true) ~= nil)
-check('flash treesitter stays off visual S', editor_src:find(
-  "{ 'S', function() require('flash').treesitter() end, mode = 'n'", 1, true) ~= nil)
+check(
+  'flash jump avoids operator-pending',
+  editor_src:find("{ 's', function() require('flash').jump() end, mode = { 'n', 'x' }", 1, true) ~= nil
+)
+check(
+  'flash treesitter stays off visual S',
+  editor_src:find("{ 'S', function() require('flash').treesitter() end, mode = 'n'", 1, true) ~= nil
+)
 check('neogit bound at startup', keymaps_src:find("gg', '<cmd>Neogit<cr>'", 1, true) ~= nil)
 check('blame bound at startup', keymaps_src:find("gb', '<cmd>GitBlameToggle<cr>'", 1, true) ~= nil)
 -- No duplicate real bindings: the terminal map lives in keymaps (label
@@ -413,68 +580,124 @@ check('reload covers whichkey', kir_src:find('lua/config/whichkey.lua', 1, true)
 -- NvimTree as an integration and centers around it): tree.lua holds
 -- nothing off, arms nothing, repairs nothing — no off/on cycle, no
 -- recenter flash when a file opens.
-check('tree leaves the centerer alone', tree_src:find('hold_nnp_off', 1, true) == nil
-  and tree_src:find('nnp_guard', 1, true) == nil
-  and tree_src:find('settle_tree_open', 1, true) == nil
-  and tree_src:find('will_open_file', 1, true) == nil
-  and tree_src:find('main.disable', 1, true) == nil)
+check(
+  'tree leaves the centerer alone',
+  tree_src:find('hold_nnp_off', 1, true) == nil
+    and tree_src:find('nnp_guard', 1, true) == nil
+    and tree_src:find('settle_tree_open', 1, true) == nil
+    and tree_src:find('will_open_file', 1, true) == nil
+    and tree_src:find('main.disable', 1, true) == nil
+)
 check('tree exposes a sync post-open recenter', tree_src:find('function M.file_opened()', 1, true) ~= nil)
 -- Short tab title: project + short label, no full terminal buffer path.
 local options_src = read(nvim .. '/lua/config/options.lua')
 local title_line = options_src:match('[^\n]*titlestring[^\n]*') or ''
-check('titlestring is short', options_src:find('titlestring', 1, true) ~= nil
-  and options_src:find("fnamemodify(getcwd(), ':t')", 1, true) ~= nil
-  and options_src:find("require('config.terminal').title_label", 1, true) ~= nil
-  and title_line:find('://', 1, true) == nil)
+check(
+  'titlestring is short',
+  options_src:find('titlestring', 1, true) ~= nil
+    and options_src:find("fnamemodify(getcwd(), ':t')", 1, true) ~= nil
+    and options_src:find("require('config.terminal').title_label", 1, true) ~= nil
+    and title_line:find('://', 1, true) == nil
+)
 local editor_src = read(nvim .. '/lua/plugins/editor.lua')
 check('tree file opens recenter through the wrapper', editor_src:find('open_file_centered()', 1, true) ~= nil)
 check('tree indent guides on', editor_src:find('indent_markers = { enable = true }', 1, true) ~= nil)
 check('svelte parser installed', editor_src:find("'svelte'", 1, true) ~= nil)
-check('mini.icons set up and mocking devicons', editor_src:find("require('mini.icons').setup()", 1, true) ~= nil
-  and editor_src:find('mock_nvim_web_devicons', 1, true) ~= nil)
-check('mini.pairs replaces autopairs', editor_src:find("require('mini.pairs').setup()", 1, true) ~= nil
-  and editor_src:find('nvim-autopairs', 1, true) == nil)
-check('mini.bufremove replaces bufdelete', editor_src:find("require('mini.bufremove').setup()", 1, true) ~= nil
-  and editor_src:find('bufdelete', 1, true) == nil
-  and keymaps_src:find('Bdelete', 1, true) == nil)
+check(
+  'mini.icons set up and mocking devicons',
+  editor_src:find("require('mini.icons').setup()", 1, true) ~= nil
+    and editor_src:find('mock_nvim_web_devicons', 1, true) ~= nil
+)
+check(
+  'mini.pairs replaces autopairs',
+  editor_src:find("require('mini.pairs').setup()", 1, true) ~= nil and editor_src:find('nvim-autopairs', 1, true) == nil
+)
+check(
+  'mini.bufremove replaces bufdelete',
+  editor_src:find("require('mini.bufremove').setup()", 1, true) ~= nil
+    and editor_src:find('bufdelete', 1, true) == nil
+    and keymaps_src:find('Bdelete', 1, true) == nil
+)
 -- NOTE: lazy `keys` bind at runtime (see test.lua note above); here we
 -- assert the declarations, shadowing the conflict check from 2026-09-14.
-check('harpoon keys declared', editor_src:find("'<leader>a'", 1, true) ~= nil
-  and editor_src:find("'<C-e>'", 1, true) ~= nil
-  and editor_src:find("'<leader>1'", 1, true) ~= nil
-  and editor_src:find("'<leader>4'", 1, true) ~= nil)
+check(
+  'harpoon keys declared',
+  editor_src:find("'<leader>a'", 1, true) ~= nil
+    and editor_src:find("'<C-e>'", 1, true) ~= nil
+    and editor_src:find("'<leader>1'", 1, true) ~= nil
+    and editor_src:find("'<leader>4'", 1, true) ~= nil
+)
 local float = require('config.float')
 check('float module exposes resize', type(float.resize) == 'function')
 local runner_src = read(nvim .. '/lua/config/runner.lua')
 check('bun runs typescript', runner_src:find("typescript = function(f) return { 'bun', f }", 1, true) ~= nil)
 
 -- 8. Testing plugins: specs declare the adapters, keys are bound.
-local test_src = read(nvim .. '/lua/plugins/test.lua')
-for _, spec in ipairs({ 'nvim-neotest/neotest', 'neotest-python', 'neotest-rust', 'neotest-vitest', 'neotest-golang', 'michaelb/sniprun' }) do
+-- (test_src read once up in the runner section.)
+for _, spec in ipairs({
+  'nvim-neotest/neotest',
+  'neotest-python',
+  'neotest-rust',
+  'neotest-vitest',
+  'neotest-golang',
+  'michaelb/sniprun',
+}) do
   check('test spec declares ' .. spec, test_src:find(spec, 1, true) ~= nil)
 end
 -- NOTE: lazy `keys` specs only bind when lazy.nvim runs, which the
 -- --noplugin smoke harness skips — so here we assert the declarations;
 -- runtime binding is proven by the full boot check below.
-for _, key in ipairs({ '<leader>Tr', '<leader>Tf', '<leader>Ta', '<leader>Td', '<leader>To', '<leader>Ts', '<leader>Tx', '<Plug>SnipRun' }) do
+for _, key in ipairs({
+  '<leader>Tr',
+  '<leader>Tf',
+  '<leader>Ta',
+  '<leader>Td',
+  '<leader>To',
+  '<leader>Ts',
+  '<leader>Tx',
+  '<Plug>SnipRun',
+}) do
   check('test spec binds ' .. key, test_src:find(key, 1, true) ~= nil)
 end
+-- Debugging drives from <leader>d with a no-launch.json python default.
+local dap_src = read(nvim .. '/lua/plugins/dap.lua')
+for _, key in ipairs({ '<leader>dO', '<leader>dq', '<leader>dr', '<leader>dR' }) do
+  check('dap binds ' .. key, dap_src:find(key, 1, true) ~= nil)
+end
+check(
+  'dap debugs python without launch.json',
+  dap_src:find('dap.configurations.python', 1, true) ~= nil
+    and dap_src:find('debugpy.adapter', 1, true) ~= nil
+    and dap_src:find('adapters.debugpy', 1, true) ~= nil
+)
+check('repl toggle focuses for typing', dap_src:find('startinsert', 1, true) ~= nil)
+-- Config hygiene: the centering plugin is pinned (nnp_guard pokes its
+-- internals), and rename is defined once (label-only in whichkey, the
+-- real map is buffer-local in lsp.lua).
+local ui_pin = read(nvim .. '/lua/plugins/ui.lua')
+local wk_rn = read(nvim .. '/lua/config/whichkey.lua')
+check('no-neck-pain pinned to guarded commit', ui_pin:find("commit = '0df6659'", 1, true) ~= nil)
+check(
+  'rename defined once (label-only in whichkey)',
+  wk_rn:find("{ '<leader>rn', desc = 'Rename symbol' }", 1, true) ~= nil
+)
 
 -- 4. Lualine shows the project name, not a slot.
 local ui = read(nvim .. '/lua/plugins/ui.lua')
 check('lualine shows cwd basename', ui:find("fnamemodify(vim.fn.getcwd(), ':t')", 1, true) ~= nil)
-check('spare themes never cost startup',
+check(
+  'spare themes never cost startup',
   ui:find("nightfox.nvim', event = 'VeryLazy'", 1, true) ~= nil
-  and ui:find("tokyonight.nvim', event = 'VeryLazy'", 1, true) ~= nil)
+    and ui:find("tokyonight.nvim', event = 'VeryLazy'", 1, true) ~= nil
+)
 check('lualine shortens toggleterm to term', ui:find("s == 'toggleterm' and 'term'", 1, true) ~= nil)
-check('lualine shows relative filepath', ui:find("'filename', path = 1", 1, true) ~= nil)
-check('lualine collapses term buffers to term N', ui:find("#toggleterm#(%d+)", 1, true) ~= nil)
+check('lualine shows relative filepath', ui:find("'filename',\n            path = 1", 1, true) ~= nil)
+check('lualine collapses term buffers to term N', ui:find('#toggleterm#(%d+)', 1, true) ~= nil)
 check('lualine labels terms with the terminal count', ui:find("require('config.terminal').label", 1, true) ~= nil)
 -- C++ buffers show their standard: the file's own -std= flag wins,
 -- CMAKE_CXX_STANDARD covers files the db skips (headers), and unknown
 -- files stay plain C++.
-check('lualine shows the C++ standard',
-  ui:find("config.cxx_standard').label()", 1, true) ~= nil)
+check('lualine shows the C++ standard', ui:find("config.cxx_standard').label()", 1, true) ~= nil)
 do
   local cxx = require('config.cxx_standard')
   local root = vim.fn.resolve(vim.fn.tempname())
@@ -489,24 +712,15 @@ do
     .. '{"directory":"%s/build",'
     .. '"command":"c++ -std=c++2b -c ../src/c.cpp",'
     .. '"file":"%s/src/c.cpp"}]'
-  vim.fn.writefile(
-    { string.format(cc, root, root, root, root, root) },
-    root .. '/build/compile_commands.json')
-  check('cc command flag resolves',
-    cxx.std_for_file(root .. '/src/a.cpp') == '20')
-  check('cc arguments and relative file resolve',
-    cxx.std_for_file(root .. '/src/b.cpp') == '23')
-  check('cc future flag names map back',
-    cxx.std_for_file(root .. '/src/c.cpp') == '23')
-  vim.fn.writefile(
-    { 'cmake_minimum_required(VERSION 3.28)', 'set(CMAKE_CXX_STANDARD 17)' },
-    root .. '/CMakeLists.txt')
-  check('cmake covers headers missing from db',
-    cxx.std_for_file(root .. '/src/h.hpp') == '17')
+  vim.fn.writefile({ string.format(cc, root, root, root, root, root) }, root .. '/build/compile_commands.json')
+  check('cc command flag resolves', cxx.std_for_file(root .. '/src/a.cpp') == '20')
+  check('cc arguments and relative file resolve', cxx.std_for_file(root .. '/src/b.cpp') == '23')
+  check('cc future flag names map back', cxx.std_for_file(root .. '/src/c.cpp') == '23')
+  vim.fn.writefile({ 'cmake_minimum_required(VERSION 3.28)', 'set(CMAKE_CXX_STANDARD 17)' }, root .. '/CMakeLists.txt')
+  check('cmake covers headers missing from db', cxx.std_for_file(root .. '/src/h.hpp') == '17')
   local bare = vim.fn.resolve(vim.fn.tempname())
   vim.fn.mkdir(bare, 'p')
-  check('unknown stays nil for a plain label',
-    cxx.std_for_file(bare .. '/x.cpp') == nil)
+  check('unknown stays nil for a plain label', cxx.std_for_file(bare .. '/x.cpp') == nil)
   vim.fn.writefile({ 'int main() {}' }, root .. '/src/a.cpp')
   vim.cmd('edit ' .. vim.fn.fnameescape(root .. '/src/a.cpp'))
   vim.bo.filetype = 'cpp'
@@ -515,32 +729,45 @@ do
   vim.fn.delete(root, 'rf')
   vim.fn.delete(bare, 'rf')
 end
-check('center toggle installed on leader-z', ui:find('shortcuts/no-neck-pain.nvim', 1, true) ~= nil
-  and ui:find("'<leader>z', '<cmd>NoNeckPain<cr>'", 1, true) ~= nil
-  and ui:find('width = 120', 1, true) ~= nil)
-check('centering is on by default', ui:find("enableOnVimEnter = 'safe'", 1, true) ~= nil
-  and ui:find('enableOnTabEnter = true', 1, true) ~= nil)
+check(
+  'center toggle installed on leader-z',
+  ui:find('shortcuts/no-neck-pain.nvim', 1, true) ~= nil
+    and ui:find("'<leader>z', '<cmd>NoNeckPain<cr>'", 1, true) ~= nil
+    and ui:find('width = 120', 1, true) ~= nil
+)
+check(
+  'centering is on by default',
+  ui:find("enableOnVimEnter = 'safe'", 1, true) ~= nil and ui:find('enableOnTabEnter = true', 1, true) ~= nil
+)
 -- No split enforcement: the tree sidebar coexists with the file window, so
 -- nothing collapses splits, refuses C-w maps, or flattens picker opens.
-check('no single-window wiring', init:find('single_window', 1, true) == nil
-  and editor_src:find('select_default', 1, true) == nil)
+check(
+  'no single-window wiring',
+  init:find('single_window', 1, true) == nil and editor_src:find('select_default', 1, true) == nil
+)
 -- No pad focus bounce: WinEnter never shuffles focus (it yanked new tabs
 -- into the tree), and pads stay plain buffers (locking them surfaced
 -- "modifiable off" instead of code).
 local autocmds_src = read(nvim .. '/lua/config/autocmds.lua')
-check('no pad focus bounce', autocmds_src:find('NoNeckPainBounce', 1, true) == nil
-  and autocmds_src:find('wincmd w', 1, true) == nil)
-check('pads stay plain buffers', ui:find('setNames', 1, true) == nil
-  and ui:find('set_names', 1, true) == nil
-  and ui:find('modifiable', 1, true) == nil)
+check(
+  'no pad focus bounce',
+  autocmds_src:find('NoNeckPainBounce', 1, true) == nil and autocmds_src:find('wincmd w', 1, true) == nil
+)
+check(
+  'pads stay plain buffers',
+  ui:find('setNames', 1, true) == nil and ui:find('set_names', 1, true) == nil and ui:find('modifiable', 1, true) == nil
+)
 -- The launcher tree opens clean: dotfiles hidden until H reveals them.
 check('tree hides dotfiles until H', editor_src:find('dotfiles = true', 1, true) ~= nil)
 -- Tree width 40, Java tabs 60; the tree opens at the default so pads
 -- never follow a resize snap.
-check('tree width 40, java 60', autocmds_src:find('local width = 40', 1, true) ~= nil
-  and autocmds_src:find('width = 60', 1, true) ~= nil
-  and autocmds_src:find("filetype == 'java'", 1, true) ~= nil
-  and editor_src:find('view = { width = 40 }', 1, true) ~= nil)
+check(
+  'tree width 40, java 60',
+  autocmds_src:find('local width = 40', 1, true) ~= nil
+    and autocmds_src:find('width = 60', 1, true) ~= nil
+    and autocmds_src:find("filetype == 'java'", 1, true) ~= nil
+    and editor_src:find('view = { width = 40 }', 1, true) ~= nil
+)
 -- Settles run synchronously once teardown/setup is complete (a lone scan
 -- consumes the change signal, leaving stale pads stuck; a rebuild on a
 -- stale scan paints wrong sizes; the TreeClose event itself fires
@@ -549,52 +776,83 @@ check('tree width 40, java 60', autocmds_src:find('local width = 40', 1, true) ~
 -- expected layout, so mid-churn snapshots never paint. Center width
 -- follows the tree: full for plain editing, narrower while open so both
 -- pads survive.
-check('tree settle scans, rebuilds, restores file focus',
-  tree_src:find("scan_layout(scope)", 1, true) ~= nil
-  and tree_src:find("main.init, scope)", 1, true) ~= nil
-  and tree_src:find("get_side_id('curr')", 1, true) ~= nil
-  and tree_src:find('is_side_the_active_win', 1, true) ~= nil
-  and tree_src:find('is_side_enabled_and_valid', 1, true) == nil)
-check('center width follows the tree',
+check(
+  'tree settle scans, rebuilds, restores file focus',
+  tree_src:find('scan_layout(scope)', 1, true) ~= nil
+    and tree_src:find('main.init, scope)', 1, true) ~= nil
+    and tree_src:find("get_side_id('curr')", 1, true) ~= nil
+    and tree_src:find('is_side_the_active_win', 1, true) ~= nil
+    and tree_src:find('is_side_enabled_and_valid', 1, true) == nil
+)
+check(
+  'center width follows the tree',
   tree_src:find('CENTER_FULL = 120', 1, true) ~= nil
-  and tree_src:find('CENTER_TREE = 100', 1, true) ~= nil
-  and tree_src:find('function M.tree_opened()', 1, true) ~= nil)
-check('shut paths settle directly, never via TreeClose event',
+    and tree_src:find('CENTER_TREE = 100', 1, true) ~= nil
+    and tree_src:find('function M.tree_opened()', 1, true) ~= nil
+)
+check(
+  'shut paths settle directly, never via TreeClose event',
   tree_src:find('TreeClose', 1, true) ~= nil
-  and tree_src:find('mid-teardown, too early', 1, true) ~= nil
-  and tree_src:find('subscribe', 1, true) == nil)
-check('file open settles via tree_closed backstop',
-  tree_src:find('function M.file_opened()', 1, true) ~= nil
-  and tree_src:find('M.tree_closed()', 1, true) ~= nil)
+    and tree_src:find('mid-teardown, too early', 1, true) ~= nil
+    and tree_src:find('subscribe', 1, true) == nil
+)
+check(
+  'file open settles via tree_closed backstop',
+  tree_src:find('function M.file_opened()', 1, true) ~= nil and tree_src:find('M.tree_closed()', 1, true) ~= nil
+)
 local openlink_src = read(nvim .. '/lua/config/openlink.lua')
 local pdf = require('config.pdf')
 check('pdf module exposes open', type(pdf.open) == 'function')
-check('pdfs open in zathura, OS viewer is the fallback only',
-  read(nvim .. '/lua/config/pdf.lua'):find("vim.fn.jobstart({ 'zathura', path }", 1, true) ~= nil)
-check('gx sends pdfs to zathura', openlink_src:find("require('config.pdf').open(target.file)", 1, true) ~= nil
-  and openlink_src:find('vim.ui.open(target.file)', 1, true) == nil)
-check('tree sends pdfs to zathura', editor_src:find("require('config.pdf')", 1, true) ~= nil
-  and editor_src:find("match('%.pdf$')", 1, true) ~= nil
-  and editor_src:find('vim.ui.open(node.absolute_path)', 1, true) == nil)
-check('tree opens renderable images in a buffer, externals only the rest',
+check(
+  'pdfs open in zathura, OS viewer is the fallback only',
+  read(nvim .. '/lua/config/pdf.lua'):find("vim.fn.jobstart({ 'zathura', path }", 1, true) ~= nil
+)
+check(
+  'gx sends pdfs to zathura',
+  openlink_src:find("require('config.pdf').open(target.file)", 1, true) ~= nil
+    and openlink_src:find('vim.ui.open(target.file)', 1, true) == nil
+)
+check(
+  'tree sends pdfs to zathura',
+  editor_src:find("require('config.pdf')", 1, true) ~= nil
+    and editor_src:find("match('%.pdf$')", 1, true) ~= nil
+    and editor_src:find('vim.ui.open(node.absolute_path)', 1, true) == nil
+)
+check(
+  'tree opens renderable images in a buffer, externals only the rest',
   editor_src:find('image.in_buffer(path)', 1, true) ~= nil
-  and editor_src:find('image.handles(path) and not image.in_buffer(path)', 1, true) ~= nil)
-check('Space previews in-buffer images, tree stays open',
+    and editor_src:find('image.handles(path) and not image.in_buffer(path)', 1, true) ~= nil
+)
+check(
+  'Space previews in-buffer images, tree stays open',
   editor_src:find("vim.keymap.set('n', '<Space>', expand_preview_or_open", 1, true) ~= nil
     and editor_src:find('api.node.open.preview()', 1, true) ~= nil
-    and editor_src:find("require('config.image').in_buffer(node.absolute_path)", 1, true) ~= nil)
-check('l/o still fully open (Space-only preview)',
+    and editor_src:find("require('config.image').in_buffer(node.absolute_path)", 1, true) ~= nil
+)
+check(
+  'l/o still fully open (Space-only preview)',
   editor_src:find("vim.keymap.set('n', 'l', expand_or_open", 1, true) ~= nil
-    and editor_src:find("vim.keymap.set('n', 'o', expand_or_open", 1, true) ~= nil)
-check('tree bg brightened, theme kept', ui:find('catppuccin-mocha', 1, true) ~= nil
-  and ui:find('NvimTreeNormal', 1, true) ~= nil
-  and ui:find('surface0', 1, true) ~= nil)
+    and editor_src:find("vim.keymap.set('n', 'o', expand_or_open", 1, true) ~= nil
+)
+check(
+  'tree bg brightened, theme kept',
+  ui:find('catppuccin-mocha', 1, true) ~= nil
+    and ui:find('NvimTreeNormal', 1, true) ~= nil
+    and ui:find('surface0', 1, true) ~= nil
+)
 
 -- 6. Fresh nvim opens the file tree UNFOCUSED (launcher flow: no args).
 local autocmds = read(nvim .. '/lua/config/autocmds.lua')
-check('tree auto-opens on VimEnter with no args', autocmds:find('TreeOnStartup', 1, true) ~= nil
-  and autocmds:find("require('config.tree').peek(false)", 1, true) ~= nil
-  and autocmds:find('argc() == 0', 1, true) ~= nil)
+check(
+  'tree auto-opens on VimEnter with no args',
+  autocmds:find('TreeOnStartup', 1, true) ~= nil
+    and autocmds:find("require('config.tree').peek(false)", 1, true) ~= nil
+    and autocmds:find('argc() == 0', 1, true) ~= nil
+)
+-- :restart drops file args (argc==0) and restores the session after
+-- boot, so the startup tree must skip restart boots or every restart
+-- pops the tree open.
+check('startup tree skipped on restart', autocmds:find("startreason ~= 'restart'", 1, true) ~= nil)
 
 -- 5. Ghostty: no top tab bar (lualine names the project) + H/L nav (both files).
 for _, p in ipairs({ home .. '/.config/ghostty/config', home .. '/.config/ghostty/nvim-launcher' }) do
@@ -626,8 +884,10 @@ local function keybinds(path)
   end
   return table.concat(out, '\n')
 end
-check('launcher mirrors main keybinds',
-  keybinds(home .. '/.config/ghostty/config') == keybinds(home .. '/.config/ghostty/nvim-launcher'))
+check(
+  'launcher mirrors main keybinds',
+  keybinds(home .. '/.config/ghostty/config') == keybinds(home .. '/.config/ghostty/nvim-launcher')
+)
 -- Kitty lives in the repo too and install.sh links it; its Cmd+E takes
 -- the same CSI-u live path (no legacy sequences anywhere).
 local root = vim.fn.fnamemodify(vim.fn.resolve(nvim), ':h')
@@ -642,10 +902,14 @@ local land = require('config.telescope_land')
 check('land_here helper exists', type(land.land_here) == 'function')
 check('land_here on Cmd+O in insert', type(land.mappings.i['<D-o>']) == 'function')
 check('land_here on Cmd+O in normal', type(land.mappings.n['<D-o>']) == 'function')
-check('land_here fallback on Ctrl+Y', type(land.mappings.i['<C-y>']) == 'function'
-  and type(land.mappings.n['<C-y>']) == 'function')
-check('telescope wires file_browser mappings',
-  read(nvim .. '/lua/plugins/editor.lua'):find("require('config.telescope_land').mappings", 1, true) ~= nil)
+check(
+  'land_here fallback on Ctrl+Y',
+  type(land.mappings.i['<C-y>']) == 'function' and type(land.mappings.n['<C-y>']) == 'function'
+)
+check(
+  'telescope wires file_browser mappings',
+  read(nvim .. '/lua/plugins/editor.lua'):find("require('config.telescope_land').mappings", 1, true) ~= nil
+)
 do
   local root = vim.fn.tempname()
   vim.fn.mkdir(root .. '/SWE', 'p')
@@ -702,10 +966,14 @@ end
 -- two Alt+[ narrow steps slimmer.
 do
   local land_src = read(nvim .. '/lua/config/telescope_land.lua')
-  check('tab-cwd changes live in one place', land_src:find('tcd', 1, true) == nil
-    and land_src:find('change_root', 1, true) ~= nil)
-  check('default float opens two narrow-steps slimmer',
-    read(nvim .. '/lua/plugins/editor.lua'):find('columns * 0.8) - 10', 1, true) ~= nil)
+  check(
+    'tab-cwd changes live in one place',
+    land_src:find('tcd', 1, true) == nil and land_src:find('change_root', 1, true) ~= nil
+  )
+  check(
+    'default float opens two narrow-steps slimmer',
+    read(nvim .. '/lua/plugins/editor.lua'):find('columns * 0.8) - 10', 1, true) ~= nil
+  )
   local dir = vim.fn.tempname()
   vim.fn.mkdir(dir, 'p')
   dir = vim.fn.resolve(dir)
@@ -826,8 +1094,12 @@ do
   hover.request = function(b, params, key) got = { bufnr = b, params = params, key = key } end
   check('mouse hover on word schedules', hover.on_mouse_move() == 'scheduled')
   check('mouse hover dedupes same word', hover.on_mouse_move() == 'same-word')
-  check('mouse hover asks at utf-16 position', vim.wait(500, function() return got ~= nil end)
-    and got.params.position.line == 0 and got.params.position.character == 2)
+  check(
+    'mouse hover asks at utf-16 position',
+    vim.wait(500, function() return got ~= nil end)
+      and got.params.position.line == 0
+      and got.params.position.character == 2
+  )
   -- ...and renders the canned answer in a mouse-anchored float.
   local shown = nil
   vim.lsp.util.open_floating_preview = function(contents, syntax, opts)
@@ -835,15 +1107,19 @@ do
     return 111, 222
   end
   local canned = { [7] = { result = { contents = { kind = 'markdown', value = 'hi' } } } }
-  check('mouse hover renders docs', hover._on_results(canned, got.key, buf) == 'shown'
-    and shown.opts.relative == 'mouse' and shown.contents[1] == 'hi')
+  check(
+    'mouse hover renders docs',
+    hover._on_results(canned, got.key, buf) == 'shown' and shown.opts.relative == 'mouse' and shown.contents[1] == 'hi'
+  )
   check('mouse hover rejects stale answers', hover._on_results({}, 'nope:\0never', buf) == 'stale')
   -- Non-ASCII: byte column 4 on 'héllo' is utf-16 character 2.
   got = nil
   hover._mousepos = function() return { winid = win, line = 3, column = 4 } end
   hover.on_mouse_move()
-  check('mouse hover converts utf-16 position', vim.wait(500, function() return got ~= nil end)
-    and got.params.position.character == 2)
+  check(
+    'mouse hover converts utf-16 position',
+    vim.wait(500, function() return got ~= nil end) and got.params.position.character == 2
+  )
   hover.close()
   hover._mousepos, hover.delay, hover.request = saved_pos, saved_delay, saved_req
   vim.lsp.get_clients = saved_clients
@@ -854,23 +1130,31 @@ end
 -- 14. Reference highlight + inlay hints: attach wires highlight autocmds
 -- and default-on hints; <leader>uh toggles per buffer.
 local lsp_src = read(nvim .. '/lua/plugins/lsp.lua')
-check('attach highlights references on hold',
+check(
+  'attach highlights references on hold',
   lsp_src:find('textDocument/documentHighlight', 1, true) ~= nil
-  and lsp_src:find('vim.lsp.buf.document_highlight()', 1, true) ~= nil
-  and lsp_src:find('vim.lsp.buf.clear_references()', 1, true) ~= nil)
-check('attach enables inlay hints by default',
+    and lsp_src:find('vim.lsp.buf.document_highlight()', 1, true) ~= nil
+    and lsp_src:find('vim.lsp.buf.clear_references()', 1, true) ~= nil
+)
+check(
+  'attach enables inlay hints by default',
   lsp_src:find('textDocument/inlayHint', 1, true) ~= nil
-  and lsp_src:find('vim.lsp.inlay_hint.enable(true, { bufnr = ev.buf })', 1, true) ~= nil)
+    and lsp_src:find('vim.lsp.inlay_hint.enable(true, { bufnr = ev.buf })', 1, true) ~= nil
+)
 check('<leader>uh toggles inlay hints', vim.fn.maparg(' uh', 'n') ~= '')
-check('which-key lists inlay toggle',
-  read(nvim .. '/lua/config/whichkey.lua'):find("<leader>uh', desc", 1, true) ~= nil)
+check(
+  'which-key lists inlay toggle',
+  read(nvim .. '/lua/config/whichkey.lua'):find("<leader>uh', desc", 1, true) ~= nil
+)
 do
   -- One server list drives both install and enable: adding a server
   -- means one entry, and the two sites can never drift apart.
-  check('one server table drives install+enable',
+  check(
+    'one server table drives install+enable',
     lsp_src:find('local servers = {', 1, true) ~= nil
-    and lsp_src:find('ensure_installed = servers', 1, true) ~= nil
-    and lsp_src:find('vim.lsp.enable(servers)', 1, true) ~= nil)
+      and lsp_src:find('ensure_installed = servers', 1, true) ~= nil
+      and lsp_src:find('vim.lsp.enable(servers)', 1, true) ~= nil
+  )
   local _, entries = lsp_src:gsub("'rust_analyzer'", '')
   check('server list written exactly once', entries == 1)
 end
@@ -900,24 +1184,29 @@ check('cycle next wraps', terminal._pick({ 1, 2, 5 }, 5, 1) == 1)
 check('cycle prev wraps', terminal._pick({ 1, 2, 5 }, 1, -1) == 5)
 check('cycle next steps', terminal._pick({ 1, 2, 5 }, 2, 1) == 5)
 check('cycle prev steps', terminal._pick({ 1, 2, 5 }, 2, -1) == 1)
-check('cycle unfocused goes first/last', terminal._pick({ 1, 2, 5 }, nil, 1) == 1
-  and terminal._pick({ 1, 2, 5 }, nil, -1) == 5)
+check(
+  'cycle unfocused goes first/last',
+  terminal._pick({ 1, 2, 5 }, nil, 1) == 1 and terminal._pick({ 1, 2, 5 }, nil, -1) == 5
+)
 check('cycle stale id restarts', terminal._pick({ 1, 2 }, 9, 1) == 1)
 check('cycle single stays', terminal._pick({ 3 }, 3, -1) == 3)
 check('cycle empty is nil', terminal._pick({}, nil, 1) == nil)
 -- Cmd+T always mints: the next id is one past the largest live id, so
 -- closing terminal 2 of {1,2,3} leaves {1,3} and the next new terminal
 -- is 4 — never a reuse of 2, never a jump to 3.
-check('next id follows the top', terminal._next({ 1, 2, 3 }) == 4
-  and terminal._next({ 1, 3 }) == 4
-  and terminal._next({ 2, 3 }) == 4)
+check(
+  'next id follows the top',
+  terminal._next({ 1, 2, 3 }) == 4 and terminal._next({ 1, 3 }) == 4 and terminal._next({ 2, 3 }) == 4
+)
 check('next id starts at 1', terminal._next({}) == 1)
-check('positional pick names the slot', terminal._at({ 1, 2, 5 }, 1) == 1
-  and terminal._at({ 1, 2, 5 }, 2) == 2
-  and terminal._at({ 1, 2, 5 }, 3) == 5)
-check('positional pick past the end is nil', terminal._at({ 1, 2, 5 }, 4) == nil
-  and terminal._at({ 1, 2, 5 }, 0) == nil
-  and terminal._at({}, 1) == nil)
+check(
+  'positional pick names the slot',
+  terminal._at({ 1, 2, 5 }, 1) == 1 and terminal._at({ 1, 2, 5 }, 2) == 2 and terminal._at({ 1, 2, 5 }, 3) == 5
+)
+check(
+  'positional pick past the end is nil',
+  terminal._at({ 1, 2, 5 }, 4) == nil and terminal._at({ 1, 2, 5 }, 0) == nil and terminal._at({}, 1) == nil
+)
 check('goto with no plugin is safe', terminal.goto_slot(1) == 'no-plugin')
 check('new with no plugin is safe', terminal.new() == 'no-plugin')
 do
@@ -944,21 +1233,22 @@ do
   local real_notify = vim.notify
   vim.notify = function(msg) notices[#notices + 1] = msg end
   local ok, res = pcall(terminal.goto_slot, 2)
-  check('goto slot lands on the live id, not the digit',
-    ok and res == 'focused'
-    and vim.tbl_contains(actions, 'focus3')
-    and vim.tbl_contains(actions, 'close1'))
+  check(
+    'goto slot lands on the live id, not the digit',
+    ok and res == 'focused' and vim.tbl_contains(actions, 'focus3') and vim.tbl_contains(actions, 'close1')
+  )
   actions = {}
   local ok_far, res_far = pcall(terminal.goto_slot, 3)
-  check('goto past the last warns and stays put',
-    ok_far and res_far == 'missing'
-    and #actions == 0
-    and notices[#notices] == 'terminal 3: only 2 open')
+  check(
+    'goto past the last warns and stays put',
+    ok_far and res_far == 'missing' and #actions == 0 and notices[#notices] == 'terminal 3: only 2 open'
+  )
   live = {}
   local ok_none, res_none = pcall(terminal.goto_slot, 1)
-  check('goto with no terminals warns and mints nothing',
-    ok_none and res_none == 'empty'
-    and notices[#notices] == 'no terminals yet (Cmd+T opens one)')
+  check(
+    'goto with no terminals warns and mints nothing',
+    ok_none and res_none == 'empty' and notices[#notices] == 'no terminals yet (Cmd+T opens one)'
+  )
   vim.notify = real_notify
   package.loaded['toggleterm.terminal'] = nil
 end
@@ -1025,9 +1315,11 @@ do
   terminal._last = nil
   package.loaded['toggleterm.terminal'] = nil
 end
-check('autocmds note the last-visited terminal',
+check(
+  'autocmds note the last-visited terminal',
   read(nvim .. '/lua/config/autocmds.lua'):find('TerminalLastVisited', 1, true) ~= nil
-  and read(nvim .. '/lua/config/autocmds.lua'):find('note_buf', 1, true) ~= nil)
+    and read(nvim .. '/lua/config/autocmds.lua'):find('note_buf', 1, true) ~= nil
+)
 do
   local actions = {}
   local seen_cmd = nil
@@ -1050,10 +1342,11 @@ do
   vim.cmd = function(c) seen_cmd = c end
   local ok, res = pcall(terminal.new)
   vim.cmd = real_cmd
-  check('new terminal mints max+1', ok and res == 'opened'
-    and seen_cmd == '4ToggleTerm direction=float')
-  check('new terminal closes other floats first',
-    vim.tbl_contains(actions, 'close1') and vim.tbl_contains(actions, 'close3'))
+  check('new terminal mints max+1', ok and res == 'opened' and seen_cmd == '4ToggleTerm direction=float')
+  check(
+    'new terminal closes other floats first',
+    vim.tbl_contains(actions, 'close1') and vim.tbl_contains(actions, 'close3')
+  )
   package.loaded['toggleterm.terminal'] = nil
 end
 
@@ -1061,18 +1354,23 @@ end
 -- buffer is empty (never the window); Shift+Cmd+W the tab,
 -- Ctrl+Shift+Cmd+W the window. Telescope Enter roots the tree at the
 -- opened file's dir; <leader>cr prompts for a new tree root (.. goes up).
-check('Cmd+W routes through buffer_close', keymaps_src:find("<D-w>", 1, true) ~= nil
-  and keymaps_src:find('config.buffer_close', 1, true) ~= nil
-  and keymaps_src:find('close_buffer_or_tab', 1, true) ~= nil)
+check(
+  'Cmd+W routes through buffer_close',
+  keymaps_src:find('<D-w>', 1, true) ~= nil
+    and keymaps_src:find('config.buffer_close', 1, true) ~= nil
+    and keymaps_src:find('close_buffer_or_tab', 1, true) ~= nil
+)
 do
   local bc_src = read(nvim .. '/lua/config/buffer_close.lua')
-  check('empty buffer tries tabclose, never window close',
+  check(
+    'empty buffer tries tabclose, never window close',
     bc_src:find('tabclose', 1, true) ~= nil
-    and bc_src:find('MiniBufremove', 1, true) ~= nil
-    and bc_src:find("'quit", 1, true) == nil
-    and bc_src:find("'close", 1, true) == nil
-    and bc_src:find("'qa", 1, true) == nil
-    and bc_src:find("close_window", 1, true) == nil)
+      and bc_src:find('MiniBufremove', 1, true) ~= nil
+      and bc_src:find("'quit", 1, true) == nil
+      and bc_src:find("'close", 1, true) == nil
+      and bc_src:find("'qa", 1, true) == nil
+      and bc_src:find('close_window', 1, true) == nil
+  )
 end
 for _, mode in ipairs({ 'n', 'v', 'i', 't' }) do
   check('Cmd+W works from ' .. mode, vim.fn.maparg('<D-w>', mode) ~= '')
@@ -1093,8 +1391,7 @@ do
   -- empty buffer, land back on one tab.
   vim.cmd('tabnew')
   vim.api.nvim_set_current_buf(vim.api.nvim_create_buf(true, false))
-  check('empty Cmd+W closes the tab', bc.close_buffer_or_tab() == 'tabclose'
-    and vim.fn.tabpagenr('$') == 1)
+  check('empty Cmd+W closes the tab', bc.close_buffer_or_tab() == 'tabclose' and vim.fn.tabpagenr('$') == 1)
   -- Last tab is a no-op (tabclose fails), never an error.
   vim.api.nvim_set_current_buf(vim.api.nvim_create_buf(true, false))
   local ok = pcall(bc.close_buffer_or_tab)
@@ -1106,8 +1403,10 @@ do
   vim.api.nvim_buf_set_lines(full, 0, -1, false, { 'keep me' })
   local deleted = nil
   _G.MiniBufremove = { delete = function(...) deleted = { ... } end }
-  check('full Cmd+W closes the buffer', bc.close_buffer_or_tab() == 'buffer'
-    and deleted ~= nil and vim.fn.tabpagenr('$') == tabs)
+  check(
+    'full Cmd+W closes the buffer',
+    bc.close_buffer_or_tab() == 'buffer' and deleted ~= nil and vim.fn.tabpagenr('$') == tabs
+  )
   _G.MiniBufremove = nil
   vim.api.nvim_buf_delete(full, { force = true })
 end
@@ -1118,27 +1417,31 @@ for _, p in ipairs({ home .. '/.config/ghostty/config', home .. '/.config/ghostt
   check(tag .. ' Ctrl+Shift+Cmd+W closes window', c:find('super+ctrl+shift+w=close_window', 1, true) ~= nil)
   check(tag .. ' Cmd+Opt+Shift+W disarmed', c:find('super+alt+shift+w=unbind', 1, true) ~= nil)
 end
-check('kitty Shift+Cmd+W closes tab',
-  read(home .. '/.config/kitty/kitty.conf'):find('shift+cmd+w close_tab', 1, true) ~= nil)
-check('kitty Ctrl+Shift+Cmd+W closes window',
-  read(home .. '/.config/kitty/kitty.conf'):find('ctrl+shift+cmd+w close_window', 1, true) ~= nil)
+check(
+  'kitty Shift+Cmd+W closes tab',
+  read(home .. '/.config/kitty/kitty.conf'):find('shift+cmd+w close_tab', 1, true) ~= nil
+)
+check(
+  'kitty Ctrl+Shift+Cmd+W closes window',
+  read(home .. '/.config/kitty/kitty.conf'):find('ctrl+shift+cmd+w close_window', 1, true) ~= nil
+)
 do
   -- Cmd+digits jump to terminal slots by position (Bank A is live);
   -- the Cmd+Shift / Cmd+Ctrl slot families stay retired.
   local kitty_conf = read(home .. '/.config/kitty/kitty.conf')
-  check('kitty Cmd+digits jump to terminals',
+  check(
+    'kitty Cmd+digits jump to terminals',
     kitty_conf:find('cmd+1 send_text', 1, true) ~= nil
-    and kitty_conf:find('cmd+4 send_text', 1, true) ~= nil
-    and kitty_conf:find('cmd+0 send_text', 1, true) ~= nil)
-  check('kitty slot selects stay retired',
-    kitty_conf:find('cmd+shift+1 send_text', 1, true) == nil
-    and kitty_conf:find('cmd+ctrl+1 send_text', 1, true) == nil)
-  check('kitty Cmd+T reaches nvim',
-    kitty_conf:find('cmd+t send_text all \\e[116;9u', 1, true) ~= nil)
-  check('kitty Shift+Cmd+T opens a tab',
-    kitty_conf:find('shift+cmd+t new_tab', 1, true) ~= nil)
-  check('kitty Shift+Cmd+N opens a window',
-    kitty_conf:find('shift+cmd+n new_window', 1, true) ~= nil)
+      and kitty_conf:find('cmd+4 send_text', 1, true) ~= nil
+      and kitty_conf:find('cmd+0 send_text', 1, true) ~= nil
+  )
+  check(
+    'kitty slot selects stay retired',
+    kitty_conf:find('cmd+shift+1 send_text', 1, true) == nil and kitty_conf:find('cmd+ctrl+1 send_text', 1, true) == nil
+  )
+  check('kitty Cmd+T reaches nvim', kitty_conf:find('cmd+t send_text all \\e[116;9u', 1, true) ~= nil)
+  check('kitty Shift+Cmd+T opens a tab', kitty_conf:find('shift+cmd+t new_tab', 1, true) ~= nil)
+  check('kitty Shift+Cmd+N opens a window', kitty_conf:find('shift+cmd+n new_window', 1, true) ~= nil)
 end
 local land2 = require('config.telescope_land')
 check('select_and_land helper exists', type(land2.select_and_land) == 'function')
@@ -1237,8 +1540,10 @@ check('absolute links carry no fallback dest', t8 and t8.rel == nil)
 local t9 = openlink.extract(' * see {@code docs/DESIGN.md} for why', 20, '/base')
 check('javadoc brace does not leak into the token', t9 and t9.file == '/base/docs/DESIGN.md')
 local t10 = openlink.extract('@src/main/java/dev/straka/ledger/posting/application/PostingService.java#43', 10, '/base')
-check('at-ref extracts file+line',
-  t10 and t10.file == '/base/src/main/java/dev/straka/ledger/posting/application/PostingService.java' and t10.lnum == 43)
+check(
+  'at-ref extracts file+line',
+  t10 and t10.file == '/base/src/main/java/dev/straka/ledger/posting/application/PostingService.java' and t10.lnum == 43
+)
 local t11 = openlink.extract('see @docs/notes.md#3-4 for why', 8, '/base')
 check('at-ref range lands on first line', t11 and t11.file == '/base/docs/notes.md' and t11.lnum == 3)
 local t12 = openlink.extract('see @docs/notes.md for why', 8, '/base')
@@ -1256,14 +1561,15 @@ do
   vim.api.nvim_buf_set_lines(0, 0, -1, false, { ' * see {@code docs-DESIGN.md} for why' })
   vim.api.nvim_win_set_cursor(0, { 1, 20 })
   openlink.open()
-  check('gx resolves repo-relative path at git root',
-    vim.fn.expand('%:p') == vim.fn.resolve('/tmp/gxroot/docs-DESIGN.md'))
+  check(
+    'gx resolves repo-relative path at git root',
+    vim.fn.expand('%:p') == vim.fn.resolve('/tmp/gxroot/docs-DESIGN.md')
+  )
   vim.cmd('bdelete!')
   vim.fn.delete('/tmp/gxroot', 'rf')
 end
 check('gx opens link under cursor', vim.fn.maparg('gx', 'n') ~= '')
-check('tree exempts applications from ignore filter',
-  editor_src:find("exclude = { 'applications' }", 1, true) ~= nil)
+check('tree exempts applications from ignore filter', editor_src:find("exclude = { 'applications' }", 1, true) ~= nil)
 
 -- 19. Right-click popup: the "How to disable mouse" item (and its
 -- trailing separator) is gone; the useful PopUp items stay. options.lua
@@ -1271,12 +1577,9 @@ check('tree exempts applications from ignore filter',
 -- above already required config.options, so assert the live menu state.
 do
   local popup = vim.fn.getcompletion('PopUp.', 'menu')
-  check('right-click menu drops How-to-disable-mouse',
-    not vim.tbl_contains(popup, 'How-to\\ disable\\ mouse'))
-  check('right-click menu drops trailing separator',
-    not vim.tbl_contains(popup, '-2-'))
-  check('right-click menu keeps useful items',
-    vim.tbl_contains(popup, 'Inspect') and vim.tbl_contains(popup, 'Copy'))
+  check('right-click menu drops How-to-disable-mouse', not vim.tbl_contains(popup, 'How-to\\ disable\\ mouse'))
+  check('right-click menu drops trailing separator', not vim.tbl_contains(popup, '-2-'))
+  check('right-click menu keeps useful items', vim.tbl_contains(popup, 'Inspect') and vim.tbl_contains(popup, 'Copy'))
 end
 
 -- 20. Terminal tab label: floats read their slot over the terminal
@@ -1286,17 +1589,20 @@ end
 -- other floats so only one stays visible.
 do
   local term_label_src = read(nvim .. '/lua/config/terminal.lua')
-  check('terminal label shows slot over total',
+  check(
+    'terminal label shows slot over total',
     term_label_src:find('term %d / %d', 1, true) ~= nil
-    and term_label_src:find('M._order()', 1, true) ~= nil
-    and term_label_src:find('function M.title_label_for', 1, true) ~= nil)
-  check('cycle closes other floats',
-    term_label_src:find('other:close()', 1, true) ~= nil)
+      and term_label_src:find('M._order()', 1, true) ~= nil
+      and term_label_src:find('function M.title_label_for', 1, true) ~= nil
+  )
+  check('cycle closes other floats', term_label_src:find('other:close()', 1, true) ~= nil)
   local ac_src20 = read(nvim .. '/lua/config/autocmds.lua')
-  check('tab count refreshes without forcing lualine',
+  check(
+    'tab count refreshes without forcing lualine',
     ac_src20:find('TerminalCountRefresh', 1, true) ~= nil
-    and ac_src20:find('TermClose', 1, true) ~= nil
-    and ac_src20:find("package.loaded['lualine']", 1, true) ~= nil)
+      and ac_src20:find('TermClose', 1, true) ~= nil
+      and ac_src20:find("package.loaded['lualine']", 1, true) ~= nil
+  )
   check('garbage term input stays plain', terminal.label(nil) == 'term')
   -- Fake the terminals with named scratch buffers (a `terminal` buftype
   -- cannot be faked onto a scratch buffer headless (E474), but the tab
@@ -1313,8 +1619,7 @@ do
   vim.api.nvim_set_current_buf(b2)
   check('tab with two terms counts two', terminal.count() == 2)
   check('label shows slot over total', terminal.label(2) == 'term 2 / 2')
-  check('title shows slot too',
-    terminal.title_label_for('terminal', 'zsh;#toggleterm#2', '') == 'term 2 / 2')
+  check('title shows slot too', terminal.title_label_for('terminal', 'zsh;#toggleterm#2', '') == 'term 2 / 2')
   -- Swap in the gappy id: the label names the position
   -- (physical 5 is slot 2 of {1,5}).
   vim.api.nvim_set_current_buf(b5)
@@ -1333,10 +1638,8 @@ do
   check('hidden terms still count', terminal.label(2) == 'term 2 / 3')
   check('viewed slot shows its position', terminal.label(5) == 'term 3 / 3')
   package.loaded['toggleterm.terminal'] = nil
-  check('title on plain terminals stays term',
-    terminal.title_label_for('terminal', 'term://x', '') == 'term')
-  check('title on files stays the tail',
-    terminal.title_label_for('', '/x/foo.lua', 'foo.lua') == 'foo.lua')
+  check('title on plain terminals stays term', terminal.title_label_for('terminal', 'term://x', '') == 'term')
+  check('title on files stays the tail', terminal.title_label_for('', '/x/foo.lua', 'foo.lua') == 'foo.lua')
   vim.cmd('enew')
   check('title on empty buffers stays nvim', terminal.title_label() == 'nvim')
   vim.api.nvim_buf_delete(b5, { force = true })
@@ -1368,7 +1671,9 @@ do
     vim.cmd('edit ' .. vim.fn.fnameescape(base .. '/' .. rel))
     local buf = vim.api.nvim_get_current_buf()
     local called, dir = false, nil
-    tw.root_dir(buf, function(d) called, dir = true, d end)
+    tw.root_dir(buf, function(d)
+      called, dir = true, d
+    end)
     vim.api.nvim_buf_delete(buf, { force = true })
     return called, dir
   end
@@ -1388,38 +1693,43 @@ end
 -- on chafa, and Markdown inline images need the markdown parsers.
 do
   local image_src = read(nvim .. '/lua/plugins/image.lua')
-  check('image preview uses the kitty backend',
-    image_src:find("backend = 'kitty'", 1, true) ~= nil)
-  check('image preview shells out to magick',
-    image_src:find("processor = 'magick_cli'", 1, true) ~= nil)
-  check('image preview hijacks image files on open',
-    image_src:find('hijack_file_patterns', 1, true) ~= nil
-    and image_src:find("'*.png'", 1, true) ~= nil)
-  check('image preview stays off without the magick CLI',
-    image_src:find("vim.fn.executable('magick')", 1, true) ~= nil)
-  check('markdown parsers installed for inline images',
-    editor_src:find("'markdown'", 1, true) ~= nil
-    and editor_src:find("'markdown_inline'", 1, true) ~= nil)
-  check('telescope media extension wired with chafa filetypes',
+  check('image preview uses the kitty backend', image_src:find("backend = 'kitty'", 1, true) ~= nil)
+  check('image preview shells out to magick', image_src:find("processor = 'magick_cli'", 1, true) ~= nil)
+  check(
+    'image preview hijacks image files on open',
+    image_src:find('hijack_file_patterns', 1, true) ~= nil and image_src:find("'*.png'", 1, true) ~= nil
+  )
+  check('image preview stays off without the magick CLI', image_src:find("vim.fn.executable('magick')", 1, true) ~= nil)
+  check(
+    'markdown parsers installed for inline images',
+    editor_src:find("'markdown'", 1, true) ~= nil and editor_src:find("'markdown_inline'", 1, true) ~= nil
+  )
+  check(
+    'telescope media extension wired with chafa filetypes',
     editor_src:find('telescope-media-files.nvim', 1, true) ~= nil
-    and editor_src:find('media_files', 1, true) ~= nil
-    and editor_src:find("'webp'", 1, true) ~= nil
-    and editor_src:find("'pdf'", 1, true) ~= nil)
-  check('PDFs hijack to an in-buffer render',
-    image_src:find("'*.pdf'", 1, true) ~= nil)
-  check('SVG stays editable text, never hijacked',
-    image_src:find("'*.svg'", 1, true) == nil)
-  check('raw-bytes hatch bound on rendered buffers',
+      and editor_src:find('media_files', 1, true) ~= nil
+      and editor_src:find("'webp'", 1, true) ~= nil
+      and editor_src:find("'pdf'", 1, true) ~= nil
+  )
+  check('PDFs hijack to an in-buffer render', image_src:find("'*.pdf'", 1, true) ~= nil)
+  check('SVG stays editable text, never hijacked', image_src:find("'*.svg'", 1, true) == nil)
+  check(
+    'raw-bytes hatch bound on rendered buffers',
     image_src:find('ImageRawView', 1, true) ~= nil
-    and image_src:find("'<leader>ir'", 1, true) ~= nil
-    and image_src:find('is_enabled()', 1, true) ~= nil)
-  check('images hide behind overlapping floats (terminal bleed-through)',
-    image_src:find('window_overlap_clear_enabled = true', 1, true) ~= nil)
-  check('images shallow-clear on terminal enter (Terminal-Insert gap)',
+      and image_src:find("'<leader>ir'", 1, true) ~= nil
+      and image_src:find('is_enabled()', 1, true) ~= nil
+  )
+  check(
+    'images hide behind overlapping floats (terminal bleed-through)',
+    image_src:find('window_overlap_clear_enabled = true', 1, true) ~= nil
+  )
+  check(
+    'images shallow-clear on terminal enter (Terminal-Insert gap)',
     image_src:find('ImageHideOnTerminal', 1, true) ~= nil
-    and image_src:find("'TermEnter'", 1, true) ~= nil
-    and image_src:find("buftype ~= 'terminal'", 1, true) ~= nil
-    and image_src:find('img:clear(true)', 1, true) ~= nil)
+      and image_src:find("'TermEnter'", 1, true) ~= nil
+      and image_src:find("buftype ~= 'terminal'", 1, true) ~= nil
+      and image_src:find('img:clear(true)', 1, true) ~= nil
+  )
 end
 
 -- Tree focus vs the centerer: entering the tree still refreshes the
@@ -1428,12 +1738,13 @@ end
 -- tab-teardown guard stays.
 do
   local ui_src = read(nvim .. '/lua/plugins/ui.lua')
-  check('centerer init still guards torn-down tabs',
-    ui_src:find('is_active_tab_registered', 1, true) ~= nil)
-  check('centerer init keeps tree focus instead of skipping',
+  check('centerer init still guards torn-down tabs', ui_src:find('is_active_tab_registered', 1, true) ~= nil)
+  check(
+    'centerer init keeps tree focus instead of skipping',
     ui_src:find("ft == 'NvimTree'", 1, true) ~= nil
-    and ui_src:find('nvim_set_current_win', 1, true) ~= nil
-    and ui_src:find('orig_init(scope)', 1, true) ~= nil)
+      and ui_src:find('nvim_set_current_win', 1, true) ~= nil
+      and ui_src:find('orig_init(scope)', 1, true) ~= nil
+  )
 end
 
 -- Window title: folder – file – N terms. File buffers carry the tab's
@@ -1446,8 +1757,7 @@ do
   check('file label still just the tail', terminal.title_label_for('', '', 'skeleton.cpp') == 'skeleton.cpp')
   check('empty buffer still nvim', terminal.title_label_for('', '', '') == 'nvim')
   local opt_src = read(nvim .. '/lua/config/options.lua')
-  check('titlestring appends the count suffix',
-    opt_src:find('title_count_suffix', 1, true) ~= nil)
+  check('titlestring appends the count suffix', opt_src:find('title_count_suffix', 1, true) ~= nil)
 end
 
 -- Doc floats: K/q/Esc dismiss instead of falling back to :Man.
@@ -1458,8 +1768,13 @@ do
     -- Hover order: the float opens before its filetype is set.
     local buf = vim.api.nvim_create_buf(false, true)
     local win = vim.api.nvim_open_win(buf, true, {
-      relative = 'editor', width = 40, height = 10, row = 2, col = 2,
-      style = 'minimal', border = 'single',
+      relative = 'editor',
+      width = 40,
+      height = 10,
+      row = 2,
+      col = 2,
+      style = 'minimal',
+      border = 'single',
     })
     vim.bo[buf].filetype = ft
     return buf, win
@@ -1471,13 +1786,11 @@ do
   check('doc float maps q to dismiss', qrhs:find('close', 1, true) ~= nil)
   vim.cmd('normal K')
   check('K in doc float closes instead of :Man', not vim.api.nvim_win_is_valid(mwin))
-  check('no man buffer opened by float K',
-    vim.fn.bufnr('man://java(1)') == -1)
+  check('no man buffer opened by float K', vim.fn.bufnr('man://java(1)') == -1)
   vim.api.nvim_set_current_win(home_win)
   vim.api.nvim_buf_delete(mbuf, { force = true })
   local pbuf, pwin = float_with('TelescopePrompt')
-  check('picker float keeps its own K',
-    (vim.fn.maparg('K', 'n', false, true).rhs or '') == '')
+  check('picker float keeps its own K', (vim.fn.maparg('K', 'n', false, true).rhs or '') == '')
   vim.api.nvim_win_close(pwin, true)
   vim.api.nvim_buf_delete(pbuf, { force = true })
   vim.api.nvim_set_current_win(home_win)
@@ -1486,8 +1799,7 @@ do
   vim.bo[fbuf].filetype = 'markdown'
   vim.api.nvim_set_current_win(home_win)
   vim.api.nvim_set_current_buf(fbuf)
-  check('plain markdown file keeps its K',
-    (vim.fn.maparg('K', 'n', false, true).rhs or '') == '')
+  check('plain markdown file keeps its K', (vim.fn.maparg('K', 'n', false, true).rhs or '') == '')
   vim.api.nvim_buf_delete(fbuf, { force = true })
 end
 
@@ -1497,12 +1809,9 @@ end
 do
   local lsp_spec = read(nvim .. '/lua/plugins/lsp.lua')
   check('fidget polls slowly', lsp_spec:find('poll_rate = 0.5', 1, true) ~= nil)
-  check('fidget ignores done-already tasks',
-    lsp_spec:find('ignore_done_already = true', 1, true) ~= nil)
-  check('fidget holds popups while typing',
-    lsp_spec:find('suppress_on_insert = true', 1, true) ~= nil)
-  check('fidget drops done items instantly',
-    lsp_spec:find('done_ttl = 0', 1, true) ~= nil)
+  check('fidget ignores done-already tasks', lsp_spec:find('ignore_done_already = true', 1, true) ~= nil)
+  check('fidget holds popups while typing', lsp_spec:find('suppress_on_insert = true', 1, true) ~= nil)
+  check('fidget drops done items instantly', lsp_spec:find('done_ttl = 0', 1, true) ~= nil)
 end
 
 -- Comment continuation: Enter in insert mode extends the comment leader

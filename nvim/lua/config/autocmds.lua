@@ -24,9 +24,7 @@ autocmd({ 'FocusGained', 'BufEnter', 'CursorHold' }, {
 -- format on save via conform.nvim (replaces removed vim.lsp.buf.formatting_sync)
 autocmd('BufWritePre', {
   group = vim.api.nvim_create_augroup('ConformFormat', { clear = true }),
-  callback = function(args)
-    require('conform').format { bufnr = args.buf, lsp_fallback = true, timeout_ms = 1000 }
-  end,
+  callback = function(args) require('conform').format({ bufnr = args.buf, lsp_fallback = true, timeout_ms = 1000 }) end,
 })
 
 -- Yank indicator in the statusline instead of a text highlight: record what
@@ -55,11 +53,14 @@ autocmd('TextYankPost', {
 -- (peek, no focus). Only when launched without file arguments
 -- (the launcher flow — `exec nvim` at home, then Ctrl+R/Cmd+O into the
 -- project); `nvim somefile` leaves you in the file. Picking a file closes
--- the tree (quit_on_open), VSCode-explorer style.
+-- the tree (quit_on_open), VSCode-explorer style. Skipped on restart
+-- boots: :restart drops file args (argc==0) and restores the session
+-- after boot, so without the startreason guard every restart would pop
+-- the tree open next to the restored files.
 autocmd('VimEnter', {
   group = vim.api.nvim_create_augroup('TreeOnStartup', { clear = true }),
   callback = function()
-    if vim.fn.argc() == 0 then
+    if vim.fn.argc() == 0 and vim.v.startreason ~= 'restart' then
       -- Deferred past startup: the tree opens on the next main-loop tick,
       -- so a slow git backend (or any tree error) can never abort VimEnter.
       vim.schedule(function()
@@ -215,7 +216,10 @@ local function pin_float_keys(buf)
   local floating = false
   for _, win in ipairs(vim.fn.win_findbuf(buf)) do
     local ok, cfg = pcall(vim.api.nvim_win_get_config, win)
-    if ok and cfg.relative ~= '' then floating = true break end
+    if ok and cfg.relative ~= '' then
+      floating = true
+      break
+    end
   end
   if not floating then return end
   local b = { buffer = buf, noremap = true, silent = true, desc = 'Dismiss docs' }
@@ -258,9 +262,7 @@ autocmd({ 'TermOpen', 'TermClose', 'BufDelete', 'BufWipeout' }, {
     pcall(vim.cmd, 'let &titlestring = &titlestring')
     if package.loaded['lualine'] == nil then return end
     local ok, lualine = pcall(require, 'lualine')
-    if ok and type(lualine) == 'table' and type(lualine.refresh) == 'function' then
-      pcall(lualine.refresh)
-    end
+    if ok and type(lualine) == 'table' and type(lualine.refresh) == 'function' then pcall(lualine.refresh) end
   end,
 })
 
@@ -270,9 +272,7 @@ autocmd({ 'TermOpen', 'TermClose', 'BufDelete', 'BufWipeout' }, {
 -- terminal 1. Pure buffer-name parse, no plugin API needed.
 autocmd({ 'BufEnter', 'TermEnter' }, {
   group = vim.api.nvim_create_augroup('TerminalLastVisited', { clear = true }),
-  callback = function(args)
-    require('config.terminal').note_buf(vim.api.nvim_buf_get_name(args.buf))
-  end,
+  callback = function(args) require('config.terminal').note_buf(vim.api.nvim_buf_get_name(args.buf)) end,
 })
 
 -- Tree width follows the tab: Java packages nest deep, so a tab showing Java
@@ -320,6 +320,20 @@ autocmd('BufReadPost', {
     end
     -- `nvim song.mp3` reads the file mid-startup: defer past VimEnter
     -- (see TreeOnStartup above) so the popup never opens half-built.
-    if vim.v.vim_did_enter == 0 then vim.schedule(play) else play() end
+    if vim.v.vim_did_enter == 0 then
+      vim.schedule(play)
+    else
+      play()
+    end
+  end,
+})
+
+-- Run output floats enter on open (see config/runner.lua) because overseer
+-- closes them on WinLeave; q dismisses straight back to the code.
+autocmd('FileType', {
+  group = vim.api.nvim_create_augroup('OverseerOutputQuit', { clear = true }),
+  pattern = 'OverseerOutput',
+  callback = function(args)
+    vim.keymap.set('n', 'q', '<cmd>close<cr>', { buffer = args.buf, silent = true, desc = 'Close run output' })
   end,
 })

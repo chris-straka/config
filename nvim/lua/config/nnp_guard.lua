@@ -27,4 +27,36 @@ function M.init(scope, init_fn)
   return ok
 end
 
+---Register overseer's sidebar as a no-neck-pain integration so the task
+---list coexists with the pads (same as NvimTree): unregistered, the
+---sidebar counts as a second main window and the gutters go away while
+---it is open. Pokes plugin internals — the constants template, which
+---every layout scan copies into the per-tab state — so the entry
+---survives rescans by construction. Same as the init guard above:
+---revisit on plugin updates past 0df6659.
+---@return boolean true when the entry is present
+function M.register_overseer()
+  local ok_c, constants = pcall(require, 'no-neck-pain.util.constants')
+  if not ok_c or type(constants.INTEGRATIONS) ~= 'table' then return false end
+  if constants.INTEGRATIONS.overseer ~= nil then return true end
+  constants.INTEGRATIONS.overseer = {
+    -- startswith match: covers OverseerList and OverseerOutput.
+    fileTypePattern = 'overseer',
+    -- Unused by this version (kept for shape parity with the builtins).
+    close = 'OverseerClose',
+    open = 'OverseerOpen',
+  }
+  -- Width math looks the entry up in the user config too
+  -- (ui.get_side_width indexes .position); without this the lookup
+  -- crashes on a nil the moment the sidebar opens. Position none is
+  -- the DAPUI precedent for panels that are not left/right sidebars,
+  -- so no pad is ever shrunk for it. Runtime patch, not setup opts,
+  -- so the builtin entries merge untouched.
+  local app = _G.NoNeckPain
+  if type(app) == 'table' and type(app.config) == 'table' and type(app.config.integrations) == 'table' then
+    app.config.integrations.overseer = { position = 'none', reopen = true }
+  end
+  return true
+end
+
 return M

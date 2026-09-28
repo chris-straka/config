@@ -26,17 +26,29 @@ map('t', '<D-e>', '<C-\\><C-n><cmd>lua require("config.tree").focus(true)<cr>', 
 map('t', '<D-S-e>', '<C-\\><C-n><cmd>lua require("config.tree").peek(true)<cr>', opts)
 -- Middle-click opens the tree (focused, current file revealed) instead of
 -- pasting. Needs `mouse = 'a'` above, or the emulator eats the click.
-map({ 'n', 'v', 'i', 't' }, '<MiddleMouse>', function() require('config.tree').focus(true) end,
-  { noremap = true, silent = true, desc = 'Open file tree' })
+map(
+  { 'n', 'v', 'i', 't' },
+  '<MiddleMouse>',
+  function() require('config.tree').focus(true) end,
+  { noremap = true, silent = true, desc = 'Open file tree' }
+)
 -- Space+h / Space+l step to the window on that side (Diffview panes
 -- included). At the left edge with nowhere to go, Space+h focuses the
 -- file tree instead (no reveal; Shift+Cmd+E peeks revealed, Cmd+E
 -- focuses revealed — see config/tree.lua). At the right edge Space+l
 -- is a no-op. See config/window_nav.lua.
-map('n', '<leader>h', function() require('config.window_nav').left() end,
-  { noremap = true, silent = true, desc = 'Window left / file tree' })
-map('n', '<leader>l', function() require('config.window_nav').right() end,
-  { noremap = true, silent = true, desc = 'Window right' })
+map(
+  'n',
+  '<leader>h',
+  function() require('config.window_nav').left() end,
+  { noremap = true, silent = true, desc = 'Window left / file tree' }
+)
+map(
+  'n',
+  '<leader>l',
+  function() require('config.window_nav').right() end,
+  { noremap = true, silent = true, desc = 'Window right' }
+)
 -- Space+j jumps INTO the tree, but only from an empty buffer (fresh nvim
 -- with the tree peeked): in a one-line empty buffer `j` has nowhere to go,
 -- so it becomes the down-and-out gesture. Elsewhere the key does nothing
@@ -48,15 +60,23 @@ end, { noremap = true, silent = true, desc = 'Focus tree from empty buffer' })
 -- <leader>cr prompts for a new tree root (completion=dir, so Tab
 -- completes paths; `..` goes up one, `~`/absolute/relative all work).
 -- The tab cwd follows, so terminals land there too.
-map('n', '<leader>cr', function() require('config.tree').change_root_prompt() end,
-  { noremap = true, silent = true, desc = 'Change tree root…' })
+map(
+  'n',
+  '<leader>cr',
+  function() require('config.tree').change_root_prompt() end,
+  { noremap = true, silent = true, desc = 'Change tree root…' }
+)
 -- <leader>p plays the file in the current buffer when it is audio
 -- (mp3/wav/flac/...): the sfx popup opens instead of a binary buffer
 -- (Space pauses, arrows seek/volume, q closes). Tree Enter on an audio
 -- file does the same (see on_attach in plugins/editor.lua), and
 -- :SfxPlayerOpen plays any path with completion.
-map('n', '<leader>p', function() require('config.audio').open_current() end,
-  { noremap = true, silent = true, desc = 'Play audio file' })
+map(
+  'n',
+  '<leader>p',
+  function() require('config.audio').open_current() end,
+  { noremap = true, silent = true, desc = 'Play audio file' }
+)
 -- Git launchers (global, always available): gd toggles a two-pane diff
 -- of the current file (see config/gitdiff.lua), gg opens Neogit, gb
 -- toggles blame. Hunk keys (gp/gr/gs) attach per buffer from gitsigns
@@ -64,8 +84,12 @@ map('n', '<leader>p', function() require('config.audio').open_current() end,
 -- whichkey.lua — so they exist from startup instead of arriving with
 -- which-key's deferred load (same split as <leader>uh: real map here,
 -- label there).
-map('n', '<leader>gd', function() require('config.gitdiff').toggle_diff() end,
-  { noremap = true, silent = true, desc = 'Diff (toggle)' })
+map(
+  'n',
+  '<leader>gd',
+  function() require('config.gitdiff').toggle_diff() end,
+  { noremap = true, silent = true, desc = 'Diff (toggle)' }
+)
 map('n', '<leader>gg', '<cmd>Neogit<cr>', { noremap = true, silent = true, desc = 'Neogit' })
 map('n', '<leader>gb', '<cmd>GitBlameToggle<cr>', { noremap = true, silent = true, desc = 'Blame' })
 
@@ -81,8 +105,12 @@ map('n', '<D-S-p>', '<cmd>Telescope commands<cr>', { noremap = true, silent = tr
 -- <leader>fw: search the project for the word under the cursor (VSCode
 -- "find all references" habit). From Markdown or any file without a
 -- language server, this is the poor man's gd: pick a match to jump.
-map('n', '<leader>fw', function() require('telescope.builtin').grep_string() end,
-  { noremap = true, silent = true, desc = 'Search word under cursor' })
+map(
+  'n',
+  '<leader>fw',
+  function() require('telescope.builtin').grep_string() end,
+  { noremap = true, silent = true, desc = 'Search word under cursor' }
+)
 -- Ctrl+R: recent projects picker (VSCode Ctrl+R).
 -- This takes over Vim's built-in redo on Ctrl+R; redo lives on Cmd+Shift+Z.
 map('n', '<C-r>', '<cmd>Telescope projects<cr>', { noremap = true, silent = true, desc = 'Recent projects' })
@@ -106,8 +134,12 @@ map('n', '<leader>fr', '<cmd>Telescope oldfiles<cr>', { noremap = true, silent =
 -- open any file and the project root follows automatically. Press Cmd+O
 -- again (or Ctrl+Y) once inside the folder you want to land this tab and
 -- the tree on it. Recents on Ctrl+R.
-map('n', '<D-o>', '<cmd>Telescope file_browser path=%:p:h select_buffer=true hidden=true<cr>',
-  { noremap = true, silent = true, desc = 'Browse files…' })
+map(
+  'n',
+  '<D-o>',
+  '<cmd>Telescope file_browser path=%:p:h select_buffer=true hidden=true<cr>',
+  { noremap = true, silent = true, desc = 'Browse files…' }
+)
 
 -- Cmd+W closes the current buffer (VSCode editor-close); on an empty
 -- buffer it tries :tabclose instead (never a window close). MiniBufremove
@@ -115,20 +147,39 @@ map('n', '<D-o>', '<cmd>Telescope file_browser path=%:p:h select_buffer=true hid
 -- one (same engine as <leader>bd, force like it). The Ghostty
 -- tab/window survives; Shift+Cmd+W stays native and closes the tab,
 -- Ctrl+Shift+Cmd+W the window. See config/buffer_close.lua.
-map({ 'n', 'v', 'i', 't' }, '<D-w>', function() require('config.buffer_close').close_buffer_or_tab() end,
-  { noremap = true, silent = true, desc = 'Close buffer' })
+map(
+  { 'n', 'v', 'i', 't' },
+  '<D-w>',
+  function() require('config.buffer_close').close_buffer_or_tab() end,
+  { noremap = true, silent = true, desc = 'Close buffer' }
+)
 
 -- Code runner (VSCode code-runner button): <leader>of runs the current
 -- file with the right interpreter via overseer (see config/runner.lua);
--- output docks at the bottom, stop/re-run from <leader>ot.
-map('n', '<leader>of', function() require('config.runner').run_file() end,
-  { noremap = true, silent = true, desc = 'Run current file' })
--- Option+K from a visual selection (Claude Code @-mention habit): types
--- @file / @file#l1-l2 into the visible floating terminal. No Ghostty
--- change needed — left-Opt-as-Alt already delivers Option+K as <A-k>,
--- and <A-k> is unbound in visual mode (window nav owns it in normal).
-map('v', '<A-k>', function() require('config.runner').send_at_reference() end,
-  { noremap = true, silent = true, desc = 'Send @file ref to terminal' })
+-- output floats, stop/re-run from <leader>ot.
+map(
+  'n',
+  '<leader>of',
+  function() require('config.runner').run_file() end,
+  { noremap = true, silent = true, desc = 'Run current file' }
+)
+-- Option+K (Claude Code @-mention habit): types @file / @file#l1-l2
+-- into the visible floating terminal. No Ghostty change needed —
+-- left-Opt-as-Alt already delivers Option+K as <A-k>. From a visual
+-- selection it sends the selection; from normal mode the whole file
+-- (window nav gave up normal <A-k>: splits go unused here).
+map(
+  'v',
+  '<A-k>',
+  function() require('config.runner').send_at_reference() end,
+  { noremap = true, silent = true, desc = 'Send @file ref to terminal' }
+)
+map(
+  'n',
+  '<A-k>',
+  function() require('config.runner').send_file_reference() end,
+  { noremap = true, silent = true, desc = 'Send whole-file @ref to terminal' }
+)
 
 -- Manual session snapshots (mini.sessions): save and restore the whole
 -- open layout on demand (one Ghostty tab = one project, one session each).

@@ -12,15 +12,11 @@ local M = {}
 function M.text(_start, _finish, first, width)
   local trimmed = first:gsub('^%s*', ''):gsub('%s*$', '')
   if trimmed == '' then trimmed = '(blank)' end
-  if vim.fn.strwidth(trimmed) > width then
-    trimmed = vim.fn.strcharpart(trimmed, 0, math.max(width - 1, 0)) .. '…'
-  end
+  if vim.fn.strwidth(trimmed) > width then trimmed = vim.fn.strcharpart(trimmed, 0, math.max(width - 1, 0)) .. '…' end
   return trimmed
 end
 
 -- Foldtext entry point: Neovim sets vim.v.foldstart/foldend around this.
-function M.foldtext()
-  return M.text(vim.v.foldstart, vim.v.foldend, vim.fn.getline(vim.v.foldstart), vim.fn.winwidth(0))
-end
+function M.foldtext() return M.text(vim.v.foldstart, vim.v.foldend, vim.fn.getline(vim.v.foldstart), vim.fn.winwidth(0)) end
 
 return M

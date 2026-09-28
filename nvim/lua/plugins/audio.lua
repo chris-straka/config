@@ -20,8 +20,20 @@ return {
         -- is visible: config/audio.lua AUDIO_EXTS must mirror this
         -- list (the tree routes on it before the plugin loads).
         extensions = {
-          'mp3', 'wav', 'flac', 'ogg', 'oga', 'opus', 'm4a',
-          'aac', 'wma', 'aiff', 'aif', 'alac', 'ape', 'mka',
+          'mp3',
+          'wav',
+          'flac',
+          'ogg',
+          'oga',
+          'opus',
+          'm4a',
+          'aac',
+          'wma',
+          'aiff',
+          'aif',
+          'alac',
+          'ape',
+          'mka',
         },
       })
     end,

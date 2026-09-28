@@ -1,5 +1,8 @@
+# Compact style, matched to the tree: this config is AI-edited, so fewer
+# lines means fewer tokens on every read and write.
 indent_type = "Spaces"
 indent_width = 2
-column_width = 80
+column_width = 120
 quote_style = "AutoPreferSingle"
-no_call_parentheses = true
+call_parentheses = "Always"
+collapse_simple_statement = "Always"
