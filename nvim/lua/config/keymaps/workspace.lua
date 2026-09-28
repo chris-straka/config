@@ -113,6 +113,8 @@ map(
 )
 -- Ctrl+R: recent projects picker (VSCode Ctrl+R).
 -- This takes over Vim's built-in redo on Ctrl+R; redo lives on Cmd+Shift+Z.
+-- Enter lands on the project (close + chdir, no file picker — see the
+-- project.nvim telescope.mappings in plugins/editor.lua).
 map('n', '<C-r>', '<cmd>Telescope projects<cr>', { noremap = true, silent = true, desc = 'Recent projects' })
 -- Shift+Cmd+R: LSP rename for the symbol under the cursor (VSCode F2):
 -- semantic, cross-file via the language server. Recent files moved to

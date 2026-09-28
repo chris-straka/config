@@ -394,6 +394,19 @@ return {
       -- Per-tab cwd: each tab follows what you open in it, global cwd
       -- stays out of the way (toggleterm reads the tab cwd).
       scope_chdir = 'tab',
+      -- Enter lands ON the project: close + chdir (the same action as
+      -- Ctrl+W), no second picker. Stock Enter dives into find_files,
+      -- which is never what Ctrl+R is for — the tree follows the tab
+      -- cwd (sync_root_with_cwd above) and terminals via autochdir, so
+      -- the chdir alone opens the project. File finders stay on Ctrl+F /
+      -- Ctrl+B / Ctrl+S inside the picker. Dict tables deep-merge (unlike
+      -- the patterns list above), so the stock Ctrl+* maps survive.
+      telescope = {
+        mappings = {
+          i = { ['<CR>'] = 'change_cwd' },
+          n = { ['<CR>'] = 'change_cwd' },
+        },
+      },
     },
     config = function(_, opts)
       require('project').setup(opts)
