@@ -1,6 +1,37 @@
 -- Debugging: plugins were installed but had no adapters and no keymaps,
 -- so nothing was actually debuggable. Adapters come from mason (see the
 -- mason-tool-installer list in lsp.lua); the keys below drive them.
+-- REPL output arrives as stream events that upstream appends onto the
+-- current line — which is still your input line, so the first chunk
+-- glues onto it ("> print(x){...}"). debugpy also emits every stdout
+-- chunk twice, the twin carrying an empty `source`. Separate once per
+-- command and drop the twin; streaming otherwise appends as usual.
+local last_output = nil
+local function repl_output(_, body)
+  if body.category == 'telemetry' or body.output == nil then return end
+  local empty_source = type(body.source) == 'table' and next(body.source) == nil
+  if
+    last_output ~= nil
+    and last_output.category == body.category
+    and last_output.output == body.output
+    and (empty_source or last_output.empty)
+  then
+    return
+  end
+  local repl = require('dap').repl
+  for _, b in ipairs(vim.api.nvim_list_bufs()) do
+    if vim.api.nvim_buf_is_loaded(b) and vim.bo[b].filetype == 'dap-repl' then
+      local count = vim.api.nvim_buf_line_count(b)
+      local last = count > 0 and vim.api.nvim_buf_get_lines(b, count - 1, count, false)[1] or ''
+      -- 'dap> ' is upstream's prompt; matching means output arrived
+      -- while the input line was still last.
+      if vim.startswith(last, 'dap> ') then repl.append('', '$', { newline = true }) end
+      break
+    end
+  end
+  last_output = { category = body.category, output = body.output, empty = empty_source }
+  repl.append(body.output, '$', { newline = false })
+end
 return {
   {
     'mfussenegger/nvim-dap',
@@ -65,6 +96,7 @@ return {
           end,
         },
       }
+      dap.defaults.fallback.on_output = repl_output
     end,
   },
   -- Toggle-only on purpose (no auto-open listeners): nothing pops open

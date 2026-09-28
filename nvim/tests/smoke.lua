@@ -671,6 +671,7 @@ check(
     and dap_src:find('adapters.debugpy', 1, true) ~= nil
 )
 check('repl toggle focuses for typing', dap_src:find('startinsert', 1, true) ~= nil)
+check('repl output separated from input', dap_src:find('on_output', 1, true) ~= nil)
 -- Config hygiene: the centering plugin is pinned (nnp_guard pokes its
 -- internals), and rename is defined once (label-only in whichkey, the
 -- real map is buffer-local in lsp.lua).
