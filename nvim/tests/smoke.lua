@@ -672,6 +672,21 @@ check(
 )
 check('repl toggle focuses for typing', dap_src:find('startinsert', 1, true) ~= nil)
 check('repl output separated from input', dap_src:find('on_output', 1, true) ~= nil)
+-- REPL exit keys, proven live: q from normal, Ctrl+Q straight from
+-- insert (no Esc step, no leader — Space would wait timeoutlen).
+do
+  require('config.autocmds')
+  local cur = vim.api.nvim_get_current_buf()
+  local buf = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_set_current_buf(buf)
+  vim.bo[buf].filetype = 'dap-repl'
+  local q = vim.fn.maparg('q', 'n', false, true)
+  local cq = vim.fn.maparg('<C-q>', 'i', false, true)
+  check('repl q closes from normal', type(q) == 'table' and q.buffer == 1)
+  check('repl Ctrl+Q closes from insert', type(cq) == 'table' and cq.buffer == 1)
+  vim.api.nvim_set_current_buf(cur)
+  vim.api.nvim_buf_delete(buf, { force = true })
+end
 -- Config hygiene: the centering plugin is pinned (nnp_guard pokes its
 -- internals), and rename is defined once (label-only in whichkey, the
 -- real map is buffer-local in lsp.lua).

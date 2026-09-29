@@ -337,3 +337,18 @@ autocmd('FileType', {
     vim.keymap.set('n', 'q', '<cmd>close<cr>', { buffer = args.buf, silent = true, desc = 'Close run output' })
   end,
 })
+
+-- Debug REPL quits the same way: q from normal, Ctrl+Q straight from
+-- insert (the toggle lands in insert, so Esc-then-q would strand the
+-- same-shortcut habit). No <leader> map on purpose: leader is Space,
+-- so an insert-mode leader map would make every typed space wait
+-- timeoutlen — the reason terminal exit is Alt+X, not <leader>.
+autocmd('FileType', {
+  group = vim.api.nvim_create_augroup('DapReplQuit', { clear = true }),
+  pattern = 'dap-repl',
+  callback = function(args)
+    local b = { buffer = args.buf, silent = true, desc = 'Close debug REPL' }
+    vim.keymap.set('n', 'q', function() require('dap').repl.close() end, b)
+    vim.keymap.set('i', '<C-q>', '<Esc><cmd>lua require("dap").repl.close()<cr>', b)
+  end,
+})
