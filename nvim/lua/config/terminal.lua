@@ -64,7 +64,7 @@ function M.cycle(dir)
       if other and other:is_open() then other:close() end
     end
   end
-  if not term:is_open() then term:open() end
+  M._float_open(term)
   term:focus()
   M.note(target)
   return 'focused'
@@ -101,10 +101,86 @@ function M.goto_slot(slot)
       if other and other:is_open() then other:close() end
     end
   end
-  if not term:is_open() then term:open() end
+  M._float_open(term)
   term:focus()
   M.note(target)
   return 'focused'
+end
+
+-- True when win is a floating window (a toggleterm float, a foreign
+-- float, any relative window); false for normal windows and dead ids.
+---@param win integer|nil
+---@return boolean
+function M._is_float_win(win)
+  if type(win) ~= 'number' then return false end
+  local ok, cfg = pcall(vim.api.nvim_win_get_config, win)
+  return ok and type(cfg) == 'table' and (cfg.relative or '') ~= ''
+end
+
+-- Open term as a float, healing a remembered split direction first:
+-- toggleterm adopts bare :terminal buffers with a guessed split
+-- direction (see enforce_float), and a bare open would materialize it
+-- as a bottom split. A term already open in a split is closed and
+-- reopened; a live float is left alone.
+---@param term table toggleterm terminal
+function M._float_open(term)
+  if type(term.change_direction) == 'function' then pcall(term.change_direction, term, 'float') end
+  if term:is_open() and not M._is_float_win(term.window) then term:close() end
+  if not term:is_open() then term:open(nil, 'float') end
+end
+
+-- Float the terminal buffer: every terminal shown in a normal window
+-- moves to a float (toggleterm-owned ones through the plugin API, so
+-- their remembered direction heals too; foreign :terminal buffers into
+-- a plain float sized like the toggleterm ones). File buffers and live
+-- floats are never touched.
+---@param bufnr integer|nil
+---@return string status word (handy for tests)
+function M.enforce_float(bufnr)
+  if type(bufnr) ~= 'number' or not vim.api.nvim_buf_is_valid(bufnr) then return 'invalid' end
+  local ok_bt, buftype = pcall(function() return vim.bo[bufnr].buftype end)
+  if not ok_bt or buftype ~= 'terminal' then return 'not-terminal' end
+  local tabpage = vim.api.nvim_get_current_tabpage()
+  local doomed = {}
+  for _, win in ipairs(vim.fn.win_findbuf(bufnr)) do
+    if vim.api.nvim_win_get_tabpage(win) == tabpage and not M._is_float_win(win) then
+      doomed[#doomed + 1] = win
+    end
+  end
+  if #doomed == 0 then return 'already-float' end
+  local ok_terms, terms = pcall(require, 'toggleterm.terminal')
+  if ok_terms and terms and type(terms.get_all) == 'function' then
+    local ok_all, all = pcall(terms.get_all)
+    if ok_all and type(all) == 'table' then
+      for _, owned in ipairs(all) do
+        if type(owned) == 'table' and owned.bufnr == bufnr then
+          if type(owned.change_direction) == 'function' then pcall(owned.change_direction, owned, 'float') end
+          if type(owned.close) == 'function' then pcall(owned.close, owned) end
+          if type(owned.open) == 'function' then pcall(owned.open, owned, nil, 'float') end
+          if type(owned.focus) == 'function' then pcall(owned.focus, owned) end
+          vim.notify('terminal split opened as a float', vim.log.levels.INFO)
+          return 'floated-toggleterm'
+        end
+      end
+    end
+  end
+  local scratch = vim.api.nvim_create_buf(false, true)
+  for _, win in ipairs(doomed) do
+    if vim.api.nvim_win_is_valid(win) then pcall(vim.api.nvim_win_set_buf, win, scratch) end
+  end
+  local width = math.max(60, math.min(vim.o.columns - 4, math.floor(vim.o.columns * 0.8) - 10))
+  local height = math.max(10, math.min(vim.o.lines - 4, math.floor(vim.o.lines * 0.8)))
+  vim.api.nvim_open_win(bufnr, true, {
+    relative = 'editor',
+    width = width,
+    height = height,
+    row = math.max(0, math.floor((vim.o.lines - height) * 0.28)),
+    col = math.max(0, math.floor((vim.o.columns - width) / 2)),
+    border = 'rounded',
+    style = 'minimal',
+  })
+  vim.notify('terminal split opened as a float', vim.log.levels.INFO)
+  return 'floated'
 end
 
 -- Sorted ids of this tab's terminals; {} when toggleterm is unavailable.

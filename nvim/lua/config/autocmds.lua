@@ -117,6 +117,22 @@ autocmd('TermOpen', {
   end,
 })
 
+-- Terminals never live in splits: toggleterm adopts bare :terminal
+-- buffers with a guessed split direction, and any bare open (bare
+-- :NToggleTerm, the <C-\> smart-toggle, a Cmd+digit jump) reopens them
+-- as a bottom split. Float every terminal buffer shown in a normal
+-- window — on creation (TermOpen) and on display (BufWinEnter: reopened
+-- ids, session restores, :split|:b termbuf) — while file splits are
+-- untouched (see the no-single-window-wiring smoke check). Deferred so
+-- toggleterm's own adoption and the window mediation settle first.
+autocmd({ 'TermOpen', 'BufWinEnter' }, {
+  group = vim.api.nvim_create_augroup('TerminalFloatOnly', { clear = true }),
+  callback = function(args)
+    local buf = args.buf
+    vim.schedule(function() require('config.terminal').enforce_float(buf) end)
+  end,
+})
+
 -- The cursor stays centered through the end-of-file tail too. scrolloff
 -- centers everywhere it can, but the docs are explicit that it gives up
 -- at the start/end of the file (`:h scrolloff`), docking the last lines
