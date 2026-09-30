@@ -1759,7 +1759,9 @@ do
     'centerer init keeps tree focus instead of skipping',
     ui_src:find("ft == 'NvimTree'", 1, true) ~= nil
       and ui_src:find('nvim_set_current_win', 1, true) ~= nil
-      and ui_src:find('orig_init(scope)', 1, true) ~= nil
+      -- The refresh routes through nnp_guard (stale layouts skip the
+      -- pass), not a direct orig_init call — see 3704f45.
+      and ui_src:find('guard.init(scope, orig_init)', 1, true) ~= nil
   )
 end
 
