@@ -419,6 +419,39 @@ do
   package.loaded['toggleterm.terminal'] = nil
 end
 check('visual Cmd+C copies', vim.fn.maparg('<D-c>', 'v') == '"+y')
+check('terminal Cmd+C copies or warns', vim.fn.maparg('<D-c>', 't') ~= '')
+check('normal Cmd+C copies or warns', vim.fn.maparg('<D-c>', 'n') ~= '')
+do
+  -- copy_or_warn with no selection warns and names the emulator chord;
+  -- with marks in the current buffer it yanks them to + (clipboard is
+  -- cleared first so the headless run never touches the real clipboard).
+  local clipboard = require('config.clipboard')
+  local noted = nil
+  local real_notify = vim.notify
+  vim.notify = function(msg, level) noted = { msg = msg, level = level } end
+  vim.cmd('enew')
+  local buf = vim.api.nvim_get_current_buf()
+  local status_empty = clipboard.copy_or_warn()
+  local warned = noted
+  check('copy with no selection warns', status_empty == 'empty' and warned ~= nil)
+  check(
+    'warning names the emulator chord',
+    warned ~= nil and warned.msg:find('Shift+Cmd+C', 1, true) ~= nil and warned.level == vim.log.levels.WARN
+  )
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, { 'hello', 'world' })
+  vim.fn.setpos("'<", { buf, 1, 1, 0 })
+  vim.fn.setpos("'>", { buf, 1, 5, 0 })
+  local saved_clipboard = vim.o.clipboard
+  vim.o.clipboard = ''
+  local status_copy = clipboard.copy_or_warn()
+  local got = vim.fn.getreg('+')
+  local confirmed = noted
+  vim.o.clipboard = saved_clipboard
+  vim.notify = real_notify
+  check('marked copy yanks to clipboard', status_copy == 'copied' and got == 'hello')
+  check('marked copy confirms what landed', confirmed ~= nil and confirmed.msg:find('Copied 1 line', 1, true) ~= nil)
+  vim.api.nvim_buf_delete(buf, { force = true })
+end
 check('leader-yp copies full path', vim.fn.maparg(' yp', 'n') ~= '')
 do
   -- Bare visual `y` must yank without a timeoutlen stall: no visual mapping
@@ -882,6 +915,7 @@ for _, p in ipairs({ home .. '/.config/ghostty/config', home .. '/.config/ghostt
   check(tag .. ' Cmd+Opt+[ fold transport', c:find('super+alt+[=text', 1, true) ~= nil)
   check(tag .. ' Cmd+Opt+] unfold transport', c:find('super+alt+]=text', 1, true) ~= nil)
   check(tag .. ' Cmd+T reaches nvim', c:find('super+t=text', 1, true) ~= nil)
+  check(tag .. ' Shift+Cmd+C copies emulator-side', c:find('super+shift+c=copy_to_clipboard', 1, true) ~= nil)
   check(tag .. ' Shift+Cmd+T opens a tab', c:find('super+shift+t=new_tab', 1, true) ~= nil)
   check(tag .. ' Shift+Cmd+N opens a window', c:find('super+shift+n=new_window', 1, true) ~= nil)
   check(tag .. ' Cmd+digits jump to nvim', c:find('super+digit_1=text', 1, true) ~= nil)
@@ -903,6 +937,10 @@ end
 check(
   'launcher mirrors main keybinds',
   keybinds(home .. '/.config/ghostty/config') == keybinds(home .. '/.config/ghostty/nvim-launcher')
+)
+check(
+  'emulator copy lives in shared keybinds',
+  read(home .. '/.config/ghostty/shared-keybinds.conf'):find('super+shift+c=copy_to_clipboard', 1, true) ~= nil
 )
 -- Kitty lives in the repo too and install.sh links it; its Cmd+E takes
 -- the same CSI-u live path (no legacy sequences anywhere).

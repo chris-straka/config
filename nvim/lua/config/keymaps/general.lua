@@ -180,6 +180,18 @@ end, { noremap = true, silent = true, desc = 'Inlay hints on/off' })
 -- Ghostty bind (super+c -> <D-c>); without it the emulator eats Cmd+C.
 map('v', '<D-c>', '"+y', { noremap = true, silent = true, desc = 'Copy selection' })
 
+-- Cmd+C with no live selection copies the last visual selection in this
+-- buffer (a just-released mouse drag) or warns when there is nothing
+-- nvim-side to copy — see config/clipboard.lua. Without this, Ghostty's
+-- forwarded Cmd+C silently no-ops in normal mode while the clipboard keeps
+-- stale content, which pastes as a "half showed up" mystery. The warning
+-- names Shift+Cmd+C, the emulator-side copy for Option-drag selections.
+map('n', '<D-c>', function() require('config.clipboard').copy_or_warn() end, {
+  noremap = true,
+  silent = true,
+  desc = 'Copy last selection',
+})
+
 -- Cmd+/ toggles comments (VSCode habit). Normal mode replays gcc,
 -- visual replays gc — both are mini.comment's own maps, so remap stays
 -- on for these two. Needs the matching Ghostty bind (super+/ -> <D-/>);

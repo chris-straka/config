@@ -149,8 +149,11 @@ keybind = super+]=text:\x1b[93;9u
 # Cmd+C copies Neovim visual selections (nvim <D-c> -> "+y). Overwrites
 # Ghostty's built-in copy: with mouse enabled in nvim, drag-selections
 # belong to nvim, so the emulator usually has nothing to copy anyway.
-# (Right-click menu still copies emulator-side.)
+# Shift+Cmd+C is the emulator-side copy for the rest: Option-drag
+# selections nvim never sees, and bare-shell tabs with no nvim running.
+# (Right-click menu copies emulator-side too.)
 keybind = super+c=text:\x1b[99;9u
+keybind = super+shift+c=copy_to_clipboard
 # Cmd+Delete (Backspace) trashes the nvim-tree node under the cursor
 # (nvim <D-BS> -> api.fs.trash, Finder parity). 127 is Delete/Backspace,
 # modifier 9 is super, like the letters above. Overwrites the default

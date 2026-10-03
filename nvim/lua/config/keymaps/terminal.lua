@@ -93,6 +93,18 @@ map('t', '|', '<C-\\><C-n>', { noremap = true, silent = true, desc = 'Terminal t
 -- which zsh kills the whole line with. The tree's buffer-local <D-BS>
 -- trash map is unaffected (different buffer, different mode table).
 map('t', '<D-BS>', '<C-u>', { noremap = true, silent = true, desc = 'Delete shell line' })
+-- Cmd+C inside a terminal float copies the last visual selection in the
+-- float (a just-released mouse drag over scrollback or TUI output) or
+-- warns when there is nothing nvim-side to copy — see
+-- config/clipboard.lua. A live drag takes the visual map instead; this
+-- covers Terminal-Insert/Normal with no live selection, where the
+-- forwarded Cmd+C used to fall through to the shell job and silently copy
+-- nothing (stale clipboard, "half showed up" paste).
+map('t', '<D-c>', function() require('config.clipboard').copy_or_warn() end, {
+  noremap = true,
+  silent = true,
+  desc = 'Copy terminal selection',
+})
 -- Exit with `|` (above), return with `i` — both stock Vim. (Retired: a
 -- Shift+Backspace Insert<->Normal toggle lived here, but Backspace is the
 -- Mac Delete key and the toggle fired on a habit keystroke. Ghostty still
