@@ -1778,6 +1778,10 @@ do
     image_src:find('window_overlap_clear_enabled = true', 1, true) ~= nil
   )
   check(
+    'webp dimensions bypass the buggy fast parser',
+    image_src:find("require('config.image_webp').apply()", 1, true) ~= nil
+  )
+  check(
     'images shallow-clear on terminal enter (Terminal-Insert gap)',
     image_src:find('ImageHideOnTerminal', 1, true) ~= nil
       and image_src:find("'TermEnter'", 1, true) ~= nil

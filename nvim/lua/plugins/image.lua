@@ -28,6 +28,10 @@ return {
         -- (toggleterm floats mask; never add them to the ignore list).
         window_overlap_clear_enabled = true,
       })
+      -- WebP hatch: upstream's fast parser only understands plain VP8 and
+      -- reports garbage for VP8X/VP8L (animated/metadata stills render
+      -- squished). Route WebP through `magick identify` instead.
+      require('config.image_webp').apply()
       -- Terminal-Insert gap: the overlap pass above only runs from the
       -- decoration provider, which bails outside Normal mode — and every
       -- toggleterm float lands in Terminal-Insert. So entering any
