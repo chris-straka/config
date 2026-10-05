@@ -66,3 +66,6 @@ export NARGO_HOME="/Users/c/.nargo"
 export PATH="$PATH:$NARGO_HOME/bin"
 export PATH="${HOME}/.bb:${PATH}"
 export PATH="/Users/c/.bb:$PATH"
+
+# czcode's terminal app, scoped to this folder's project (a all; see czcode/ccez/docs/phase-7.md)
+alias ct="cz tui"

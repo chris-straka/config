@@ -368,3 +368,7 @@ autocmd('FileType', {
     vim.keymap.set('i', '<C-q>', '<Esc><cmd>lua require("dap").repl.close()<cr>', b)
   end,
 })
+
+-- Terminal floats running a TUI with inline images (cz tui): forward its
+-- Kitty graphics commands to Ghostty (see config/kitty_passthrough.lua).
+require('config.kitty_passthrough').setup()
