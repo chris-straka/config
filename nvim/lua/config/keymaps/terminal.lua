@@ -105,6 +105,13 @@ map('t', '<D-c>', function() require('config.clipboard').copy_or_warn() end, {
   silent = true,
   desc = 'Copy terminal selection',
 })
+-- Editing Cmd keys mean nothing inside a terminal, but nvim's terminal
+-- drops the Cmd and forwards the bare key: Cmd+Z typed `z`, Cmd+/ typed
+-- `/`, Cmd+Opt+[ sent a lone `ESC[` that merged with the next key.
+-- Swallow them. (The finder Cmd keys have real t maps in workspace.lua.)
+for _, lhs in ipairs({ '<D-z>', '<D-S-z>', '<D-/>', '<D-M-[>', '<D-M-]>' }) do
+  map('t', lhs, '<Nop>', opts)
+end
 -- Exit with `|` (above), return with `i` — both stock Vim. (Retired: a
 -- Shift+Backspace Insert<->Normal toggle lived here, but Backspace is the
 -- Mac Delete key and the toggle fired on a habit keystroke. Ghostty still

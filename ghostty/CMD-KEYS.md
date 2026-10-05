@@ -50,9 +50,11 @@ a Lua function RHS, so it runs in every mode with no drop-to-Normal).
 `<D-t>` (new terminal) and `<D-1>`..`<D-0>` (positional jumps) are Lua
 functions too, so they run in every mode — including inside a float —
 with no drop-to-Normal.
-Still missing: `<D-p>`,
-`<D-o>`, `<D-S-f>`, `<D-S-p>`, `<D-z>`-family from floats (undo's bare-`u` RHS needs
-care — in terminal mode it would be typed into the shell).
+The finders `<D-p>`, `<D-o>`, `<D-S-f>`, `<D-S-p>` hide the float and
+open over code (`from_code` in nvim lua/config/terminal.lua). The
+editing keys `<D-z>`, `<D-S-z>`, `<D-/>`, `<D-M-[>`, `<D-M-]>` are
+swallowed in floats: nvim's terminal drops the Cmd, so without a `t`
+map they reached the job as bare letters.
 
 ## File inventory (2026-09-14: slots retired, Ghostty tabs own projects)
 

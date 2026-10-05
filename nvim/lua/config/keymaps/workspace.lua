@@ -142,6 +142,18 @@ map(
   '<cmd>Telescope file_browser path=%:p:h select_buffer=true hidden=true<cr>',
   { noremap = true, silent = true, desc = 'Browse files…' }
 )
+-- The same four finders from inside a terminal float: hide the float,
+-- then open the picker over code (see from_code in config/terminal.lua).
+-- Without these, nvim's terminal dropped the Cmd and typed the bare
+-- letter into the job (Cmd+O sent `o`, which cz tui acts on).
+for lhs, cmd in pairs({
+  ['<D-p>'] = 'Telescope find_files',
+  ['<D-o>'] = 'Telescope file_browser path=%:p:h select_buffer=true hidden=true',
+  ['<D-S-f>'] = 'Telescope live_grep',
+  ['<D-S-p>'] = 'Telescope commands',
+}) do
+  map('t', lhs, function() require('config.terminal').from_code(cmd) end, opts)
+end
 
 -- Cmd+W closes the current buffer (VSCode editor-close); on an empty
 -- buffer it tries :tabclose instead (never a window close). MiniBufremove

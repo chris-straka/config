@@ -17,6 +17,22 @@ function M.exit_focused()
   if term and term.job_id then vim.fn.chansend(term.job_id, 'exit\n') end
 end
 
+-- Run a code-side Ex command from inside a float (Cmd+P/O/Shift+F/
+-- Shift+P, see config/keymaps/workspace.lua): hide the focused float
+-- first, so the picker opens over code and a picked file lands in a
+-- code window instead of the terminal's. Without a t map these keys
+-- reached the job as bare letters (Cmd+O typed `o`).
+---@param cmd string Ex command, e.g. 'Telescope find_files'
+function M.from_code(cmd)
+  local ok, terms = pcall(require, 'toggleterm.terminal')
+  if ok then
+    local id = terms.get_focused_id()
+    local term = id and terms.get(id, true)
+    if term and term:is_open() then term:close() end
+  end
+  vim.cmd(cmd)
+end
+
 -- New terminal for Cmd+T (see config/keymaps/terminal.lua): every press
 -- mints a fresh float with the next free id (max live id + 1), so the
 -- key always creates instead of toggling or reusing. One float stays
