@@ -176,13 +176,18 @@ function M.on_mouse_move()
       character = vim.str_utfindex(text, encoding, mouse.column - 1, false),
     },
   }
-  timer = vim.uv.new_timer()
-  timer:start(
+  local t = vim.uv.new_timer()
+  timer = t
+  t:start(
     M.delay,
     0,
     vim.schedule_wrap(function()
-      timer:stop()
-      timer:close()
+      -- A mouse move between the timer firing and this scheduled run can
+      -- close it (M.close) or replace it with a newer one: stand down, or
+      -- this indexes a nil timer / cancels the newer hover.
+      if timer ~= t then return end
+      t:stop()
+      t:close()
       timer = nil
       M.request(bufnr, params, key)
     end)
