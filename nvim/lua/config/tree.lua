@@ -68,6 +68,9 @@ end
 function M.peek(find)
   local api = with_api()
   if not api then return end
+  -- From a picker prompt the toggle closes the picker and the insert
+  -- mode it leaves behind lands in the tree; a code buffer keeps insert.
+  if vim.api.nvim_win_get_config(0).relative ~= '' then vim.cmd.stopinsert() end
   -- Open or shut, cursor never leaves the code: toggle does both.
   -- pcall: a slow git backend must not surface as a startup error.
   pcall(api.tree.toggle, { find_file = find, focus = false })
@@ -136,6 +139,9 @@ end
 function M.focus(find)
   local api = with_api()
   if not api then return end
+  -- The tree is never typed into: from insert (a picker prompt, a code
+  -- buffer) the mode would otherwise follow the cursor into the tree.
+  vim.cmd.stopinsert()
   if api.tree.is_visible() then
     if api.tree.is_tree_buf() then
       api.tree.toggle() -- already inside: second press closes
