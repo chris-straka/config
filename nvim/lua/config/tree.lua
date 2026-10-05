@@ -16,7 +16,6 @@ local function with_api()
     vim.notify('nvim-tree not loaded', vim.log.levels.WARN)
     return nil
   end
-  pcall(require, 'config.tree_git_guard')
   return api
 end
 

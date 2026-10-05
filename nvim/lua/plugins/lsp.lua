@@ -46,7 +46,7 @@ return {
       local caps = require('blink.cmp').get_lsp_capabilities()
 
       -- Base for every server. Per-server files live in lsp/ (native 0.11+
-      -- autoload): lsp/lua_ls.lua, lsp/tailwindcss.lua, lsp/omnisharp.lua.
+      -- autoload): lsp/lua_ls.lua, lsp/tailwindcss.lua, lsp/jdtls.lua.
       vim.lsp.config('*', { capabilities = caps })
 
       vim.lsp.enable(servers)
