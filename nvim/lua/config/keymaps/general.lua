@@ -29,12 +29,18 @@ map('v', ']e', ":m '>+1<CR>gv=gv", { noremap = true, silent = true, desc = 'Move
 
 -- window navigation (old ',' prefix kept via whichkey, plus Alt-hjkl)
 map('n', ',', '<C-w>', opts)
-map({ 'n', 't', 'i' }, '<A-h>', '<C-w>h', opts)
-map({ 'n', 't', 'i' }, '<A-j>', '<C-w>j', opts)
--- <A-k> skips normal mode: splits go unused, so normal Alt+K sends a
--- whole-file @ref instead (workspace.lua); terminal/insert keep nav.
-map({ 't', 'i' }, '<A-k>', '<C-w>k', opts)
-map({ 'n', 't', 'i' }, '<A-l>', '<C-w>l', opts)
+-- <Cmd>wincmd, not <C-w>: in insert and terminal mode <C-w> deletes the
+-- previous word (the shell got ^W), so Alt+H ate a word instead of moving.
+-- Insert leaves insert first, or the mode follows the cursor into the
+-- tree or another file.
+for key, dir in pairs({ h = 'h', j = 'j', k = 'k', l = 'l' }) do
+  local cmd = '<Cmd>wincmd ' .. dir .. '<CR>'
+  -- <A-k> skips normal mode: splits go unused, so normal Alt+K sends a
+  -- whole-file @ref instead (workspace.lua); terminal/insert keep nav.
+  if key ~= 'k' then map('n', '<A-' .. key .. '>', cmd, opts) end
+  map('t', '<A-' .. key .. '>', cmd, opts)
+  map('i', '<A-' .. key .. '>', '<Esc>' .. cmd, opts)
+end
 
 -- Alt+Right intentionally left unmapped in terminal modes: Ghostty sends it
 -- as Esc+f, which the shell reads as word-forward (VSCode behavior). It used
@@ -93,6 +99,8 @@ map('n', '<leader>I', '<cmd>Inspect<CR>', { noremap = true, silent = true, desc 
 -- close/open everything.
 map({ 'n', 'v' }, '<D-M-[>', 'zc', { noremap = true, silent = true, desc = 'Fold' })
 map({ 'n', 'v' }, '<D-M-]>', 'zo', { noremap = true, silent = true, desc = 'Unfold' })
+map('i', '<D-M-[>', '<cmd>normal! zc<cr>', { noremap = true, silent = true, desc = 'Fold' })
+map('i', '<D-M-]>', '<cmd>normal! zo<cr>', { noremap = true, silent = true, desc = 'Unfold' })
 
 -- Shift+Alt+F: format the buffer (VSCode format-document). From a visual
 -- selection it formats just that — conform reads the range itself. Same
@@ -148,7 +156,7 @@ map('n', '<leader>yd', function()
 end, { noremap = true, silent = true, desc = 'Copy diagnostic' })
 
 -- Cmd+Shift+Z: redo (VSCode redo). u undoes, this re-applies.
-map('n', '<D-S-z>', '<cmd>redo<cr>', { noremap = true, silent = true, desc = 'Redo' })
+map({ 'n', 'i' }, '<D-S-z>', '<cmd>redo<cr>', { noremap = true, silent = true, desc = 'Redo' })
 
 -- Ctrl+Z: disabled. Vim's default suspends Neovim (SIGTSTP), but the
 -- Spotlight/Ghostty launcher runs `exec nvim` with no shell underneath,
@@ -186,7 +194,7 @@ map('v', '<D-c>', '"+y', { noremap = true, silent = true, desc = 'Copy selection
 -- forwarded Cmd+C silently no-ops in normal mode while the clipboard keeps
 -- stale content, which pastes as a "half showed up" mystery. The warning
 -- names Shift+Cmd+C, the emulator-side copy for Option-drag selections.
-map('n', '<D-c>', function() require('config.clipboard').copy_or_warn() end, {
+map({ 'n', 'i' }, '<D-c>', function() require('config.clipboard').copy_or_warn() end, {
   noremap = true,
   silent = true,
   desc = 'Copy last selection',
@@ -198,3 +206,4 @@ map('n', '<D-c>', function() require('config.clipboard').copy_or_warn() end, {
 -- without it the key never reaches nvim.
 map('n', '<D-/>', 'gcc', { remap = true, silent = true, desc = 'Toggle comment line' })
 map('v', '<D-/>', 'gc', { remap = true, silent = true, desc = 'Toggle comment selection' })
+map('i', '<D-/>', '<C-o>gcc', { remap = true, silent = true, desc = 'Toggle comment line' })
