@@ -57,16 +57,32 @@ autocmd('TextYankPost', {
 -- boots: :restart drops file args (argc==0) and restores the session
 -- after boot, so without the startreason guard every restart would pop
 -- the tree open next to the restored files.
+-- A key pressed while nvim is still booting (Cmd+O in a fresh tab) can
+-- open a float before the peek runs. Opening the tree under it steals
+-- the window: Telescope closes on leave and strands the cursor in the
+-- tree in insert mode, where Cmd+O is unmapped. So wait for the float
+-- to close, then peek as usual.
+local function peek_on_startup()
+  local win = vim.api.nvim_get_current_win()
+  if vim.api.nvim_win_get_config(win).relative ~= '' then
+    autocmd('WinClosed', {
+      pattern = tostring(win),
+      once = true,
+      callback = function() vim.schedule(peek_on_startup) end,
+    })
+    return
+  end
+  local ok, err = pcall(function() require('config.tree').peek(false) end)
+  if not ok then vim.notify('tree on startup: ' .. tostring(err), vim.log.levels.WARN) end
+end
+
 autocmd('VimEnter', {
   group = vim.api.nvim_create_augroup('TreeOnStartup', { clear = true }),
   callback = function()
     if vim.fn.argc() == 0 and vim.v.startreason ~= 'restart' then
       -- Deferred past startup: the tree opens on the next main-loop tick,
       -- so a slow git backend (or any tree error) can never abort VimEnter.
-      vim.schedule(function()
-        local ok, err = pcall(function() require('config.tree').peek(false) end)
-        if not ok then vim.notify('tree on startup: ' .. tostring(err), vim.log.levels.WARN) end
-      end)
+      vim.schedule(peek_on_startup)
     end
   end,
 })
