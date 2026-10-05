@@ -17,13 +17,14 @@ function M.exit_focused()
   if term and term.job_id then vim.fn.chansend(term.job_id, 'exit\n') end
 end
 
--- Run a code-side Ex command from inside a float (Cmd+P/O/Shift+F/
--- Shift+P, see config/keymaps/workspace.lua): hide the focused float
--- first, so the picker opens over code and a picked file lands in a
+-- Run a code-side Ex command from insert mode or inside a float
+-- (Cmd+P/O/Shift+F/Shift+P, see config/keymaps/workspace.lua): leave
+-- insert and hide the focused float first, so the picker opens over code and a picked file lands in a
 -- code window instead of the terminal's. Without a t map these keys
 -- reached the job as bare letters (Cmd+O typed `o`).
 ---@param cmd string Ex command, e.g. 'Telescope find_files'
 function M.from_code(cmd)
+  vim.cmd.stopinsert()
   local ok, terms = pcall(require, 'toggleterm.terminal')
   if ok then
     local id = terms.get_focused_id()

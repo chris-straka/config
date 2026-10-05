@@ -93,6 +93,9 @@ map('t', '|', '<C-\\><C-n>', { noremap = true, silent = true, desc = 'Terminal t
 -- which zsh kills the whole line with. The tree's buffer-local <D-BS>
 -- trash map is unaffected (different buffer, different mode table).
 map('t', '<D-BS>', '<C-u>', { noremap = true, silent = true, desc = 'Delete shell line' })
+-- Same key in insert mode deletes back to the line start (macOS parity);
+-- unmapped, it typed `<D-BS>` into the buffer.
+map('i', '<D-BS>', '<C-u>', { noremap = true, silent = true, desc = 'Delete to line start' })
 -- Cmd+C inside a terminal float copies the last visual selection in the
 -- float (a just-released mouse drag over scrollback or TUI output) or
 -- warns when there is nothing nvim-side to copy — see
