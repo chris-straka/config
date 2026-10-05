@@ -16,9 +16,13 @@ autocmd('FileType', {
 })
 
 -- Pick up files changed on disk (e.g. agent edits): VSCode-style auto-reload.
+-- Skipped in the command-line window (q:, Ctrl+F on the : line), where
+-- :checktime is E11 and the BufEnter error fired on every open.
 autocmd({ 'FocusGained', 'BufEnter', 'CursorHold' }, {
   group = vim.api.nvim_create_augroup('AutoReload', { clear = true }),
-  command = 'checktime',
+  callback = function()
+    if vim.fn.getcmdwintype() == '' then vim.cmd.checktime() end
+  end,
 })
 
 -- format on save via conform.nvim (replaces removed vim.lsp.buf.formatting_sync)
@@ -60,11 +64,17 @@ autocmd('TextYankPost', {
 -- A key pressed while nvim is still booting (Cmd+O in a fresh tab) can
 -- open a float before the peek runs. Opening the tree under it steals
 -- the window: Telescope closes on leave and strands the cursor in the
--- tree in insert mode, where Cmd+O is unmapped. So wait for the float
--- to close, then peek as usual.
+-- tree in insert mode, where Cmd+O is unmapped. So wait for a picker
+-- to close, then peek as usual. Any other float (an early Cmd+T) skips
+-- the peek: it would otherwise pop the tree whenever that terminal is
+-- first hidden, minutes later. The peek is a toggle, so a tree already
+-- opened by an early Cmd+E stays put too.
 local function peek_on_startup()
+  local ok_api, api = pcall(require, 'nvim-tree.api')
+  if ok_api and api.tree.is_visible() then return end
   local win = vim.api.nvim_get_current_win()
   if vim.api.nvim_win_get_config(win).relative ~= '' then
+    if vim.bo.filetype ~= 'TelescopePrompt' then return end
     autocmd('WinClosed', {
       pattern = tostring(win),
       once = true,
@@ -130,6 +140,10 @@ autocmd('TermOpen', {
     local b = { buffer = args.buf, noremap = true, silent = true, desc = 'Terminal keeps its shell (no jumplist)' }
     vim.keymap.set('n', '<C-o>', '<Nop>', b)
     vim.keymap.set('n', '<C-i>', '<Nop>', b)
+    -- Tab is no longer <C-i> under the kitty keyboard protocol, so the
+    -- global Tab/Shift+Tab :bnext maps swapped the float to a file too.
+    vim.keymap.set('n', '<Tab>', '<Nop>', b)
+    vim.keymap.set('n', '<S-Tab>', '<Nop>', b)
   end,
 })
 
