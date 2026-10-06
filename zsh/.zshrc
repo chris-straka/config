@@ -18,9 +18,6 @@ zstyle ':completion:*' use-cache on
 zstyle ':completion:*' cache-path "$HOME/.zsh_cache"
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
 
-# opencode
-export PATH=/Users/c/.opencode/bin:$PATH
-
 # Added by LM Studio CLI (lms)
 export PATH="$PATH:/Users/c/.lmstudio/bin"
 # End of LM Studio CLI section
@@ -67,5 +64,15 @@ export PATH="$PATH:$NARGO_HOME/bin"
 export PATH="${HOME}/.bb:${PATH}"
 export PATH="/Users/c/.bb:$PATH"
 
+# Vite+ bin (https://viteplus.dev)
+. "/Users/c/.config/vite-plus/env"
+
+# Claude Code with permission prompts skipped (interactive shells only; build tools still find /usr/bin/cc)
+alias cc="claude --dangerously-skip-permissions"
+# Resume a Claude Code session, picker when bare (cr <id> resumes that session)
+alias cr="claude --dangerously-skip-permissions --resume"
 # czcode's terminal app, scoped to this folder's project (a all; see czcode/ccez/docs/phase-7.md)
 alias ct="cz tui"
+
+# MEGAcmd CLI (mega-put, mega-get, ...); replaces the old mega MCP.
+export PATH="$PATH:/Applications/MEGAcmd.app/Contents/MacOS"
