@@ -2,101 +2,99 @@
   "schema_version": 1,
   "provider": "meta",
   "model": "muse-spark-1.3-contributor",
+  "reasoning_effort": "max",
   "tui": {
     "foreign_context_notice_shown": true
   },
-  "mcp_servers": {
+  "mcpServers": {
+    "blender": {
+      "mode": "optional",
+      "transport": "stdio",
+      "command": "/Users/c/.local/bin/blender-mcp"
+    },
     "chrome-devtools": {
+      "mode": "optional",
       "transport": "stdio",
-      "command": "/Users/c/Library/pnpm/bin/chrome-devtools-mcp",
-      "args": [],
-      "mode": "optional"
+      "command": "/Users/c/Library/pnpm/bin/chrome-devtools-mcp"
     },
-    "playwright": {
-      "transport": "stdio",
-      "command": "npx",
-      "args": [
-        "-y",
-        "@playwright/mcp@latest"
-      ],
-      "mode": "optional"
-    },
-    "microsoft-learn": {
+    "cloud-run": {
+      "mode": "optional",
       "transport": "streamable_http",
-      "url": "https://learn.microsoft.com/api/mcp",
-      "mode": "optional"
-    },
-    "cloudflare-docs": {
-      "transport": "streamable_http",
-      "url": "https://docs.mcp.cloudflare.com/mcp",
-      "mode": "optional"
+      "url": "https://run.googleapis.com/mcp"
     },
     "cloudflare-api": {
+      "mode": "optional",
       "transport": "streamable_http",
-      "url": "https://mcp.cloudflare.com/mcp",
-      "mode": "optional"
+      "url": "https://mcp.cloudflare.com/mcp"
     },
     "cloudflare-bindings": {
+      "mode": "optional",
       "transport": "streamable_http",
-      "url": "https://bindings.mcp.cloudflare.com/mcp",
-      "mode": "optional"
+      "url": "https://bindings.mcp.cloudflare.com/mcp"
+    },
+    "cloudflare-docs": {
+      "mode": "optional",
+      "transport": "streamable_http",
+      "url": "https://docs.mcp.cloudflare.com/mcp"
     },
     "cloudflare-observability": {
+      "mode": "optional",
       "transport": "streamable_http",
-      "url": "https://observability.mcp.cloudflare.com/mcp",
-      "mode": "optional"
-    },
-    "blender": {
-      "transport": "stdio",
-      "command": "/Users/c/.local/bin/blender-mcp",
-      "args": [],
-      "mode": "optional"
-    },
-    "hll": {
-      "transport": "stdio",
-      "command": "/Users/c/Games/hll/tools/hll-mcp/publish/HllMcp",
-      "args": [],
-      "env": {
-        "GODOT_PATH": "/Applications/Godot.app/Contents/MacOS/Godot",
-        "HLL_PROJECT": "/Users/c/Games/hll"
-      },
-      "mode": "optional"
+      "url": "https://observability.mcp.cloudflare.com/mcp"
     },
     "context7": {
+      "mode": "optional",
       "transport": "stdio",
       "command": "npx",
       "args": [
         "-y",
         "@upstash/context7-mcp"
-      ],
-      "mode": "optional"
-    },
-    "deepwiki": {
-      "transport": "streamable_http",
-      "url": "https://mcp.deepwiki.com/mcp",
-      "mode": "optional"
+      ]
     },
     "dart": {
+      "mode": "optional",
       "transport": "stdio",
       "command": "/opt/homebrew/bin/dart",
       "args": [
         "mcp-server"
-      ],
-      "mode": "optional"
+      ]
+    },
+    "deepwiki": {
+      "mode": "optional",
+      "transport": "streamable_http",
+      "url": "https://mcp.deepwiki.com/mcp"
+    },
+    "hll": {
+      "mode": "optional",
+      "transport": "stdio",
+      "command": "/Users/c/Games/hll/tools/hll-mcp/publish/HllMcp",
+      "env": {
+        "GODOT_PATH": "/Applications/Godot.app/Contents/MacOS/Godot",
+        "HLL_PROJECT": "/Users/c/Games/hll"
+      }
+    },
+    "microsoft-learn": {
+      "mode": "optional",
+      "transport": "streamable_http",
+      "url": "https://learn.microsoft.com/api/mcp"
+    },
+    "playwright": {
+      "mode": "optional",
+      "transport": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest"
+      ]
     },
     "tauri": {
+      "mode": "optional",
       "transport": "stdio",
       "command": "/Users/c/.local/share/mise/shims/npx",
       "args": [
         "-y",
         "@hypothesi/tauri-mcp-server"
-      ],
-      "mode": "optional"
-    },
-    "cloud-run": {
-      "transport": "streamable_http",
-      "url": "https://run.googleapis.com/mcp",
-      "mode": "optional"
+      ]
     }
   }
 }
