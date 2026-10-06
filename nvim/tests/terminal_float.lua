@@ -143,10 +143,34 @@ if type(term.enforce_float) == 'function' then
   }
   package.loaded['toggleterm.terminal'] = { get_all = function() return { stub } end }
   check('owned terminal floats via plugin', term.enforce_float(sbuf) == 'floated-toggleterm')
-  check('owned direction forced to float', calls[1] == 'direction=float')
-  check('owned split closed', calls[2] == 'close')
+  check('owned split closed', calls[1] == 'close')
+  check('owned direction forced to float', calls[2] == 'direction=float')
   check('owned reopened as float', calls[3] == 'open=nil,float')
   package.loaded['toggleterm.terminal'] = nil
+
+  -- _float_open on a live float is a no-op. Stub mirrors toggleterm:
+  -- change_direction nils window, open() always makes a new float — so
+  -- calling either on a live float stacked untracked copies (`\` then
+  -- closed only the top one and dropped to Normal).
+  local live = vim.api.nvim_open_win(
+    sbuf,
+    true,
+    { relative = 'editor', width = 40, height = 8, row = 1, col = 1, border = 'single' }
+  )
+  local opens = 0
+  local fstub = { bufnr = sbuf, window = live }
+  function fstub:change_direction() self.window = nil end
+  function fstub:is_open() return self.window ~= nil and vim.api.nvim_win_is_valid(self.window) end
+  function fstub:close() self.window = nil end
+  function fstub:open() opens = opens + 1 end
+  term._float_open(fstub)
+  term._float_open(fstub)
+  check('live float is not reopened', opens == 0)
+  check('live float stays tracked', fstub.window == live)
+  pcall(vim.api.nvim_win_close, live, true)
+  fstub.window = nil
+  term._float_open(fstub)
+  check('closed float opens once', opens == 1)
 end
 
 -- Wiring pins (headless has no plugin/autocmds, so assert on source like
@@ -171,7 +195,6 @@ while true do
 end
 check('float_open defined once, used twice', float_routes == 3)
 check('float_open opens floats explicitly', term_src:find("term:open(nil, 'float')", 1, true) ~= nil)
-check('jumpers heal direction', term_src:find("change_direction, term, 'float'", 1, true) ~= nil)
 
 if failures > 0 then
   print('FAILURES: ' .. failures)

@@ -134,16 +134,18 @@ function M._is_float_win(win)
   return ok and type(cfg) == 'table' and (cfg.relative or '') ~= ''
 end
 
--- Open term as a float, healing a remembered split direction first:
--- toggleterm adopts bare :terminal buffers with a guessed split
--- direction (see enforce_float), and a bare open would materialize it
--- as a bottom split. A term already open in a split is closed and
--- reopened; a live float is left alone.
+-- Open term as a float. A live float is left alone; a term open in a
+-- split is closed and reopened. open(nil, 'float') heals a remembered
+-- split direction itself (toggleterm adopts bare :terminal buffers with
+-- a guessed one, see enforce_float). Never change_direction a live
+-- float: toggleterm's change_direction forgets term.window, so is_open()
+-- turns false and open() stacks a copy on top of the untracked old
+-- window — `\` then closed only the top copy and dropped to Normal.
 ---@param term table toggleterm terminal
 function M._float_open(term)
-  if type(term.change_direction) == 'function' then pcall(term.change_direction, term, 'float') end
-  if term:is_open() and not M._is_float_win(term.window) then term:close() end
-  if not term:is_open() then term:open(nil, 'float') end
+  if term:is_open() and M._is_float_win(term.window) then return end
+  if term:is_open() then term:close() end
+  term:open(nil, 'float')
 end
 
 -- Float the terminal buffer: every terminal shown in a normal window
@@ -171,8 +173,10 @@ function M.enforce_float(bufnr)
     if ok_all and type(all) == 'table' then
       for _, owned in ipairs(all) do
         if type(owned) == 'table' and owned.bufnr == bufnr then
-          if type(owned.change_direction) == 'function' then pcall(owned.change_direction, owned, 'float') end
+          -- Close before change_direction: it forgets owned.window and
+          -- flips the direction, so close() would skip the split.
           if type(owned.close) == 'function' then pcall(owned.close, owned) end
+          if type(owned.change_direction) == 'function' then pcall(owned.change_direction, owned, 'float') end
           if type(owned.open) == 'function' then pcall(owned.open, owned, nil, 'float') end
           if type(owned.focus) == 'function' then pcall(owned.focus, owned) end
           vim.notify('terminal split opened as a float', vim.log.levels.INFO)
