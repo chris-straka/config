@@ -2,7 +2,9 @@
 
 Personal machine config, one Ghostty tab per project. New machine:
 `git clone https://github.com/chris-straka/config.git ~/config &&
-~/config/install.sh`, then restart Ghostty.
+~/config/install.sh`, then restart Ghostty. On macOS it also builds
+`/Applications/nvim.app`, so typing "nvim" in Spotlight opens a Ghostty
+window on `ghostty/nvim-launcher` (icon in `macos/`).
 
 | dir | what | live path |
 | --- | ---- | --------- |

@@ -56,4 +56,18 @@ link muse/settings.json "$HOME/.config/muse/settings.json"
 link zsh/.zshrc "$HOME/.zshrc"
 link zsh/.zprofile "$HOME/.zprofile"
 link git/.gitconfig "$HOME/.gitconfig"
+
+# macOS: nvim.app, so Spotlight "nvim" opens a Ghostty window on the
+# nvim-launcher config. Built once; delete the app to rebuild it.
+build_nvim_app() {
+  local app="${1:-/Applications/nvim.app}"
+  [ -d "$app" ] && return
+  osacompile -o "$app" -e "do shell script \"open -na /Applications/Ghostty.app --args --config-file=$HOME/.config/ghostty/nvim-launcher >/dev/null 2>&1 &\""
+  cp "$REPO/macos/nvim.icns" "$app/Contents/Resources/applet.icns"
+  cp "$REPO/macos/nvim-Assets.car" "$app/Contents/Resources/Assets.car"
+  codesign --force --sign - "$app" 2> /dev/null
+  touch "$app"
+  echo "app: $app"
+}
+[ "$(uname)" != Darwin ] || build_nvim_app "${NVIM_APP:-/Applications/nvim.app}"
 echo done.
