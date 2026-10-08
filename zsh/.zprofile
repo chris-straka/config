@@ -11,3 +11,4 @@ export PATH="$PATH:$HOME/.dotnet/tools"
 for d in "$HOME/.local/bin" "$HOME/.cargo/bin" "$HOME/.bun/bin" /opt/homebrew/opt/node@24/bin; do
   [ -d "$d" ] && export PATH="$d:$PATH"
 done
+[ -f "$HOME/.config/cz-host/env.sh" ] && . "$HOME/.config/cz-host/env.sh"
