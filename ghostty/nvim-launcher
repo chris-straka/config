@@ -8,7 +8,8 @@
 # `open --args --config-file=...` handoff path (windows opened with the
 # command applied yet no translations), so this file must work standalone.
 # To change a key: edit shared-keybinds.conf, then run install.sh.
-config-file = /Users/c/.config/ghostty/config
+# Relative: Ghostty resolves it next to this file (~/.config/ghostty).
+config-file = config
 command = /bin/zsh -l -i -c "exec nvim"
 # Large default (mirrors main config): launcher windows open zoomed in too.
 font-size = 20

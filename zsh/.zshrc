@@ -1,4 +1,5 @@
-eval "$(/Users/c/.local/bin/mise activate zsh)"
+# mise is on the main Mac only; other fleet Macs get Node etc. from Homebrew.
+[ -x "$HOME/.local/bin/mise" ] && eval "$("$HOME/.local/bin/mise" activate zsh)"
 # NOTE: no shims dir on PATH -- `mise activate` already handles shims.
 # (Old line kept in ~/.zshrc.bak.20260912 if anything non-interactive misses it.)
 
@@ -19,13 +20,13 @@ zstyle ':completion:*' cache-path "$HOME/.zsh_cache"
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
 
 # Added by LM Studio CLI (lms)
-export PATH="$PATH:/Users/c/.lmstudio/bin"
+export PATH="$PATH:$HOME/.lmstudio/bin"
 # End of LM Studio CLI section
 
 # bun completions
-[ -s "/Users/c/.bun/_bun" ] && source "/Users/c/.bun/_bun"
+[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 # The following lines have been added by Docker Desktop to enable Docker CLI completions.
-fpath=(/Users/c/.docker/completions $fpath)
+fpath=($HOME/.docker/completions $fpath)
 autoload -Uz compinit
 compinit
 # End of Docker CLI completions
@@ -35,7 +36,7 @@ export PATH=$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator
 export ANDROID_NDK_HOME=$HOME/Library/Android/sdk/ndk/30.0.16138531
 
 # pnpm
-export PNPM_HOME='/Users/c/Library/pnpm'
+export PNPM_HOME="$HOME/Library/pnpm"
 case ":$PATH:" in
   *":$PNPM_HOME/bin:"*) ;;
   *) export PATH="$PNPM_HOME/bin:$PATH" ;;
@@ -58,14 +59,13 @@ mc() {
 # (mauve moved from the username to the path on request)
 PROMPT='%F{#FFFFFF}%n@%m%f %F{#CBA6F7}%1~%f %F{#6C7086}%#%f '
 
-export NARGO_HOME="/Users/c/.nargo"
+export NARGO_HOME="$HOME/.nargo"
 
 export PATH="$PATH:$NARGO_HOME/bin"
-export PATH="${HOME}/.bb:${PATH}"
-export PATH="/Users/c/.bb:$PATH"
+export PATH="$HOME/.bb:$PATH"
 
 # Vite+ bin (https://viteplus.dev)
-. "/Users/c/.config/vite-plus/env"
+[ -s "$HOME/.config/vite-plus/env" ] && . "$HOME/.config/vite-plus/env"
 
 # Claude Code with permission prompts skipped (interactive shells only; build tools still find /usr/bin/cc)
 alias cc="claude --dangerously-skip-permissions"
