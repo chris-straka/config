@@ -239,7 +239,18 @@ return {
       -- re-hide ignored nodes for the session (stock toggle).
       -- Dotfiles start hidden so the launcher view opens clean; press H
       -- in the tree to reveal them (stock toggle, see default_on_attach).
-      filters = { dotfiles = true, git_ignored = false, exclude = { 'applications' } },
+      -- Symlinks start hidden too (~/SWE keeps compatibility links into
+      -- ~/Games that only old sessions use); press U in the tree to show
+      -- them (stock custom-filter toggle).
+      filters = {
+        dotfiles = true,
+        git_ignored = false,
+        exclude = { 'applications' },
+        custom = function(path)
+          local stat = vim.uv.fs_lstat(path)
+          return stat ~= nil and stat.type == 'link'
+        end,
+      },
       -- VSCode behavior: Enter on a file opens it and closes the tree.
       actions = { open_file = { quit_on_open = true } },
       -- VSCode-explorer keys: h collapses the directory (or jumps to the
