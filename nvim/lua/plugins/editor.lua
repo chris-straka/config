@@ -260,6 +260,9 @@ return {
       on_attach = function(bufnr)
         local api = require('nvim-tree.api')
         api.config.mappings.default_on_attach(bufnr)
+        -- j/k show the file or folder under the cursor in the code window
+        -- (config/tree_preview.lua); leaving without opening restores it.
+        require('config.tree_preview').attach(bufnr)
         local function opts(desc)
           return { desc = 'nvim-tree: ' .. desc, buffer = bufnr, noremap = true, silent = true, nowait = true }
         end
