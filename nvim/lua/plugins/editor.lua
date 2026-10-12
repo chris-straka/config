@@ -368,6 +368,10 @@ return {
         -- nowait, so no leader delay inside the tree or anywhere else.)
       end,
     },
+    config = function(_, opts)
+      require('nvim-tree').setup(opts)
+      require('config.tree').keep_windows_on_remove()
+    end,
   },
   {
     -- Maintained fork of the archived ahmedkhalf/project.nvim. The original

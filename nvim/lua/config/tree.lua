@@ -177,4 +177,23 @@ function M.tree_closed() settle('tree:close') end
 -- settle needed).
 function M.file_opened() M.tree_closed() end
 
+-- Deleting or trashing a file from the tree swaps every window showing
+-- it to another buffer (mini.bufremove keeps windows) before nvim-tree's
+-- own cleanup runs. Left to nvim-tree, that cleanup deletes the buffer,
+-- which closes the code window when the file was the only one open (the
+-- pads then swallow the screen) and closes the tree otherwise. With the
+-- buffer already unloaded, nvim-tree finds nothing left to clear. Fires
+-- after the confirm prompt; a failed trash leaves the file closed but
+-- on disk.
+function M.keep_windows_on_remove()
+  local api = require('nvim-tree.api')
+  api.events.subscribe(api.events.Event.WillRemoveFile, function(data)
+    for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+      if vim.api.nvim_buf_is_loaded(buf) and vim.api.nvim_buf_get_name(buf) == data.fname then
+        pcall(MiniBufremove.delete, buf, true)
+      end
+    end
+  end)
+end
+
 return M
