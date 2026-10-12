@@ -88,6 +88,17 @@ local opened = vim.api.nvim_get_current_buf()
 check('l opens the real file', vim.api.nvim_buf_get_name(opened) == root .. '/a.lua' and vim.bo[opened].buftype == '')
 check('opened file is listed', vim.bo[opened].buflisted)
 
+-- l on an already-loaded file: the preview shows its real buffer, and
+-- nvim-tree only focuses a window already showing it (no :edit), so the
+-- open must keep it rather than restore the window's own buffer.
+require('config.tree').focus(false)
+vim.wait(300, no)
+hover('b.txt')
+check('loaded file previews as its real buffer', shown() == orig_buf)
+vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('l', true, false, true), 'x', false)
+vim.wait(600, no)
+check('l on a loaded file lands on it', vim.api.nvim_buf_get_name(vim.api.nvim_get_current_buf()) == root .. '/b.txt')
+
 if failures > 0 then
   print(failures .. ' check(s) failed')
   os.exit(1)

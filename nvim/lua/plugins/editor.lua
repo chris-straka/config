@@ -272,6 +272,7 @@ return {
         -- tree, the open lands final and this no-ops; where they had
         -- closed for space, it rebuilds them before any redraw.
         local function open_file_centered()
+          require('config.tree_preview').commit()
           api.node.open.edit()
           require('config.tree').file_opened()
         end

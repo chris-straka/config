@@ -145,6 +145,22 @@ function M.restore()
   pcall(vim.api.nvim_win_call, s.win, function() vim.fn.winrestview(s.view) end)
 end
 
+-- Called just before l/Enter/o open the node under the cursor. When the
+-- preview shows that file's real buffer, nvim-tree sees it already in a
+-- window and only focuses it (no :edit), so the restore on WinLeave
+-- would put the old buffer back over it: keep it instead. Scratch
+-- previews are left to restore as usual, since :edit replaces them.
+function M.commit()
+  local s = state
+  if not s or not s.shown or not vim.api.nvim_win_is_valid(s.win) then return end
+  if vim.api.nvim_win_get_buf(s.win) ~= s.shown then return end
+  local ok, api = pcall(require, 'nvim-tree.api')
+  local node = ok and api.tree.get_node_under_cursor()
+  if not node or node.absolute_path ~= s.path then return end
+  if timer then timer:stop() end
+  state = nil
+end
+
 function M.update()
   if vim.bo.filetype ~= 'NvimTree' then return end
   local ok, api = pcall(require, 'nvim-tree.api')
