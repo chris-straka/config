@@ -49,11 +49,10 @@ pcall(vim.cmd, 'aunmenu PopUp.-2-')
 -- lag"); combos resolve instantly once the next key arrives, so this only
 -- shortens the lone-tap stall, not real typing.
 o.timeoutlen = 200
--- Alt keys arrive as Esc-prefixed sequences (now in insert mode too), so a
--- lone Esc must resolve fast: 10ms keeps Esc snappy while still
--- recognizing the sequences, which always arrive in a single write.
--- (Cmd keys now arrive as CSI-u super encodings, decoded before mapping.)
-o.ttimeoutlen = 10
+-- Paste markers and modified keys may arrive in separate terminal reads,
+-- especially while a nested terminal is busy. Allow the rest of an escape
+-- sequence to arrive before treating its leading Esc as a separate key.
+o.ttimeoutlen = 100
 o.exrc = true -- per-project '.nvim.lua' overrides (e.g. disable a server)
 o.hlsearch = false
 o.ignorecase = true
