@@ -3,6 +3,9 @@
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
+-- Per-machine overrides (untracked, see .gitignore), e.g. vim.g.center_width.
+pcall(require, 'config.local')
+
 require 'config.options'
 require 'config.lazy'
 require 'config.keymaps'

@@ -87,8 +87,9 @@ end
 -- (at full width the plugin's own math closes the right pad). Applied on
 -- every transition, enabled or not, so a later <leader>z re-enable picks
 -- up the width that matches the visible layout.
-local CENTER_FULL = 120
-local CENTER_TREE = 100
+-- config/local.lua can narrow both for a smaller screen.
+local CENTER_FULL = vim.g.center_width or 120
+local CENTER_TREE = vim.g.center_width_tree or 100
 
 local function set_center_width(w)
   pcall(function()
