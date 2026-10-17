@@ -440,8 +440,6 @@ return {
     config = function() require('hex').setup() end,
   },
   { 'mechatroner/rainbow_csv', ft = 'csv' }, -- mechatroner.rainbow-csv
-  -- humao.rest-client. API is Lua + <leader>R keys (no :Kulala command exists).
-  { 'mistweaverco/kulala.nvim', ft = { 'http', 'rest' }, opts = { global_keymaps = true } },
   {
     'stevearc/overseer.nvim',
     cmd = { 'OverseerRun', 'OverseerToggle' }, -- formulahendry.code-runner + tasks
