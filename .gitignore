@@ -4,3 +4,6 @@
 *.lock
 # Live Muse credentials (OAuth tokens) — see muse/.gitignore too.
 auth.json
+
+# Per-machine nvim overrides (nvim/init.lua loads it if present).
+nvim/lua/config/local.lua

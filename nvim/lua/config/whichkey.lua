@@ -26,7 +26,6 @@ wk.add({
   { '<leader>cf', desc = 'Format code' },
   { '<leader>T', group = 'Test' },
   { '<leader>o', group = 'Tasks' },
-  { '<leader>R', group = 'REST' },
   { '<leader>m', group = 'Markdown' },
   { '<leader>d', group = 'Debug' },
   { '<leader>f', group = 'Find' },

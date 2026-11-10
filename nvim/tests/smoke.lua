@@ -782,7 +782,7 @@ check(
   'center toggle installed on leader-z',
   ui:find('shortcuts/no-neck-pain.nvim', 1, true) ~= nil
     and ui:find("'<leader>z', '<cmd>NoNeckPain<cr>'", 1, true) ~= nil
-    and ui:find('width = 120', 1, true) ~= nil
+    and ui:find('width = vim.g.center_width or 120', 1, true) ~= nil
 )
 check(
   'centering is on by default',
@@ -835,8 +835,8 @@ check(
 )
 check(
   'center width follows the tree',
-  tree_src:find('CENTER_FULL = 120', 1, true) ~= nil
-    and tree_src:find('CENTER_TREE = 100', 1, true) ~= nil
+  tree_src:find('CENTER_FULL = vim.g.center_width or 120', 1, true) ~= nil
+    and tree_src:find('CENTER_TREE = vim.g.center_width_tree or 100', 1, true) ~= nil
     and tree_src:find('function M.tree_opened()', 1, true) ~= nil
 )
 check(

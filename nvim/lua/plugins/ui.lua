@@ -106,7 +106,7 @@ return {
       { '<leader>z', '<cmd>NoNeckPain<cr>', desc = 'Center buffer' },
     },
     opts = {
-      width = 120,
+      width = vim.g.center_width or 120,
       autocmds = {
         enableOnVimEnter = 'safe',
         enableOnTabEnter = true,
